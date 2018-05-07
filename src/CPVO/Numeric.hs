@@ -1,6 +1,10 @@
 module CPVO.Numeric (
+  testFunc,
   integrateAll
   ) where
+
+testFunc = do
+  putStrLn "========test========="
 
 integrateAll res [] = res
 integrateAll res ([enA,nA]:b@[enB,nB]:as)
