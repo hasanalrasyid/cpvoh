@@ -1,0 +1,15 @@
+resolver: lts-11.3
+name: hasanCust
+packages: 
+  - git: /home/aku/Documents/kerja/kanazawa/dev/hascpvo
+    commit: 51750410a815705176e1294e57423c1250c4c4ac
+
+# perlu dilakukan untuk transisi dari lts-11.3 ke hasanCust.yaml
+# stack --resolver ./bin/hasanCust.yaml exec -- ghc-pkg unregister pandoc
+# stack --resolver ./bin/hasanCust.yaml exec -- ghc-pkg unregister haddock-library 
+# rm -rf ~/.stack/precompiled/x86_64-linux/ghc-8.2.2/2.0.1.0/haddock-library-1.4.*
+# rm -rf ~/.stack/precompiled/x86_64-linux/ghc-8.2.2/2.0.1.0/pandoc-*
+# rm -rf ~/.stack/precompiled/x86_64-linux/ghc-8.2.2/2.0.1.0/attoparsec-*
+#
+# dengan demikian pandoc dan haddock harus direcompile ...
+# dan seharusnya kita bisa pakai hasanCust
