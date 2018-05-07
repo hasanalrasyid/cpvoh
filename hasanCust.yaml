@@ -1,8 +1,8 @@
 resolver: lts-11.3
 name: hasanCust
-packages: 
+packages:
   - git: /home/aku/Documents/kerja/kanazawa/dev/hascpvo
-    commit: 51750410a815705176e1294e57423c1250c4c4ac
+    commit: 5cc21f003d7c21e641f96a06197b3e55ee2365a8
 
 # perlu dilakukan untuk transisi dari lts-11.3 ke hasanCust.yaml
 # stack --resolver ./bin/hasanCust.yaml exec -- ghc-pkg unregister pandoc
