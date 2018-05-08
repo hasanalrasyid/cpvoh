@@ -6,7 +6,7 @@ module CPVO.IO (
     showDouble
     , markdownToTex
     , shell2list
-
+    , table
   ) where
 
 import CPVO.Numeric
