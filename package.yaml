@@ -23,6 +23,11 @@ dependencies:
 - base >= 4.7 && < 5
 - text
 - pandoc
+- process
+- hmatrix
+- boxes
+- foldl
+- turtle
 
 library:
   source-dirs: src
