@@ -3,16 +3,22 @@
 {-# LANGUAGE FlexibleContexts #-}
 
 module CPVO.IO (
-    showDouble
-    , markdownToTex
-    , shell2list
-    , table
-    , pdosA'
-    , getPDOS
+    showDouble,
+    markdownToTex,
+    shell2text,
+    shell2list,
+    rendertable,
+    pdosA',
+    getPDOS,
+    inshell,
+    getAllPDOS,
+    takeAO,
+    empty
   ) where
 
 import CPVO.Numeric
 
+--import Data.Char
 import Text.Printf as TP
 import Text.Pandoc
 import qualified Data.Text as T
@@ -78,6 +84,8 @@ markdownToTex str = runIOorExplode
 shell2list :: MonadIO io =>  Shell a->  io [a]
 shell2list xx = fold (xx) Fold.list
 
+shell2text xx = fmap (map lineToText) $ shell2list xx
+
 --------------------------------------------------------------------------------------
 -- Text Formatting
 --
@@ -90,8 +98,8 @@ fmt_column items = vcat left (addHead $ map (text.pad width) items)
         hsep = text ( replicate width '-' )
         addHead (a:as) = a:hsep:as
 
-table :: [[String]] -> Box
-table rs = vsep TB.<> hcat top (intersperse vsep (map fmt_column columns)) TB.<> vsep
+--table :: [[String]] -> Box
+rendertable rs = render $ vsep TB.<> hcat top (intersperse vsep (map fmt_column columns)) TB.<> vsep
   where
     columns = transpose rs
     nrows = length rs
