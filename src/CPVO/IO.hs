@@ -7,6 +7,8 @@ module CPVO.IO (
     , markdownToTex
     , shell2list
     , table
+    , pdosA'
+    , getPDOS
   ) where
 
 import CPVO.Numeric

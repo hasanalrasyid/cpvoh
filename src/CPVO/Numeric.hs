@@ -6,7 +6,8 @@ module CPVO.Numeric (
   testFunc,
   integrateAll,
   sumRow,
-  getY0
+  getY0,
+  delta
   ) where
 
 import Numeric.LinearAlgebra
