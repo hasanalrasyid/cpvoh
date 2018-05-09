@@ -28,6 +28,7 @@ dependencies:
 - boxes
 - foldl
 - turtle
+- split
 
 library:
   source-dirs: src
@@ -65,3 +66,5 @@ tests:
     - -with-rtsopts=-N
     dependencies:
     - hascpvo
+    - text-format
+    - split

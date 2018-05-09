@@ -7,7 +7,8 @@ module CPVO.Numeric (
   integrateAll,
   sumRow,
   getY0,
-  delta
+  delta,
+  integrateToZero
   ) where
 
 import Numeric.LinearAlgebra
@@ -17,6 +18,11 @@ import Data.Maybe (fromJust)
 
 testFunc = do
   putStrLn "========test========="
+
+integrateToZero mP = integrateAll 0
+  $ (++ ([toList $ getY0 $ takeColumns 2 mP]))
+  $ takeWhile (\(a:_) -> a <= 0)
+  $ toLists $ takeColumns 2 mP
 
 integrateAll res [] = res
 integrateAll res ([enA,nA]:b@[enB,nB]:as)
