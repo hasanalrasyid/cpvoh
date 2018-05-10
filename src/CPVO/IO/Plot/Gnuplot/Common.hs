@@ -136,7 +136,7 @@ genTOP (xr:yr:poskey:_) = unlines [ "#!/home/aku/bin/gnuplot -persist"
                    where
                      xticsnya = "-100,2,100"
                      yticsnya = concat ["-", yta, ", ",show subytics,",", yta ]
-                     subytics = (\x -> x - (mod x 5)) $ floor $ (read yr :: Double)/3
+                     subytics = (\x -> x - (mod x 5)) $ floor $ (10 + (read yr :: Double))/3
                      yta = show $ subytics * 3
 
 

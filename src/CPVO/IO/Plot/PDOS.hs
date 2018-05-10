@@ -15,9 +15,10 @@ import CPVO.IO.Plot.Gnuplot.Common
 import qualified Data.Text as T
 import qualified Data.Text.IO as T
 import Data.List.Split
+import System.Process as SP
 
 --plotPDOS plotStatementDOS_args@(jd:xr:ymax':wTot:tumpuk:invS:tailer:foldernya:aos) = do
-plotPDOS (xr:yr:over:invStat:poskey':total:foldernya:daftarOrbital) plotStatementDOS_args = do
+plotPDOS (fOut:xr:yr:over:invStat:poskey':total:foldernya:daftarOrbital) = do
   putStrLn "====start: CPVO.IO.Plot.PDOS===="
 -------------draft---------------------------------------
   let poskey = unwords $ splitOn ":" poskey'
@@ -34,7 +35,7 @@ plotPDOS (xr:yr:over:invStat:poskey':total:foldernya:daftarOrbital) plotStatemen
   let ender = genEnder
   let pre = "plot "
   let akhiran = unlines [ ender
-                        , "system 'cd plots && rm -f tmp*jpg'"
+                        , "system 'cd plots && rm -f tmp*jpg && for i in {eps,pdf,png}; do mv hasil.$i " ++ fOut ++ ".$i; done '"
                         ]
   let plotplate = "set format x '% h'; set xtics format '' nomirror ; unset xlabel; unset ylabel "
   let urutan = 0
@@ -54,7 +55,7 @@ plotPDOS (xr:yr:over:invStat:poskey':total:foldernya:daftarOrbital) plotStatemen
                      , plotplate1
                      , akhiran
                      ]
---  _ <- PS.system "gnuplot temp.glt"
+  _ <- SP.system "gnuplot temp.glt"
     -- #---#dimensi=$(convert plots/hasil.jpg -fuzz 5% -transparent white sparse-color:-|sed -e 's/ /\n/g'|awk -F ',' 'BEGIN{a=0; b=0;aa=10000;bb=10000}{if (a<$1) a=$1; if ($1<aa) aa=$1;  if (b<$2) b=$2; if (bb>$2) bb=$2 }END{print a-(10-a%10)"x"b-bb+(10-b%10)"+"aa-(30+aa%10)"+"bb-(10-aa%10)}')
     -- #---#convert plots/hasil.jpg -crop $dimensi plots/hasil.jpg
     -- #---##convert plots/hasil.jpg -pointsize 24 -font "monofur" label:'Energy (eV)' -gravity Center -append plots/hasil.jpg

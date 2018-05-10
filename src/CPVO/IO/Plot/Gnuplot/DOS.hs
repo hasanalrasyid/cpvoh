@@ -95,8 +95,8 @@ plotStatementDOS (jd:xr:ymax':wTot:tumpuk:invS:tailer:foldernya:aos) = do
                          ]
           )
         $ map (insertText "unset label")
-        $ map (insertLabel "spin-up" "at graph 0.15,0.85 font ',10'")
-        $ map (insertLabel "spin-down" "at graph 0.15,0.15 font ',10'") hasilSemua
+        $ map (insertLabel "spin-up" "at graph 0.15,0.9 font ',10'")
+        $ map (insertLabel "spin-down" "at graph 0.15,0.1 font ',10'") hasilSemua
 
 
 pSubPlot ( (_,(_,a,_)) ,p) = unlines [

@@ -29,11 +29,24 @@ dependencies:
 - foldl
 - turtle
 - split
+- text-format
 
 library:
   source-dirs: src
 
 executables:
+  f1:
+    main:                f1PdosTotAtomicMajorOrbitalVert.hs
+    source-dirs:         app
+    ghc-options:
+    - -threaded
+    - -rtsopts
+    - -with-rtsopts=-N
+    dependencies:
+    - hascpvo
+    - text-format
+    - split
+  
   t2:
     main:                t2DOSintegration.hs
     source-dirs:         app
@@ -69,7 +82,7 @@ executables:
     - hascpvo
 
 tests:
-  f1:
+  tf1:
     main:                f1.hs
     source-dirs:         test
     ghc-options:
