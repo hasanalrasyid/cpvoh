@@ -1,6 +1,9 @@
 if [ -z "$1" ]; then 
-  tipe="t3"
+  tipe="exe:t3"
 else
   tipe=$1
 fi
-stack ghci --main-is hascpvo:exe:${tipe} --only-main
+#examples:
+# exe:t2
+# test:f1
+stack ghci --main-is hascpvo:${tipe} --only-main
