@@ -4,8 +4,7 @@
 
 module CPVO.IO.MMOM where
 --x-- import Turtle hiding (sortBy,char,text)
-import Lib (someFunc)
-import CPVO.Numeric (integrateAll,testFunc,getY0,delta,integrateToZero)
+import CPVO.Numeric (integrateAll,getY0,delta,integrateToZero)
 import CPVO.IO
 --x--
 --x-- --import Turtle.Helper
@@ -143,13 +142,6 @@ getMMOM (texFile:jd:jdHead:xr:ymax':wTot:tumpuk:invS:tailer:foldernya:aos) = do
     T.writeFile texFile resIntAll
     putStrLn "===done==="
 
-{-
-integrateToZero mP = integrateAll 0
-  $ (++ ([toList $ getY0 $ takeColumns 2 mP]))
-  $ takeWhile (\(a:_) -> a <= 0)
-  $ toLists $ takeColumns 2 mP
--}
-
 readMMOM nAtom foldernya = do
     fLLMF <- T.readFile $ foldernya ++ "/llmf"
     let fMMOM = inshell ( T.pack $ concat [ "mkdir -p temp; grep mmom ", foldernya , "/llmf "
@@ -162,7 +154,4 @@ readMMOM nAtom foldernya = do
     mmom <- fmap (map T.double) $ shell2text fMMOM
     sdtMMOM <- fmap (map T.double) $ shell2text sdTMMOM'
     return ( map fst $ rights $ concat [sdtMMOM,mmom])
-
-
-
 
