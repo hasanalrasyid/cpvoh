@@ -5,6 +5,7 @@
 module CPVO.IO (
     showDouble,
     markdownToTex,
+    inshell2text,
     shell2text,
     shell2list,
     rendertable,
@@ -84,7 +85,13 @@ markdownToTex str = runIOorExplode
 shell2list :: MonadIO io =>  Shell a->  io [a]
 shell2list xx = fold (xx) Fold.list
 
+shell2text :: MonadIO io => Shell Line -> io [Text]
 shell2text xx = fmap (map lineToText) $ shell2list xx
+
+inshell2text :: MonadIO io => String -> io [Text]
+inshell2text xx = do
+  x2 <- shell2text $ inshell ( T.pack xx) empty
+  return x2
 
 --------------------------------------------------------------------------------------
 -- Text Formatting

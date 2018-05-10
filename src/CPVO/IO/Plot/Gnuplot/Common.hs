@@ -1,71 +1,154 @@
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE Strict #-}
-{-# LANGUAGE FlexibleContexts #-}
-{-# LANGUAGE TypeApplications #-}
 
-module CPVO.IO.Plot.PDOS
+module CPVO.IO.Plot.Gnuplot.Common
   where
 
-import CPVO.Numeric
-import CPVO.IO
-import CPVO.IO.DOS
-import CPVO.IO.Plot.Gnuplot.DOS
-import CPVO.IO.Plot.Gnuplot.Common
-
+-- import Turtle                       --
+-- import qualified Control.Foldl as Fold
+-- import System.Environment (getArgs)
 import qualified Data.Text as T
-import qualified Data.Text.IO as T
-import Data.List.Split
+-- import qualified Data.Text.IO as T
+-- import qualified Data.Text.Read as T
+-- import qualified Data.Text.Format as T
+import Text.Printf
+-- import Data.List.Split
+-- import Data.List
+-- import Data.Maybe
+-- import Data.Either
 
---plotPDOS plotStatementDOS_args@(jd:xr:ymax':wTot:tumpuk:invS:tailer:foldernya:aos) = do
-plotPDOS (xr:yr:over:invStat:poskey':total:foldernya:daftarOrbital) plotStatementDOS_args = do
-  putStrLn "====start: CPVO.IO.Plot.PDOS===="
--------------draft---------------------------------------
-  let poskey = unwords $ splitOn ":" poskey'
-  let xticsnya = "-100,2,100"
-  let yticsnya = concat ["-", yr, "+5, 5,", yr, "-5"]
-  -- yticsnya = (echo $yr | awk '{print "-"$1"+5,5,"$1"-5"}')
-  tailer <- fmap (T.unpack . last . T.splitOn "." . head ) $ inshell2text $ unwords [ "ls", foldernya ++ "/dos.tot.*" ]
-  let mainTitle = ""
-  putStrLn $ show poskey
-  -- tailer="$(ls "${dirs[0]}" |grep dos.tot | awk -F '.' '{print $NF}' )"
-  -- over=$3
-  -- mkdir -p plots
-  let tempGLT = genTOP [xr,yr,poskey]
-  let ender = genEnder
-  let pre = "plot "
-  let akhiran = unlines [ ender
-                        , "system 'cd plots && rm -f tmp*jpg'"
-                        ]
-  let plotplate = "set format x '% h'; set xtics format '' nomirror ; unset xlabel; unset ylabel "
-  let urutan = 0
-  let topTitle' = (last $ T.splitOn "." $ T.pack foldernya)
-  let topTitle = case topTitle' of
-                      "0GGA" -> "GGA(PBE)"
-                      _ -> concat [ "QSGW_{"
-                                  , T.unpack $ last $ T.splitOn "G" topTitle'
-                                  , "}"
-                                  ]
-      --generator="f1.genPDOSAtomicOrbitalTot.hs $topTitle $xr $yr $total $over $invStat $tailer $foldernya $daftarOrbital"
+warna :: [T.Text]
+warna = [
+    "#e41a1c"
+  , "#377eb8"
+  , "#4daf4a"
+  , "#984ea3"
+  , "#ff3399"
+--  , "#006d2c"
+--  , "#993f00"
+--  , "#4c05c0"
+--  , "#191919", "#05c310"
+--  , "#2bce48", "#ffcc99"
+--  , "#808080", "#94ffb5"
+--  , "#8f7c00", "#9dcc00"
+--  , "#c20880", "#033800"
+--  , "#ffa450", "#ffa8bb"
+--  , "#426600", "#ff0100"
+--  , "#5ef1f2", "#0998f0"
+--  , "#e0ff66", "#74aff0"
+--  , "#990000", "#ffff80"
+--  , "#ffff00", "#ff5050"
+--    "#e41a1c"
+--    , "#377eb8"
+--    , "#4daf4a"
+--    , "#984ea3"
+--    , "#ff7f00"
+--    , "#ff3399"
+--    , "#2ca25f"
+--    , "#006d2c"
+--    , "#fdae61"
+--    , "#ffffbf"
+--    , "#abdda4"
+--    , "#993f0"
+--    , "#4c05c"
+--    , "#191919"
+--    , "#05c31"
+--    , "#2bce48"
+--    , "#ffcc99"
+--    , "#808080"
+--    , "#94ffb5"
+--    , "#8f7c0"
+--    , "#9dcc0"
+--    , "#c2088"
+--    , "#03380"
+--    , "#ffa45"
+--    , "#ffa8bb"
+--    , "#42660"
+--    , "#ff010"
+--    , "#5ef1f2"
+--    , "#0998f"
+--    , "#e0ff66"
+--    , "#74aff"
+--    , "#9900"
+--    , "#ffff80"
+--    , "#ffff0"
+--    , "#ff505"
+    ]
 
-  plotplate1 <- plotStatementDOS (topTitle:xr:yr:total:over:invStat:tailer:foldernya:daftarOrbital)
-  putStrLn "==========================================="
-  T.writeFile "temp.glt" $ T.pack $ unlines [ genTOP [xr,yr,poskey]
-                     , plotplate
-                     , plotplate1
-                     , akhiran
-                     ]
---  _ <- PS.system "gnuplot temp.glt"
-    -- #---#dimensi=$(convert plots/hasil.jpg -fuzz 5% -transparent white sparse-color:-|sed -e 's/ /\n/g'|awk -F ',' 'BEGIN{a=0; b=0;aa=10000;bb=10000}{if (a<$1) a=$1; if ($1<aa) aa=$1;  if (b<$2) b=$2; if (bb>$2) bb=$2 }END{print a-(10-a%10)"x"b-bb+(10-b%10)"+"aa-(30+aa%10)"+"bb-(10-aa%10)}')
-    -- #---#convert plots/hasil.jpg -crop $dimensi plots/hasil.jpg
-    -- #---##convert plots/hasil.jpg -pointsize 24 -font "monofur" label:'Energy (eV)' -gravity Center -append plots/hasil.jpg
-    -- #---##convert plots/hasil.jpg -gravity West -font monofur -pointsize 24 -draw 'rotate -90 text 0,20 "DOS (states/eV)"' plots/hasil.jpg
+-- shell2list :: MonadIO io => Shell a -> io [a]
+-- shell2list xx = fold (xx) Fold.list
+--
+-- diracDelta f x = if ( f x == 0 ) then 1 else 0
 
-{-
--}
+genLineType = unlines
+        $ map (\(nomor,warnanya) -> Text.Printf.printf "set style line %d lt %d lw 1 lc rgb '%s'" nomor nomor warnanya )
+        $ zip [1..(length warna)] warna
 
-  ------------------------------
-  putStrLn "====finish: CPVO.IO.Plot.PDOS===="
+genTOP (xr:yr:poskey:_) = unlines [ "#!/home/aku/bin/gnuplot -persist"
+                 , "reset"
+                 , "set term post  portrait enhanced color font 'Times-Roman'"
+                 , "set output 'plots/hasil.eps'"
 
+                 , "if (!exists('MP_LEFT'))   MP_LEFT = .1"
+                 , "if (!exists('MP_RIGHT'))  MP_RIGHT = .91"
+                 , "if (!exists('MP_BOTTOM')) MP_BOTTOM = .1"
+                 , "if (!exists('MP_TOP'))    MP_TOP = .9"
+                 , "if (!exists('MP_GAP'))    MP_GAP = 0.0"
+
+                 , "set tmargin 0"
+                 , "set bmargin 0"
+                 , "set lmargin 8"
+                 , "set rmargin 6"
+
+                 , "set multiplot layout 5,2 columnsfirst title '{/:Bold=15   }' \\"
+                 , " margins screen MP_LEFT, MP_RIGHT, MP_BOTTOM, MP_TOP spacing screen MP_GAP"
+
+                 , "set border lw 0.2"
+
+                 , "set key " ++ poskey ++ " font 'Times New Roman Bold,8'"
+                 , "set key spacing 1"
+                 , "set key samplen 0"
+                        , "set xrange [" ++ xr ++ "]"
+                        , "set yrange [-" ++ yr ++ ":" ++ yr ++ "]"
+                 , "set mxtics 2"
+                 , "set mytics 2"
+                 , "rydberg=13.605"
+
+                 , "unset grid"
+
+                        , "#set arrow from 0,-" ++ yr ++ " to 0," ++ yr ++ " nohead lc rgb 'navy'"
+
+                 , genLineType
+
+                 , "f(x) = 0"
+
+                 , "set xzeroaxis lw 1 lt 1 lc rgb 'black'"
+                 , "set yzeroaxis lw 1 lt 1 lc rgb 'black'"
+
+                 , "set style data boxes"
+                 , "unset ylabel"
+                 , "unset xtics"
+                        , "set ytics " ++ yticsnya ++ " font ',10' nomirror offset .7"
+                        , "set xtics " ++ xticsnya ++ " font ',10' nomirror offset 0,.6"
+                 , "set format x ''"
+                 , "#############################################################################################"
+                 ]
+                   where
+                     xticsnya = "-100,2,100"
+                     yticsnya = concat ["-", yta, ", ",show subytics,",", yta ]
+                     subytics = (\x -> x - (mod x 5)) $ floor $ (read yr :: Double)/3
+                     yta = show $ subytics * 3
+
+
+genEnder = unlines [ "unset multiplot"
+                   , "system 'cd plots && epstopdf hasil.eps && pdftocairo -r 150 -singlefile -jpeg hasil.pdf tmp && convert tmp.jpg -rotate 0 hasil.png && rm -f tmp.jpg'"
+                   ]
+
+totalHeader = unlines [ "###########Total Header#############"
+                      , "set label 'Total' at 2.5,15 font 'Bold,8'"
+                      , "set label 'spin-up' at 2.5,7.5 font ',8'"
+                      , "set label 'spin-down' at 2.5,-7.5 font ',8'"
+                      ]
 {-
 #!/bin/bash
 
@@ -217,4 +300,5 @@ urutan=0
     #---##convert plots/hasil.jpg -pointsize 24 -font "monofur" label:'Energy (eV)' -gravity Center -append plots/hasil.jpg
     #---##convert plots/hasil.jpg -gravity West -font monofur -pointsize 24 -draw 'rotate -90 text 0,20 "DOS (states/eV)"' plots/hasil.jpg
     exit
+
 -}
