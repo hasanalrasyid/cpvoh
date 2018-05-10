@@ -34,6 +34,18 @@ library:
   source-dirs: src
 
 executables:
+  t2:
+    main:                t2DOSintegration.hs
+    source-dirs:         app
+    ghc-options:
+    - -threaded
+    - -rtsopts
+    - -with-rtsopts=-N
+    dependencies:
+    - hascpvo
+    - text-format
+    - split
+
   t3:
     main:                t3atomicMagneticMoment.hs
     source-dirs:         app
