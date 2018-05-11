@@ -43,7 +43,7 @@ import System.Environment (getArgs)
 main = do
   let testArgs1 = [ "fig1"
                  , "-9:3"
-                 , "25" , "o" ,"1", "top:right", "T"
+                 , "25" , "o" ,"flipSpin/keepSpin", "top:right", "T"
                  , "extendedNiCo2O4.normal/nico2o4.0GGA"
                  , "Ni:Ni#3d:6:7:9:8:10", "Co:Co#3d:6:7:8:9:10", "O:O#2p:3:4:5"
                  ]

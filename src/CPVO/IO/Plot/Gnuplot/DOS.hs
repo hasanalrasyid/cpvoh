@@ -34,7 +34,7 @@ tampilkan (a:as) = do
 
 plotStatementDOS (jd:xr:ymax':wTot:tumpuk:invS:tailer:foldernya:aos) = do
     fCtrl <- T.readFile $ foldernya ++ "/ctrl." ++ tailer
-    let invStat = read invS :: Int
+    let invStat = if (invS == "flipSpin") then (-1) else 1
     let ymax = read ymax' :: Double
         [xmin,xmax] = map (read :: String -> Double) $ splitOn ":" xr
     let ctrlAtoms =
