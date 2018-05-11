@@ -59,7 +59,10 @@ genCtrlAtomicAOs aoSet ctrlAtoms =  map (\x -> (head $ takeAOs x aoSet))
           $ zip ([1..]::[Int]) $ map T.unpack ctrlAtoms
 
 -- totalDOS :: Matrix Double [ energy, DOSspinUp, DOSspinDown ]
-readTotalDOS tailer foldernya = loadMatrix $ foldernya ++ "/dos.tot." ++ tailer
+readTotalDOSText tailer foldernya = loadMatrix $ foldernya ++ "/dos.tot." ++ tailer
+
+
+-----------------------------------------------------------
 
 readHeaderData (texFile:jd:jdHead:colAlign:xr:ymax':wTot:tumpuk:invS:tailer:foldernya:aos) = do
   -------------------------------reading data------------------------
@@ -76,7 +79,7 @@ readHeaderData (texFile:jd:jdHead:colAlign:xr:ymax':wTot:tumpuk:invS:tailer:fold
     putStrLn $ show aos
     putStrLn $ show $ last daftarCetak
       -------------------------------generating DOS data------------------------
-    totalDOS <- readTotalDOS tailer foldernya
+    totalDOS <- readTotalDOSText tailer foldernya
       -------------------------------integrating DOS data------------------------
     let intgTot = map (\i -> integrateToZero $ totalDOS ¿ [0,i]) [1,2] -- run it on spin [1,2]
     putStrLn $ show intgTot
@@ -100,6 +103,7 @@ readHeaderData (texFile:jd:jdHead:colAlign:xr:ymax':wTot:tumpuk:invS:tailer:fold
     putStrLn "==========================="
     pdosAtomicPilihan <- readPDOS tailer foldernya $ take 2 ctrlAtomicAOs
     putStrLn $ show $ head $ pdosAtomicPilihan
+    {-
     pdosAtomic <- sequence
       $ (\x ->  [f a | f <- (pdosA' foldernya tailer), a <- x]) ctrlAtomicAOset
       -------------------------------integrating PDOS data------------------------
@@ -134,7 +138,9 @@ readHeaderData (texFile:jd:jdHead:colAlign:xr:ymax':wTot:tumpuk:invS:tailer:fold
     -- putStrLn rIntgAll
     -- T.putStrLn resIntAll
 --    T.writeFile texFile resIntAll
+--    -}
     putStrLn "===done==="
+    return (invStat, ymax, xmin, xmax, ctrlAtoms, uniqAtoms, ctrlAtomicAOs)
 
 readMMOM nAtom foldernya = do
     fLLMF <- T.readFile $ foldernya ++ "/llmf"

@@ -149,6 +149,7 @@ readPDOS tailer dir ctrlAtAOs =
 readPDOS' foldernya tailer = fmap (readOnePDOS foldernya tailer) [1,2]
 
 --readPDOS :: String -> String -> Int -> ((String, String, [Int]), [(Int, String)]) -> IO (Int,String, Matrix Double)
+--readPDOS ::(spin, (noAt, (symAt, (labelAt, PDOS :: Matrix Double))))
 readOnePDOS theFolder tailing spin (noAt,(symAt,(labelAt,intAOs))) = do
   -- getPDOS a b c ((symAt,labelAt,intAOs),[(noAt,symAt)])
   let namaFao = theFolder ++ "/dos.isp" ++ show spin ++ ".site" ++ (TP.printf "%03d" noAt) ++ "." ++ tailing
