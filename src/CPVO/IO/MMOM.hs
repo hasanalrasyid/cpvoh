@@ -98,7 +98,7 @@ getMMOM (texFile:jd:jdHead:xr:ymax':wTot:tumpuk:invS:tailer:foldernya:aos) = do
     let intgPdosA =  map (\(s,j,mP) -> (s,j,integrateToZero $ takeColumns 2 mP  )) pdosA   -- we only consider the first 2 columns, i.e. Energy, PDOS of 1st Atom
     putStrLn "========"
     (tMMomSD:mmomSD) <- readMMOM nAtom foldernya
-    putStrLn $ show $ map (showDouble 2) mmomSD
+    putStrLn $ show $ map (showDouble 3) mmomSD
     putStrLn $ show $ length pdosA
     {-
     pdosAtomic <- sequence $ (\x ->  [f a | f <- (pdosA' foldernya tailer), a <- x])
@@ -121,11 +121,11 @@ getMMOM (texFile:jd:jdHead:xr:ymax':wTot:tumpuk:invS:tailer:foldernya:aos) = do
           $ (:) (splitOn "|" jdHead)
           $ (:) (concat [ ["Total" ]
                         , ["  "]
-                        , map (showDouble 2) $ (\[t,iu,id] -> [t,iu-id,t-(iu-id)]) $ (tMMomSD:intgTot)
+                        , map (showDouble 3) $ (\[t,iu,id] -> [t,iu-id,t-(iu-id)]) $ (tMMomSD:intgTot)
                         --, map (showDouble 2) $ (\[iu,id] -> [iu,id,(iu-id)]) $ (intgTot)
                         ])
           $ zipWith (\a b -> a:b) (map show [1,2..])
-          $ zipWith (\sdMom (j,intMom) -> j:(map (showDouble 2) [sdMom,intMom,sdMom-intMom])) mmomSD integratedAtomicPDOS
+          $ zipWith (\sdMom (j,intMom) -> j:(map (showDouble 3) [sdMom,intMom,sdMom-intMom])) mmomSD integratedAtomicPDOS
     let rIntgAll = unlines  [
                             rIntgAll'
                             , "Table: " ++ jd
