@@ -21,7 +21,7 @@ import Data.Maybe
 import Numeric.LinearAlgebra
 
 showTotPDOS :: [String] -> IO ()
-showTotPDOS (texFile:jd:jdHead:xr:ymax':wTot:tumpuk:invS:tailer:foldernya:aos) = do
+showTotPDOS (texFile:jd:jdHead:colAlign:xr:ymax':wTot:tumpuk:invS:tailer:foldernya:aos) = do
     fCtrl <- T.readFile $ foldernya ++ "/ctrl." ++ tailer
     -------------------------------start calculation------------------------
       -------------------------------generating data------------------------
@@ -78,8 +78,8 @@ showTotPDOS (texFile:jd:jdHead:xr:ymax':wTot:tumpuk:invS:tailer:foldernya:aos) =
     let rIntgAll' =
           rendertable
           $ (:) (splitOn "|" jdHead)
-          $ (:) ((:) "Total" $ map (showDouble 2) $ (\[a,b] -> [a,b,a+b]) $ intgTot)
-          $ map (\[(_,_,u),(_,j,d)] ->  j : map (showDouble 2) [u,d,u+d])
+          $ (:) ((:) "Total" $ map (showDouble 2) $ (\[a,b] -> [a,b,a-b,a+b]) $ intgTot)
+          $ map (\[(_,_,u),(_,j,d)] ->  j : map (showDouble 2) [u,d,u-d,u+d])
           $ groupBy (\(_,a,_) (_,b,_) -> a == b)
           $ sortBy (\(_,a,_) (_,b,_) ->  compare a b ) intgPdosA
     let rIntgAll = unlines  [
@@ -93,7 +93,7 @@ showTotPDOS (texFile:jd:jdHead:xr:ymax':wTot:tumpuk:invS:tailer:foldernya:aos) =
     let resIntAll = T.replace "\\}" "}"
                   $ T.replace "\\{" "{" $ T.pack
                   $ unlines [
-                            "\\begin{longtable}[]{@{}lSSS@{}}"
+                            "\\begin{longtable}[]{" ++ colAlign ++ "}"
                             , unlines $ tail $ lines $ T.unpack resIntAll'
                             ]
 --    putStrLn $ show intgPdosA
