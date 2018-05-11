@@ -2,7 +2,7 @@
 {-# LANGUAGE Strict #-}
 {-# LANGUAGE FlexibleContexts #-}
 
-module CPVO.IO.PDOS where
+module CPVO.IO.Reader.MMOM where
 --x-- import Turtle hiding (sortBy,char,text)
 import CPVO.Numeric (integrateAll,getY0,delta,integrateToZero)
 import CPVO.IO
@@ -50,7 +50,8 @@ import Data.Char (ord)
 --   --main' allArgs
 --   getMMOM testArgs
 
-getMMOM (texFile:jd:jdHead:xr:ymax':wTot:tumpuk:invS:tailer:foldernya:aos) = do
+{-
+getMMOM (texFile:jd:jdHead:colAlign:xr:ymax':wTot:tumpuk:invS:tailer:foldernya:aos) = do
     fCtrl <- T.readFile $ foldernya ++ "/ctrl." ++ tailer
     -------------------------------start calculation------------------------
       -------------------------------generating data------------------------
@@ -98,7 +99,7 @@ getMMOM (texFile:jd:jdHead:xr:ymax':wTot:tumpuk:invS:tailer:foldernya:aos) = do
     let intgPdosA =  map (\(s,j,mP) -> (s,j,integrateToZero $ takeColumns 2 mP  )) pdosA   -- we only consider the first 2 columns, i.e. Energy, PDOS of 1st Atom
     putStrLn "========"
     (tMMomSD:mmomSD) <- readMMOM nAtom foldernya
-    putStrLn $ show $ map (showDouble 2) mmomSD
+    putStrLn $ show $ map (showDouble 3) mmomSD
     putStrLn $ show $ length pdosA
     {-
     pdosAtomic <- sequence $ (\x ->  [f a | f <- (pdosA' foldernya tailer), a <- x])
@@ -121,11 +122,11 @@ getMMOM (texFile:jd:jdHead:xr:ymax':wTot:tumpuk:invS:tailer:foldernya:aos) = do
           $ (:) (splitOn "|" jdHead)
           $ (:) (concat [ ["Total" ]
                         , ["  "]
-                        , map (showDouble 2) $ (\[t,iu,id] -> [t,iu-id,t-(iu-id)]) $ (tMMomSD:intgTot)
+                        , map (showDouble 3) $ (\[t,iu,id] -> [t,iu-id,t-(iu-id)]) $ (tMMomSD:intgTot)
                         --, map (showDouble 2) $ (\[iu,id] -> [iu,id,(iu-id)]) $ (intgTot)
                         ])
           $ zipWith (\a b -> a:b) (map show [1,2..])
-          $ zipWith (\sdMom (j,intMom) -> j:(map (showDouble 2) [sdMom,intMom,sdMom-intMom])) mmomSD integratedAtomicPDOS
+          $ zipWith (\sdMom (j,intMom) -> j:(map (showDouble 3) [sdMom,intMom,sdMom-intMom])) mmomSD integratedAtomicPDOS
     let rIntgAll = unlines  [
                             rIntgAll'
                             , "Table: " ++ jd
@@ -134,27 +135,25 @@ getMMOM (texFile:jd:jdHead:xr:ymax':wTot:tumpuk:invS:tailer:foldernya:aos) = do
     let resIntAll = T.replace "\\}" "}"
                   $ T.replace "\\{" "{" $ T.pack
                   $ unlines [
-                            "\\begin{longtable}[]{@{}llSSS@{}}"
+                            "\\begin{longtable}[]{" ++ colAlign ++ "}"
                             , unlines $ tail $ lines $ T.unpack resIntAll'
                             ]
     putStrLn rIntgAll
     T.putStrLn resIntAll
     T.writeFile texFile resIntAll
     putStrLn "===done==="
+-}
 
 readMMOM nAtom foldernya = do
     fLLMF <- T.readFile $ foldernya ++ "/llmf"
-    let fMMOM = inshell ( T.pack $ concat [ "mkdir -p temp; grep mmom ", foldernya , "/llmf "
+    mmom <- fmap (map T.double) $ inshell2text $ concat [ "mkdir -p temp; grep mmom ", foldernya , "/llmf "
                                             ,"| tail -n", show (nAtom + 1)
                                             ,"| head -n", show nAtom
                                             ,"| awk '{print $2}'"
-                                          ]) empty
-    let sdTMMOM' = inshell ( T.pack $ concat [ "grep mmom ", foldernya , "/llmf | grep ehf | tail -1 | sed -e 's/^.*mmom=//g'| awk '{print $1}'"
-                                          ]) empty
-    mmom <- fmap (map T.double) $ shell2text fMMOM
-    sdtMMOM <- fmap (map T.double) $ shell2text sdTMMOM'
+                                          ]
+    sdtMMOM <- fmap (map T.double) $ inshell2text $ concat [ "grep mmom ", foldernya , "/llmf | grep ehf | tail -1 | sed -e 's/^.*mmom=//g'| awk '{print $1}'"
+                                          ]
+
+
     return ( map fst $ rights $ concat [sdtMMOM,mmom])
-
-
-
 

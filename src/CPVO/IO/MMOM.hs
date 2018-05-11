@@ -144,14 +144,14 @@ getMMOM (texFile:jd:jdHead:colAlign:xr:ymax':wTot:tumpuk:invS:tailer:foldernya:a
 
 readMMOM nAtom foldernya = do
     fLLMF <- T.readFile $ foldernya ++ "/llmf"
-    let fMMOM = inshell ( T.pack $ concat [ "mkdir -p temp; grep mmom ", foldernya , "/llmf "
+    mmom <- fmap (map T.double) $ inshell2text $ concat [ "mkdir -p temp; grep mmom ", foldernya , "/llmf "
                                             ,"| tail -n", show (nAtom + 1)
                                             ,"| head -n", show nAtom
                                             ,"| awk '{print $2}'"
-                                          ]) empty
-    let sdTMMOM' = inshell ( T.pack $ concat [ "grep mmom ", foldernya , "/llmf | grep ehf | tail -1 | sed -e 's/^.*mmom=//g'| awk '{print $1}'"
-                                          ]) empty
-    mmom <- fmap (map T.double) $ shell2text fMMOM
-    sdtMMOM <- fmap (map T.double) $ shell2text sdTMMOM'
+                                          ]
+    sdtMMOM <- fmap (map T.double) $ inshell2text $ concat [ "grep mmom ", foldernya , "/llmf | grep ehf | tail -1 | sed -e 's/^.*mmom=//g'| awk '{print $1}'"
+                                          ]
+
+
     return ( map fst $ rights $ concat [sdtMMOM,mmom])
 

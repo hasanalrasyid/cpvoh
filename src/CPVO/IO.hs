@@ -6,14 +6,14 @@ module CPVO.IO (
     showDouble,
     markdownToTex,
     inshell2text,
-    shell2text,
-    shell2list,
     rendertable,
     pdosA',
     getPDOS,
     inshell,
     getAllPDOS,
+    readPDOS,
     takeAO,
+    takeAOs,
     empty
   ) where
 
@@ -89,9 +89,7 @@ shell2text :: MonadIO io => Shell Line -> io [Text]
 shell2text xx = fmap (map lineToText) $ shell2list xx
 
 inshell2text :: MonadIO io => String -> io [Text]
-inshell2text xx = do
-  x2 <- shell2text $ inshell ( T.pack xx) empty
-  return x2
+inshell2text xx = shell2text $ inshell ( T.pack xx) empty
 
 --------------------------------------------------------------------------------------
 -- Text Formatting
@@ -124,6 +122,10 @@ getAllPDOS (s,n,pd) = do
   let pdTot = getY0 pd
   return (s,n,pdTot)
 
+takeAOs _ [] = []
+takeAOs k@(x,i) (ao@(n,l,m):as) = if (i == n) then [(x,(n,(l,m)))]
+                                            else takeAOs k as
+
 takeAO i [] = []
 takeAO i (a@(n,_,_):as) = if (i == n) then [a]
                                      else takeAO i as
@@ -141,6 +143,27 @@ getPDOS' res tmpf intAOs (nf:nfiles)  = do
 -------------------------------------------------------------
 -- Input Processing: read PDOS data
 --
+readPDOS tailer dir ctrlAtAOs =
+  sequence $ (\x ->  [f a | f <- (readPDOS' dir tailer), a <- x]) ctrlAtAOs
+
+readPDOS' foldernya tailer = fmap (readOnePDOS foldernya tailer) [1,2]
+
+--readPDOS :: String -> String -> Int -> ((String, String, [Int]), [(Int, String)]) -> IO (Int,String, Matrix Double)
+readOnePDOS theFolder tailing spin (noAt,(symAt,(labelAt,intAOs))) = do
+  -- getPDOS a b c ((symAt,labelAt,intAOs),[(noAt,symAt)])
+  let namaFao = theFolder ++ "/dos.isp" ++ show spin ++ ".site" ++ (TP.printf "%03d" noAt) ++ "." ++ tailing
+  (tmpfile,h) <- openTempFile "temp" "aEDOS.suffix"
+  hClose h
+  _ <- SP.system $ "mkdir -p temp; more +2 " ++ namaFao ++ " > " ++ tmpfile -- this is needed only to generate aoE, the real processing is in getPDOS'
+  aoE <- fmap (\x -> (¿) x [0]) $ loadMatrix tmpfile                             -- 0th column, Energy column
+  let zeroE = asColumn $ konst 0 (rows aoE)                                      -- zero valued column instead of real column
+  aPDOS <- fmap (dropColumns 1) $ getPDOS' zeroE tmpfile intAOs [namaFao]                                -- create sum of per atomic AOs (PDOS/atom)
+--  putStrLn $ show $ sumRow aPDOS
+--  let pDOS = sumRow aPDOS -- create sum of aPDOS (atomic PDOS/cell)
+--  return $ (spin, hashSpaceText jdAtom, fromBlocks [[aoE, asColumn pDOS]])
+  return $ (spin, (noAt, (symAt, (hashSpaceText labelAt, fromBlocks [[aoE, aPDOS]]))))
+------------------------------------------------------------------
+
 getPDOS :: String -> String -> Int -> ((String, String, [Int]), [(Int, String)]) -> IO (Int,String, Matrix Double)
 getPDOS theFolder tailing spin (a@(namaAtom,jdAtom,intAOs),lsAtoms) = do
   let namaFaos = map (\(x,_) -> theFolder ++ "/dos.isp" ++ show spin ++ ".site" ++ (TP.printf "%03d" x) ++ "." ++ tailing) lsAtoms
@@ -155,3 +178,4 @@ getPDOS theFolder tailing spin (a@(namaAtom,jdAtom,intAOs),lsAtoms) = do
 --  return $ (spin, hashSpaceText jdAtom, fromBlocks [[aoE, asColumn pDOS]])
   return $ (spin, hashSpaceText jdAtom, fromBlocks [[aoE, aPDOS]])
 ------------------------------------------------------------------
+

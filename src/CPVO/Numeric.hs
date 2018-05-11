@@ -3,7 +3,6 @@
 {-# LANGUAGE FlexibleContexts #-}
 
 module CPVO.Numeric (
-  testFunc,
   integrateAll,
   sumRow,
   getY0,
@@ -16,9 +15,6 @@ import Numeric.LinearAlgebra.Data hiding (find)
 import Data.List (findIndex)
 import Data.Maybe (fromJust)
 
-testFunc = do
-  putStrLn "========test========="
-
 integrateToZero mP = integrateAll 0
   $ (++ ([toList $ getY0 $ takeColumns 2 mP]))
   $ takeWhile (\(a:_) -> a <= 0)
@@ -30,6 +26,7 @@ integrateAll res ([enA,nA]:b@[enB,nB]:as)
   | otherwise = integrateAll (res + (enB - enA)*(nA+nB)*0.5) (b:as)
 
 sumRow a = a #> konst 1 (cols a)
+
 getY0 dos = getY0' lowPos higNeg
   where
     rTDOS = toRows $ dos
@@ -45,6 +42,4 @@ getY0' a b = a + (scale m v)
 
 delta :: Bool -> b -> b -> b
 delta x y z = if x then y else z
-
-
 

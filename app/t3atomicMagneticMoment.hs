@@ -2,10 +2,8 @@
 {-# LANGUAGE Strict #-}
 {-# LANGUAGE FlexibleContexts #-}
 
-import Lib (someFunc)
-import CPVO.Numeric (integrateAll,testFunc,getY0,delta)
 import CPVO.IO
-import CPVO.IO.MMOM
+import CPVO.IO.MMOM (getMMOM)
 
 import System.Environment (getArgs)
 
