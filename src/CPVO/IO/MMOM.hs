@@ -50,7 +50,7 @@ import Data.Char (ord)
 --   --main' allArgs
 --   getMMOM testArgs
 
-getMMOM (texFile:jd:jdHead:xr:ymax':wTot:tumpuk:invS:tailer:foldernya:aos) = do
+getMMOM (texFile:jd:jdHead:colAlign:xr:ymax':wTot:tumpuk:invS:tailer:foldernya:aos) = do
     fCtrl <- T.readFile $ foldernya ++ "/ctrl." ++ tailer
     -------------------------------start calculation------------------------
       -------------------------------generating data------------------------
@@ -134,7 +134,7 @@ getMMOM (texFile:jd:jdHead:xr:ymax':wTot:tumpuk:invS:tailer:foldernya:aos) = do
     let resIntAll = T.replace "\\}" "}"
                   $ T.replace "\\{" "{" $ T.pack
                   $ unlines [
-                            "\\begin{longtable}[]{@{}llSSS@{}}"
+                            "\\begin{longtable}[]{" ++ colAlign ++ "}"
                             , unlines $ tail $ lines $ T.unpack resIntAll'
                             ]
     putStrLn rIntgAll
