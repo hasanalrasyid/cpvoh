@@ -33,6 +33,7 @@ readMMOM nAtom foldernya = do
 ----------------------------------------------------------------------
 getMMOM allArgs@(texFile:jd:jdHead:colAlign:xr:ymax':wTot:tumpuk:invS:tailer:foldernya:aos) = do
 --getMMOM allArgs = do
+    putStrLn "===start ==== CPVO.IO.Reader.Ecalj.MMOM: getMMOM ==="
     (invStat, ymax, xmin, xmax, ctrlAtoms, uniqAtoms, ctrlAtomicAOs,jdTable, cleanedJdHead, foldernya, tailer) <- readHeaderData allArgs
 
     -------------------------------generating data------------------------
@@ -104,22 +105,4 @@ getMMOM allArgs@(texFile:jd:jdHead:colAlign:xr:ymax':wTot:tumpuk:invS:tailer:fol
     putStrLn rIntgAll
     T.putStrLn resIntAll
     T.writeFile texFile resIntAll
-    putStrLn "===done CPVO.IO.Reader.Ecalj.MMOM: readMMOM ==="
-
-{-
-readMMOM nAtom foldernya = do
-    fLLMF <- T.readFile $ foldernya ++ "/llmf"
-    mmom <- fmap (map T.double) $ inshell2text $ concat [ "mkdir -p temp; grep mmom ", foldernya , "/llmf "
-                                            ,"| tail -n", show (nAtom + 1)
-                                            ,"| head -n", show nAtom
-                                            ,"| awk '{print $2}'"
-                                          ]
-    sdtMMOM <- fmap (map T.double) $ inshell2text $ concat [ "grep mmom ", foldernya , "/llmf | grep ehf | tail -1 | sed -e 's/^.*mmom=//g'| awk '{print $1}'"
-                                          ]
-
-    putStrLn "=========-test=========="
-    testnya <- inshell2text "tail -1 $(ls extendedNiCo2O4.normal/nico2o4.1G0/llmf{,_gwscend.0,_gwscend.1,_gwscend.0}|tail -1)"
-    putStrLn $ show testnya
-    putStrLn "==========testfin======="
-    return ( map fst $ rights $ concat [sdtMMOM,mmom])
--}
+    putStrLn "===done CPVO.IO.Reader.Ecalj.MMOM: getMMOM ==="

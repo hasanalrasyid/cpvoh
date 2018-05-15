@@ -12,7 +12,6 @@ import CPVO.IO.Reader.Ecalj.MMOM
 import CPVO.IO.Plot.Gnuplot.DOS
 import CPVO.IO.Plot.Gnuplot.Common
 import CPVO.IO.Plot.PDOS
-import CPVO.IO.MMOM
 
 
 -------
@@ -60,7 +59,7 @@ main = do
                  -- @{}lSSS@{} in \begin{longtable}[]{@{}lSSS@{}}
                  , "@{}lSSS@{}"
                  ,"-9:6","25","T","o","1","nico2o4"
-                 ,"extendedNiCo2O4.normal/nico2o4.1G0"
+                 ,"extendedNiCo2O4.normal/nico2o4.6G10"
                  ,"Ni:Ni#3d:6:7:9:8:10","Co:Co#3d:6:7:8:9:10","O:O#2p:3:4:5" ]
   let testArgs1 = [ "fig1"
                  , "-9:3"
