@@ -3,7 +3,7 @@
 {-# LANGUAGE FlexibleContexts #-}
 
 import CPVO.IO
-import CPVO.IO.MMOM (getMMOM)
+import CPVO.IO.Reader.Ecalj.MMOM (getMMOM)
 
 import System.Environment (getArgs)
 

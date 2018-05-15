@@ -5,7 +5,6 @@
 --x-- import Turtle hiding (sortBy,char,text)
 import CPVO.Numeric (integrateAll,getY0,delta)
 import CPVO.IO
-import CPVO.IO.MMOM
 import CPVO.IO.Plot.PDOS
 
 --x--

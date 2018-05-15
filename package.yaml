@@ -46,6 +46,7 @@ executables:
     - hascpvo
     - text-format
     - split
+    - text
   
   t2:
     main:                t2DOSintegration.hs
@@ -58,6 +59,7 @@ executables:
     - hascpvo
     - text-format
     - split
+    - text
 
   t3:
     main:                t3atomicMagneticMoment.hs
@@ -70,6 +72,7 @@ executables:
     - hascpvo
     - text-format
     - split
+    - text
 
   x:
     main:                Main.hs
@@ -93,6 +96,7 @@ tests:
     - hascpvo
     - text-format
     - split
+    - text
   hascpvo-test:
     main:                Spec.hs
     source-dirs:         test
@@ -104,3 +108,4 @@ tests:
     - hascpvo
     - text-format
     - split
+    - text

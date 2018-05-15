@@ -7,13 +7,18 @@
 import CPVO.IO
 import CPVO.Numeric
 import CPVO.IO.DOS
-import CPVO.IO.Reader.Common
-import CPVO.IO.Reader.MMOM
+import CPVO.IO.Reader.Ecalj.Common
+import CPVO.IO.Reader.Ecalj.MMOM
 import CPVO.IO.Plot.Gnuplot.DOS
 import CPVO.IO.Plot.Gnuplot.Common
 import CPVO.IO.Plot.PDOS
 import CPVO.IO.MMOM
 
+
+-------
+import Data.Text as T
+import Turtle
+import Data.Either
 
 --x--
 --x-- --import Turtle.Helper
@@ -55,7 +60,7 @@ main = do
                  -- @{}lSSS@{} in \begin{longtable}[]{@{}lSSS@{}}
                  , "@{}lSSS@{}"
                  ,"-9:6","25","T","o","1","nico2o4"
-                 ,"extendedNiCo2O4.normal/nico2o4.0GGA"
+                 ,"extendedNiCo2O4.normal/nico2o4.1G0"
                  ,"Ni:Ni#3d:6:7:9:8:10","Co:Co#3d:6:7:8:9:10","O:O#2p:3:4:5" ]
   let testArgs1 = [ "fig1"
                  , "-9:3"
@@ -72,6 +77,8 @@ main = do
                  ]
 
 -- plotPDOS testArgs1
-  readHeaderData testArgs
+--  readHeaderData testArgs
+  a <- getMMOM testArgs
+  putStrLn $ show a
   putStrLn "========beres======="
 

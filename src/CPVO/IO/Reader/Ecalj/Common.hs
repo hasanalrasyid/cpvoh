@@ -2,7 +2,7 @@
 {-# LANGUAGE Strict #-}
 {-# LANGUAGE FlexibleContexts #-}
 
-module CPVO.IO.Reader.Common where
+module CPVO.IO.Reader.Ecalj.Common where
 import CPVO.Numeric (integrateAll,getY0,delta,integrateToZero)
 import CPVO.IO
 import System.Environment (getArgs)
@@ -63,6 +63,8 @@ readTotalDOSText tailer foldernya = loadMatrix $ foldernya ++ "/dos.tot." ++ tai
 
 
 -----------------------------------------------------------
+getLastLLMF foldernya = inshell2text $ concat ["ls -lahut ", foldernya,"/llmf{,_gwscend.*} | head -1|awk '{print $NF}'" ]
+-----------------------------------------------------------
 
 readHeaderData (texFile:jd:jdHead:colAlign:xr:ymax':wTot:tumpuk:invS:tailer:foldernya:aos) = do
   -------------------------------reading data------------------------
@@ -71,6 +73,7 @@ readHeaderData (texFile:jd:jdHead:colAlign:xr:ymax':wTot:tumpuk:invS:tailer:fold
     let [xmin,xmax] = map (read :: String -> Double) $ splitOn ":" xr
     ctrlAtoms <- readCtrlAtoms tailer foldernya
     let nAtom = length ctrlAtoms
+    let jdHeads = splitOn "|" jdHead
     let uniqAtoms = readUniqAtoms ctrlAtoms
     putStrLn $ show ctrlAtoms
     putStrLn $ show uniqAtoms
@@ -84,9 +87,9 @@ readHeaderData (texFile:jd:jdHead:colAlign:xr:ymax':wTot:tumpuk:invS:tailer:fold
     let intgTot = map (\i -> integrateToZero $ totalDOS ¿ [0,i]) [1,2] -- run it on spin [1,2]
     putStrLn $ show intgTot
     let aoSet = map ( (\(n:l:as) -> (n,l,map ( ((+) (-1)) . read :: String -> Int) as) ) . splitOn ":") aos
+    {-
     (tMMomSD:mmomSD) <- readMMOM nAtom foldernya
     putStrLn $ show $ map (showDouble 3) mmomSD
-    {-
       -------------------------------generating PDOS data------------------------
               -- map ditambah -1 karena input mengikuti gnuplot
               -- input : d kolom 6-10
@@ -97,13 +100,23 @@ readHeaderData (texFile:jd:jdHead:colAlign:xr:ymax':wTot:tumpuk:invS:tailer:fold
               -- ((String , String,[ Int  ]),[(Int       , String )])
               -- (("O"    ,"O#2p" ,[2,3,4 ]),[(1         ,"O"     )])
       -}
-    let ctrlAtomicAOset = genCtrlAtomicAOset aoSet ctrlAtoms
+    -- let ctrlAtomicAOset = genCtrlAtomicAOset aoSet ctrlAtoms
     let ctrlAtomicAOs = genCtrlAtomicAOs aoSet ctrlAtoms
+    let jdTable = "Table: " ++ jd
     putStrLn $ show $ head ctrlAtomicAOs
-    putStrLn "==========================="
     pdosAtomicPilihan <- readPDOS tailer foldernya $ take 2 ctrlAtomicAOs
-    putStrLn $ show $ head $ pdosAtomicPilihan
+    let integratedAtomicPDOS = integrateAtomicPDOS pdosAtomicPilihan
+    putStrLn $ show $ integratedAtomicPDOS
+    putStrLn "===done:readHeaderData@CPVO/IO/Reader/Common ====================="
+    return
+      (invStat, ymax, xmin, xmax, ctrlAtoms, uniqAtoms, ctrlAtomicAOs,jdTable, jdHeads, foldernya, tailer)
+
+integrateAtomicPDOS pdosAtomicPilihan =
+          (\[us,ds] -> zipWith (\(iu,b) (idown,_) -> (iu,idown,b)) us ds )
+          $ groupBy (\(_,(s,_)) (_,(s',_)) -> s == s') -- [[(spin,label,iup)]]
+          $ map (\(mp,b) -> (integrateToZero mp,b)) $ pdosAtomicPilihan
     {-
+    putStrLn "==========================="
     pdosAtomic <- sequence
       $ (\x ->  [f a | f <- (pdosA' foldernya tailer), a <- x]) ctrlAtomicAOset
       -------------------------------integrating PDOS data------------------------
@@ -139,9 +152,8 @@ readHeaderData (texFile:jd:jdHead:colAlign:xr:ymax':wTot:tumpuk:invS:tailer:fold
     -- T.putStrLn resIntAll
 --    T.writeFile texFile resIntAll
 --    -}
-    putStrLn "===done==="
-    return (invStat, ymax, xmin, xmax, ctrlAtoms, uniqAtoms, ctrlAtomicAOs)
 
+{-
 readMMOM nAtom foldernya = do
     fLLMF <- T.readFile $ foldernya ++ "/llmf"
     mmom <- fmap (map T.double) $ inshell2text $ concat [ "mkdir -p temp; grep mmom ", foldernya , "/llmf "
@@ -154,4 +166,4 @@ readMMOM nAtom foldernya = do
 
 
     return ( map fst $ rights $ concat [sdtMMOM,mmom])
-
+-}

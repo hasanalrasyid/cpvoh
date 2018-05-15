@@ -37,8 +37,8 @@ import qualified Control.Foldl as Fold
 --x-- import Text.Printf as TP
 --x-- import Data.List.Split
 import Data.List
---x-- import Data.Maybe
---x-- import Data.Either
+import Data.Maybe
+import Data.Either
 --x-- -------------------------
 --x--
 import Numeric.LinearAlgebra
@@ -89,7 +89,15 @@ shell2text :: MonadIO io => Shell Line -> io [Text]
 shell2text xx = fmap (map lineToText) $ shell2list xx
 
 inshell2text :: MonadIO io => String -> io [Text]
-inshell2text xx = shell2text $ inshell ( T.pack xx) empty
+--inshell2text xx = shell2text $ inshell ( T.pack xx) empty
+inshell2text xx = do
+  (_,a,_) <- shellStrictWithErr ( T.pack xx) empty
+  return $ T.lines a
+
+-- shellStrictWithErr harusnya mungkin pake ini....
+-- tapi perlu dicari, apakah Line of standard input????
+-- ya seperti biasa... empty saja
+--
 
 --------------------------------------------------------------------------------------
 -- Text Formatting
@@ -162,7 +170,7 @@ readOnePDOS theFolder tailing spin (noAt,(symAt,(labelAt,intAOs))) = do
 --  putStrLn $ show $ sumRow aPDOS
 --  let pDOS = sumRow aPDOS -- create sum of aPDOS (atomic PDOS/cell)
 --  return $ (spin, hashSpaceText jdAtom, fromBlocks [[aoE, asColumn pDOS]])
-  return $ (spin, (noAt, (symAt, (hashSpaceText labelAt, fromBlocks [[aoE, aPDOS]]))))
+  return $ (fromBlocks [[aoE, aPDOS]] , (spin, (hashSpaceText labelAt, (noAt, symAt))))
 ------------------------------------------------------------------
 
 getPDOS :: String -> String -> Int -> ((String, String, [Int]), [(Int, String)]) -> IO (Int,String, Matrix Double)

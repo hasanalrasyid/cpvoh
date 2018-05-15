@@ -51,6 +51,7 @@ import Data.Char (ord)
 --   getMMOM testArgs
 
 getMMOM (texFile:jd:jdHead:xr:ymax':wTot:tumpuk:invS:tailer:foldernya:aos) = do
+    putStrLn "=========start getMMOM@CPVO.IO.PDOS"
     fCtrl <- T.readFile $ foldernya ++ "/ctrl." ++ tailer
     -------------------------------start calculation------------------------
       -------------------------------generating data------------------------
@@ -98,7 +99,8 @@ getMMOM (texFile:jd:jdHead:xr:ymax':wTot:tumpuk:invS:tailer:foldernya:aos) = do
     let intgPdosA =  map (\(s,j,mP) -> (s,j,integrateToZero $ takeColumns 2 mP  )) pdosA   -- we only consider the first 2 columns, i.e. Energy, PDOS of 1st Atom
     putStrLn "========"
     (tMMomSD:mmomSD) <- readMMOM nAtom foldernya
-    putStrLn $ show $ map (showDouble 2) mmomSD
+    -- putStrLn $ show $ map (showDouble 2) mmomSD
+    putStrLn $ show mmomSD
     putStrLn $ show $ length pdosA
     {-
     pdosAtomic <- sequence $ (\x ->  [f a | f <- (pdosA' foldernya tailer), a <- x])
@@ -117,6 +119,7 @@ getMMOM (texFile:jd:jdHead:xr:ymax':wTot:tumpuk:invS:tailer:foldernya:aos) = do
           $ groupBy (\(s,_,_) (s',_,_) -> s == s')
           $ map (\(a,x,mp) -> (a,x,integrateToZero mp)) $ pdosAtomic
     putStrLn $ show tMMomSD
+{-
     let rIntgAll' = rendertable
           $ (:) (splitOn "|" jdHead)
           $ (:) (concat [ ["Total" ]
@@ -141,19 +144,20 @@ getMMOM (texFile:jd:jdHead:xr:ymax':wTot:tumpuk:invS:tailer:foldernya:aos) = do
     T.putStrLn resIntAll
     T.writeFile texFile resIntAll
     putStrLn "===done==="
+-}
 
 readMMOM nAtom foldernya = do
-    fLLMF <- T.readFile $ foldernya ++ "/llmf"
-    let fMMOM = inshell ( T.pack $ concat [ "mkdir -p temp; grep mmom ", foldernya , "/llmf "
+    fLLMF <- T.readFile $ foldernya ++ "/llmf_gwscend.0"
+    mmom <- inshell2text $ concat [ "mkdir -p temp; grep mmom ", foldernya , "/llmf_gwscend.0 "
                                             ,"| tail -n", show (nAtom + 1)
                                             ,"| head -n", show nAtom
                                             ,"| awk '{print $2}'"
-                                          ]) empty
-    let sdTMMOM' = inshell ( T.pack $ concat [ "grep mmom ", foldernya , "/llmf | grep ehf | tail -1 | sed -e 's/^.*mmom=//g'| awk '{print $1}'"
-                                          ]) empty
-    mmom <- fmap (map T.double) $ shell2text fMMOM
-    sdtMMOM <- fmap (map T.double) $ shell2text sdTMMOM'
-    return ( map fst $ rights $ concat [sdtMMOM,mmom])
+                                          ]
+    sdtMMOM <- inshell2text $ concat [ "grep mmom ", foldernya , "/llmf | grep ehf | tail -1 | sed -e 's/^.*mmom=//g'| awk '{print $1}'"
+                                          ]
+--    mmom <- fmap (map T.double) $ shell2text fMMOM
+--    sdtMMOM <- fmap (map T.double) $ shell2text sdTMMOM'
+    return $ map fst $ rights $ map T.double $ concat [sdtMMOM,mmom]
 
 
 
