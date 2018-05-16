@@ -40,7 +40,7 @@ getMMOM allArgs@(texFile:jd:jdHead:colAlign:xr:ymax':wTot:tumpuk:invS:tailer:fol
     -------------------------------generating DOS data------------------------
     totalDOS <- loadMatrix $ foldernya ++ "/dos.tot." ++ tailer
     -------------------------------integrating DOS data-----------------------
-    let intgTot = map (\i -> integrateToZero $ totalDOS ¿ [0,i]) [1,2] -- run it on spin [1,2]
+    let intgTot = map (\i -> integrateToZero $ totalDOS ¿ [0,i]) $ flipBy invStat [1,2] -- run it on spin [1,2]
     putStrLn $ show intgTot
     -------------------------------integrating PDOS data------------------------
     let nAtom = length ctrlAtoms
@@ -49,6 +49,7 @@ getMMOM allArgs@(texFile:jd:jdHead:colAlign:xr:ymax':wTot:tumpuk:invS:tailer:fol
               -- input : d kolom 6-10
               -- gnuplot : d kolom 6-10
               -- hmatrix : d kolom 5-9
+              {-
     let aoSet = map ( (\(a:l:as) -> (a,l,map ( ((+) (-1)) . read :: String -> Int) as) ) . splitOn ":") aos
     pdosA <- sequence $ (\x ->  [f a | f <- (pdosA' foldernya tailer), a <- x])
               -- ((namaAtom,jdAtom,[intAOs]),[(nourutAtom,namaAtom)])
@@ -56,31 +57,15 @@ getMMOM allArgs@(texFile:jd:jdHead:colAlign:xr:ymax':wTot:tumpuk:invS:tailer:fol
               $ groupBy (\(_,a:_) (_,b:_) -> (ord a) == (ord b))
               $ zip ([1..]::[Int]) $ map T.unpack ctrlAtoms
     putStrLn $ show $ length pdosA
+    -}
   -------------------------------integrating PDOS data------------------------
 --    let intgPdosA =  map (\(s,j,mP) -> (s,j,integrateToZero $ takeColumns 2 mP  )) pdosA   -- we only consider the first 2 columns, i.e. Energy, PDOS of 1st Atom
     putStrLn "========"
-    (tMMomSD:mmomSD) <- readMMOM nAtom foldernya
+    (tMMomSD:mmomSD) <- fmap (map (* invStat)) $ readMMOM nAtom foldernya
     putStrLn $ show $ map (showDouble 3) mmomSD
     putStrLn $ show tMMomSD
-    {-
-    pdosAtomic <- sequence $ (\x ->  [f a | f <- (pdosA' foldernya tailer), a <- x])
-              -- ((namaAtom,jdAtom,[intAOs]),[(nourutAtom,namaAtom)])
-              -- ((String , String,[ Int  ]),[(Int       , String )])
-              -- (("O"    ,"O#2p" ,[2,3,4 ]),[(1         ,"O"     )])
-    pdosAtomic <- sequence
-      $ (\x ->  [f a | f <- (pdosA' foldernya tailer), a <- x])
---      $ ctrlAtomicAOs
-      $ map (\x@(_,i) -> ((head $ takeAO i aoSet),[x]))
-      $ concat
-      $ groupBy (\(_,a:_) (_,b:_) -> (ord a) == (ord b))
-      $ zip ([1..]::[Int]) $ map T.unpack ctrlAtoms
---    pdosAtomic <- readPDOS tailer foldernya
-    let integratedAtomicPDOS =
-          (\[us,ds] -> zipWith (\(_,j,iu) (_,_,id) -> (j, iu - id)) us ds )
-          $ groupBy (\(s,_,_) (s',_,_) -> s == s')
-          $ map (\(a,x,mp) -> (a,x,integrateToZero mp)) $ pdosAtomic
-    -}
-    pdosAtomicAll <- readPDOS tailer foldernya ctrlAtomicAOs
+    putStrLn "==========show tMMomSD==========="
+    pdosAtomicAll <- readPDOS invStat tailer foldernya ctrlAtomicAOs
     let integratedAtomicPDOS = integrateAtomicPDOS pdosAtomicAll
     let rIntgAll' = rendertable
          $ (:) cleanedJdHead

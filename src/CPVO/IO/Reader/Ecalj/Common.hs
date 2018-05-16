@@ -61,6 +61,10 @@ genCtrlAtomicAOs aoSet ctrlAtoms =  map (\x -> (head $ takeAOs x aoSet))
 -- totalDOS :: Matrix Double [ energy, DOSspinUp, DOSspinDown ]
 readTotalDOSText tailer foldernya = loadMatrix $ foldernya ++ "/dos.tot." ++ tailer
 
+-----------------------------------------------------------
+flipSpin iS
+  | iS < 0 = reverse
+  | otherwise = id
 
 -----------------------------------------------------------
 getLastLLMF foldernya = inshell2text $ concat ["ls -lahut ", foldernya,"/llmf{,_gwscend.*} | head -1|awk '{print $NF}'" ]
@@ -88,8 +92,6 @@ readHeaderData (texFile:jd:jdHead:colAlign:xr:ymax':wTot:tumpuk:invS:tailer:fold
     putStrLn $ show intgTot
     let aoSet = map ( (\(n:l:as) -> (n,l,map ( ((+) (-1)) . read :: String -> Int) as) ) . splitOn ":") aos
     {-
-    (tMMomSD:mmomSD) <- readMMOM nAtom foldernya
-    putStrLn $ show $ map (showDouble 3) mmomSD
       -------------------------------generating PDOS data------------------------
               -- map ditambah -1 karena input mengikuti gnuplot
               -- input : d kolom 6-10
@@ -100,11 +102,10 @@ readHeaderData (texFile:jd:jdHead:colAlign:xr:ymax':wTot:tumpuk:invS:tailer:fold
               -- ((String , String,[ Int  ]),[(Int       , String )])
               -- (("O"    ,"O#2p" ,[2,3,4 ]),[(1         ,"O"     )])
       -}
-    -- let ctrlAtomicAOset = genCtrlAtomicAOset aoSet ctrlAtoms
     let ctrlAtomicAOs = genCtrlAtomicAOs aoSet ctrlAtoms
     let jdTable = "Table: " ++ jd
     putStrLn $ show $ head ctrlAtomicAOs
-    pdosAtomicPilihan <- readPDOS tailer foldernya $ take 2 ctrlAtomicAOs
+    pdosAtomicPilihan <- readPDOS invStat tailer foldernya $ take 2 ctrlAtomicAOs
     let integratedAtomicPDOS = integrateAtomicPDOS pdosAtomicPilihan
     putStrLn $ show $ integratedAtomicPDOS
     putStrLn "===done:readHeaderData@CPVO/IO/Reader/Common ====================="

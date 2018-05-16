@@ -14,7 +14,8 @@ module CPVO.IO (
     readPDOS,
     takeAO,
     takeAOs,
-    empty
+    empty,
+    flipBy
   ) where
 
 import CPVO.Numeric
@@ -151,10 +152,13 @@ getPDOS' res tmpf intAOs (nf:nfiles)  = do
 -------------------------------------------------------------
 -- Input Processing: read PDOS data
 --
-readPDOS tailer dir ctrlAtAOs =
-  sequence $ (\x ->  [f a | f <- (readPDOS' dir tailer), a <- x]) ctrlAtAOs
+readPDOS invStat tailer dir ctrlAtAOs =
+  sequence $ (\x ->  [f a | f <- (readPDOS' invStat dir tailer), a <- x]) ctrlAtAOs
 
-readPDOS' foldernya tailer = fmap (readOnePDOS foldernya tailer) [1,2]
+flipBy invStat x = if (invStat < 0) then reverse x
+                                    else x
+
+readPDOS' invStat foldernya tailer = fmap (readOnePDOS foldernya tailer) $ flipBy invStat [1,2] -- spin 1 up n spin 2 down
 
 --readPDOS :: String -> String -> Int -> ((String, String, [Int]), [(Int, String)]) -> IO (Int,String, Matrix Double)
 --readPDOS ::(spin, (noAt, (symAt, (labelAt, PDOS :: Matrix Double))))

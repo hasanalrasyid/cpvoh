@@ -52,13 +52,13 @@ import System.Environment (getArgs)
 
 main = do
   putStrLn "========start test/f1.hs======="
-  let testArgs = [ "table02.tex"
+  let testArgs = [ "table.tex"
                  ,"Atomic magnetic moment"
-                 ,"{Atom Number}|{Atomic Orbital}|{Spin Density Integration}|{PDOS Integration}|{Difference}"
+                 ,"{Number}|{Orbital}|{Spin Density}|{PDOS}|{Diff}"
                  -- column alignment options, sumthing like
                  -- @{}lSSS@{} in \begin{longtable}[]{@{}lSSS@{}}
-                 , "@{}lSSS@{}"
-                 ,"-9:6","25","T","o","1","nico2o4"
+                 , "@{}llSSS@{}"
+                 ,"-9:6","25","T","o","flipSpin","nico2o4"
                  ,"extendedNiCo2O4.normal/nico2o4.6G10"
                  ,"Ni:Ni#3d:6:7:9:8:10","Co:Co#3d:6:7:8:9:10","O:O#2p:3:4:5" ]
   let testArgs1 = [ "fig1"
