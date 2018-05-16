@@ -34,11 +34,11 @@ readMMOM nAtom foldernya = do
 getMMOM allArgs@(texFile:jd:jdHead:colAlign:xr:ymax':wTot:tumpuk:invS:tailer:foldernya:aos) = do
 --getMMOM allArgs = do
     putStrLn "===start ==== CPVO.IO.Reader.Ecalj.MMOM: getMMOM ==="
-    (invStat, ymax, xmin, xmax, ctrlAtoms, uniqAtoms, ctrlAtomicAOs,jdTable, cleanedJdHead, foldernya, tailer) <- readHeaderData allArgs
+    (invStat, ymax, xmin, xmax, ctrlAtoms, uniqAtoms, ctrlAtomicAOs,jdTable, cleanedJdHead, foldernya, tailer,colAlign,texFile) <- readHeaderData allArgs
 
     -------------------------------generating data------------------------
     -------------------------------generating DOS data------------------------
-    totalDOS <- loadMatrix $ foldernya ++ "/dos.tot." ++ tailer
+    totalDOS <- readTotalDOSText tailer foldernya
     -------------------------------integrating DOS data-----------------------
     let intgTot = map (\i -> integrateToZero $ totalDOS ¿ [0,i]) $ flipBy invStat [1,2] -- run it on spin [1,2]
     putStrLn $ show intgTot
@@ -49,17 +49,8 @@ getMMOM allArgs@(texFile:jd:jdHead:colAlign:xr:ymax':wTot:tumpuk:invS:tailer:fol
               -- input : d kolom 6-10
               -- gnuplot : d kolom 6-10
               -- hmatrix : d kolom 5-9
-              {-
-    let aoSet = map ( (\(a:l:as) -> (a,l,map ( ((+) (-1)) . read :: String -> Int) as) ) . splitOn ":") aos
-    pdosA <- sequence $ (\x ->  [f a | f <- (pdosA' foldernya tailer), a <- x])
-              -- ((namaAtom,jdAtom,[intAOs]),[(nourutAtom,namaAtom)])
-              $ map (\x@((_,i):_) -> (head $ takeAO i aoSet ,x) )
-              $ groupBy (\(_,a:_) (_,b:_) -> (ord a) == (ord b))
-              $ zip ([1..]::[Int]) $ map T.unpack ctrlAtoms
-    putStrLn $ show $ length pdosA
-    -}
+
   -------------------------------integrating PDOS data------------------------
---    let intgPdosA =  map (\(s,j,mP) -> (s,j,integrateToZero $ takeColumns 2 mP  )) pdosA   -- we only consider the first 2 columns, i.e. Energy, PDOS of 1st Atom
     putStrLn "========"
     (tMMomSD:mmomSD) <- fmap (map (* invStat)) $ readMMOM nAtom foldernya
     putStrLn $ show $ map (showDouble 3) mmomSD

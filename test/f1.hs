@@ -77,7 +77,6 @@ main = do
 
 -- plotPDOS testArgs1
 --  readHeaderData testArgs
-  a <- getMMOM testArgs
-  putStrLn $ show a
+  showTotPDOS testArgs
   putStrLn "========beres======="
 

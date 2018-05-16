@@ -110,61 +110,11 @@ readHeaderData (texFile:jd:jdHead:colAlign:xr:ymax':wTot:tumpuk:invS:tailer:fold
     putStrLn $ show $ integratedAtomicPDOS
     putStrLn "===done:readHeaderData@CPVO/IO/Reader/Common ====================="
     return
-      (invStat, ymax, xmin, xmax, ctrlAtoms, uniqAtoms, ctrlAtomicAOs,jdTable, jdHeads, foldernya, tailer)
+      (invStat, ymax, xmin, xmax, ctrlAtoms, uniqAtoms, ctrlAtomicAOs,jdTable, jdHeads, foldernya, tailer, colAlign, texFile)
 
 integrateAtomicPDOS pdosAtomicPilihan =
           (\[us,ds] -> zipWith (\(iu,b) (idown,_) -> (iu,idown,b)) us ds )
           $ groupBy (\(_,(s,_)) (_,(s',_)) -> s == s') -- [[(spin,label,iup)]]
           $ map (\(mp,b) -> (integrateToZero mp,b)) $ pdosAtomicPilihan
-    {-
-    putStrLn "==========================="
-    pdosAtomic <- sequence
-      $ (\x ->  [f a | f <- (pdosA' foldernya tailer), a <- x]) ctrlAtomicAOset
-      -------------------------------integrating PDOS data------------------------
-    let integratedAtomicPDOS =
-          (\[us,ds] -> zipWith (\(_,j,iu) (_,_,idown) -> (j, iu,idown)) us ds )
-          $ groupBy (\(s,_,_) (s',_,_) -> s == s') -- [[(spin,label,iup)]]
-          $ map (\(a,x,mp) -> (a,x,integrateToZero mp)) $ pdosAtomic
-    putStrLn $ show $ length ctrlAtomicAOset
-    putStrLn $ show integratedAtomicPDOS
-    putStrLn "========"
-    putStrLn $ show tMMomSD
-    let rIntgAll' = rendertable
-          $ (:) (splitOn "|" jdHead)
-          $ (:) (concat [ ["Total" ]
-                        , ["  "]
-                        , map (showDouble 3) $ (\[t,iu,id] -> [t,iu-id,t-(iu-id)]) $ (tMMomSD:intgTot)
-                        --, map (showDouble 2) $ (\[iu,id] -> [iu,id,(iu-id)]) $ (intgTot)
-                        ])
-          $ zipWith (\a b -> a:b) (map show [1,2..])
-          $ zipWith (\sdMom (j,iu,id) -> j:(map (showDouble 3) [sdMom,iu-id,sdMom-(iu-id)])) mmomSD integratedAtomicPDOS
-    let rIntgAll = unlines  [
-                            rIntgAll'
-                            , "Table: " ++ jd
-                            ]
-    resIntAll' <- markdownToTex rIntgAll
-    let resIntAll = T.replace "\\}" "}"
-                  $ T.replace "\\{" "{" $ T.pack
-                  $ unlines [
-                            "\\begin{longtable}[]{" ++ colAlign ++ "}"
-                            , unlines $ tail $ lines $ T.unpack resIntAll'
-                            ]
-    -- putStrLn rIntgAll
-    -- T.putStrLn resIntAll
---    T.writeFile texFile resIntAll
---    -}
-
-{-
-readMMOM nAtom foldernya = do
-    fLLMF <- T.readFile $ foldernya ++ "/llmf"
-    mmom <- fmap (map T.double) $ inshell2text $ concat [ "mkdir -p temp; grep mmom ", foldernya , "/llmf "
-                                            ,"| tail -n", show (nAtom + 1)
-                                            ,"| head -n", show nAtom
-                                            ,"| awk '{print $2}'"
-                                          ]
-    sdtMMOM <- fmap (map T.double) $ inshell2text $ concat [ "grep mmom ", foldernya , "/llmf | grep ehf | tail -1 | sed -e 's/^.*mmom=//g'| awk '{print $1}'"
-                                          ]
 
 
-    return ( map fst $ rights $ concat [sdtMMOM,mmom])
--}
