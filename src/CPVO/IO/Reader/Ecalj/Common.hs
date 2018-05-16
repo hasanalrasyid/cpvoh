@@ -67,7 +67,7 @@ flipSpin iS
   | otherwise = id
 
 -----------------------------------------------------------
-getLastLLMF foldernya = inshell2text $ concat ["ls -lahut ", foldernya,"/llmf{,_gwscend.*} | head -1|awk '{print $NF}'" ]
+getLastLLMF foldernya = inshell2text $ concat ["ls -laht ", foldernya,"/llmf{,_gwscend.*} | head -1|awk '{print $NF}'" ]
 -----------------------------------------------------------
 
 readHeaderData (texFile:jd:jdHead:colAlign:xr:ymax':wTot:tumpuk:invS:tailer:foldernya:aos) = do

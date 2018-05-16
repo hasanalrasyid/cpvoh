@@ -21,6 +21,7 @@ import Data.Char (ord)
 
 readMMOM nAtom foldernya = do
     fLLMF <- fmap (T.unpack . head) $ getLastLLMF foldernya
+    putStrLn $ "===================processed LLMF=" ++ fLLMF
     mmom <- fmap (map T.double) $ inshell2text $ concat [ "mkdir -p temp; grep mmom ", fLLMF
                                             ,"| tail -n", show (nAtom + 1)
                                             ,"| head -n", show nAtom
@@ -51,7 +52,7 @@ getMMOM allArgs@(texFile:jd:jdHead:colAlign:xr:ymax':wTot:tumpuk:invS:tailer:fol
               -- hmatrix : d kolom 5-9
 
   -------------------------------integrating PDOS data------------------------
-    putStrLn "========"
+    putStrLn $ "========invStat=" ++ (show invStat)
     (tMMomSD:mmomSD) <- fmap (map (* invStat)) $ readMMOM nAtom foldernya
     putStrLn $ show $ map (showDouble 3) mmomSD
     putStrLn $ show tMMomSD
