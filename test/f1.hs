@@ -12,7 +12,7 @@ import CPVO.IO.Reader.Ecalj.MMOM
 import CPVO.IO.Plot.Gnuplot.DOS
 import CPVO.IO.Plot.Gnuplot.Common
 import CPVO.IO.Plot.PDOS
-
+import Test
 
 -------
 import Data.Text as T

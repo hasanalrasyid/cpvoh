@@ -3,9 +3,6 @@
 {-# LANGUAGE FlexibleContexts #-}
 
 module CPVO.IO.DOS (
-    pdosA',
-    getPDOS,
-    getAllPDOS,
     showTotPDOS
   ) where
 
@@ -22,13 +19,9 @@ import Data.Maybe
 import Numeric.LinearAlgebra
 
 showTotPDOS :: [String] -> IO ()
---showTotPDOS allArgs@(texFile:jd:jdHead:colAlign:xr:ymax':wTot:tumpuk:invS:tailer:foldernya:aos) = do
 showTotPDOS allArgs = do
   (invStat, ymax, xmin, xmax, ctrlAtoms, uniqAtoms, ctrlAtomicAOs,jdTable, cleanedJdHead, foldernya, tailer, colAlign, texFile) <- readHeaderData allArgs
 
-  fCtrl <- T.readFile $ foldernya ++ "/ctrl." ++ tailer
-  -------------------------------start calculation------------------------
-  -------------------------------generating data------------------------
   -------------------------------generating DOS data------------------------
   totalDOS <- readTotalDOSText tailer foldernya
   -------------------------------integrating DOS data------------------------
