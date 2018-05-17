@@ -7,15 +7,13 @@ module CPVO.IO (
     markdownToTex,
     inshell2text,
     rendertable,
-    pdosA',
-    getPDOS,
     inshell,
     getAllPDOS,
-    readPDOS,
     takeAO,
     takeAOs,
     empty,
-    flipBy
+    flipBy,
+    hashSpaceText
   ) where
 
 import CPVO.Numeric
@@ -139,6 +137,10 @@ takeAO i [] = []
 takeAO i (a@(n,_,_):as) = if (i == n) then [a]
                                      else takeAO i as
 
+flipBy invStat x = if (invStat < 0) then reverse x
+                                    else x
+
+{-
 pdosA' :: String -> String -> [((String, String, [Int]), [(Int, String)]) -> IO (Int,String, Matrix Double)]
 pdosA' foldernya tailer = fmap (getPDOS foldernya tailer) [1,2]
 ---------------------------------------------------
@@ -154,9 +156,6 @@ getPDOS' res tmpf intAOs (nf:nfiles)  = do
 --
 readPDOS invStat tailer dir ctrlAtAOs =
   sequence $ (\x ->  [f a | f <- (readPDOS' invStat dir tailer), a <- x]) ctrlAtAOs
-
-flipBy invStat x = if (invStat < 0) then reverse x
-                                    else x
 
 readPDOS' invStat foldernya tailer = fmap (readOnePDOS foldernya tailer) $ flipBy invStat [1,2] -- spin 1 up n spin 2 down
 
@@ -192,3 +191,4 @@ getPDOS theFolder tailing spin (a@(namaAtom,jdAtom,intAOs),lsAtoms) = do
   return $ (spin, hashSpaceText jdAtom, fromBlocks [[aoE, aPDOS]])
 ------------------------------------------------------------------
 
+-}

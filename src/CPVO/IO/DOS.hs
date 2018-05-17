@@ -9,6 +9,7 @@ module CPVO.IO.DOS (
 import CPVO.Numeric
 import CPVO.IO
 import CPVO.IO.Reader.Ecalj.Common
+import CPVO.IO.Reader.Ecalj.DOS
 
 import Data.Char
 import qualified Data.Text as T

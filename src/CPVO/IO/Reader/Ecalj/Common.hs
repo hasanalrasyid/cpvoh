@@ -3,8 +3,9 @@
 {-# LANGUAGE FlexibleContexts #-}
 
 module CPVO.IO.Reader.Ecalj.Common where
-import CPVO.Numeric (integrateAll,getY0,delta,integrateToZero)
+import CPVO.Numeric
 import CPVO.IO
+
 import System.Environment (getArgs)
 import qualified Data.Text as T
 import qualified Data.Text.IO as T
@@ -42,17 +43,9 @@ genDaftarCetak listAtoms tailer foldernya aos = do
                       $ map (\(a,label,b) -> (head $ filter (\(_,_,aa) -> aa == (T.pack a)) listAtoms , label, b) )
                       $ map ( (\(a:label:as) -> (a,label,as)) . splitOn ":") aos
 
--- ctrlAtomicAOset :: [((atomSym,label ,[intAOs]),(atomNumber,atomSym))]
--- ctrlAtomicAOset :: [((  "O"  ,"O#2p",[2,3,4 ]),(     1    ,  "O"  ))]
--- ctrlAtomicAOset :: 14 atoms
-genCtrlAtomicAOset aoSet ctrlAtoms =  map (\x@(_,i) -> ((head $ takeAO i aoSet),[x]))
-          $ concat
-          $ groupBy (\(_,a:_) (_,b:_) -> (ord a) == (ord b))
-          $ zip ([1..]::[Int]) $ map T.unpack ctrlAtoms
-
--- ctrlAtomicAOset :: [(atomNumber,(atomSym,(label ,[intAOs])))]
--- ctrlAtomicAOset :: [(    1     ,(  "O"  ,("O#2p",[ 2,3,4])))]
--- ctrlAtomicAOset :: 14 atoms
+-- ctrlAtomicAOs :: [(atomNumber,(atomSym,(label ,[intAOs])))]
+-- ctrlAtomicAOs :: [(    1     ,(  "O"  ,("O#2p",[ 2,3,4])))]
+-- ctrlAtomicAOs :: 14 atoms
 genCtrlAtomicAOs aoSet ctrlAtoms =  map (\x -> (head $ takeAOs x aoSet))
           $ concat
           $ groupBy (\(_,a:_) (_,b:_) -> (ord a) == (ord b))
@@ -60,11 +53,6 @@ genCtrlAtomicAOs aoSet ctrlAtoms =  map (\x -> (head $ takeAOs x aoSet))
 
 -- totalDOS :: Matrix Double [ energy, DOSspinUp, DOSspinDown ]
 readTotalDOSText tailer foldernya = loadMatrix $ foldernya ++ "/dos.tot." ++ tailer
-
------------------------------------------------------------
-flipSpin iS
-  | iS < 0 = reverse
-  | otherwise = id
 
 -----------------------------------------------------------
 getLastLLMF foldernya = inshell2text $ concat ["ls -laht ", foldernya,"/llmf{,_gwscend.*} | head -1|awk '{print $NF}'" ]
@@ -105,16 +93,10 @@ readHeaderData (texFile:jd:jdHead:colAlign:xr:ymax':wTot:tumpuk:invS:tailer:fold
     let ctrlAtomicAOs = genCtrlAtomicAOs aoSet ctrlAtoms
     let jdTable = "Table: " ++ jd
     putStrLn $ show $ head ctrlAtomicAOs
-    pdosAtomicPilihan <- readPDOS invStat tailer foldernya $ take 2 ctrlAtomicAOs
-    let integratedAtomicPDOS = integrateAtomicPDOS pdosAtomicPilihan
-    putStrLn $ show $ integratedAtomicPDOS
+--    pdosAtomicPilihan <- readPDOS invStat tailer foldernya $ take 2 ctrlAtomicAOs
+--    let integratedAtomicPDOS = integrateAtomicPDOS pdosAtomicPilihan
+--    putStrLn $ show $ integratedAtomicPDOS
     putStrLn "===done:readHeaderData@CPVO/IO/Reader/Common ====================="
     return
       (invStat, ymax, xmin, xmax, ctrlAtoms, uniqAtoms, ctrlAtomicAOs,jdTable, jdHeads, foldernya, tailer, colAlign, texFile)
-
-integrateAtomicPDOS pdosAtomicPilihan =
-          (\[us,ds] -> zipWith (\(iu,b) (idown,_) -> (iu,idown,b)) us ds )
-          $ groupBy (\(_,(s,_)) (_,(s',_)) -> s == s') -- [[(spin,label,iup)]]
-          $ map (\(mp,b) -> (integrateToZero mp,b)) $ pdosAtomicPilihan
-
 

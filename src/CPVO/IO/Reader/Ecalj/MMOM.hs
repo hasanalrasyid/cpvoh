@@ -3,9 +3,10 @@
 {-# LANGUAGE FlexibleContexts #-}
 
 module CPVO.IO.Reader.Ecalj.MMOM where
-import CPVO.Numeric (integrateAll,getY0,delta,integrateToZero)
+import CPVO.Numeric
 import CPVO.IO
 import CPVO.IO.Reader.Ecalj.Common
+import CPVO.IO.Reader.Ecalj.DOS
 
 import System.Environment (getArgs)
 import qualified Data.Text as T

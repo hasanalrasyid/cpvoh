@@ -7,12 +7,13 @@ module CPVO.Numeric (
   sumRow,
   getY0,
   delta,
-  integrateToZero
+  integrateToZero,
+  integrateAtomicPDOS
   ) where
 
 import Numeric.LinearAlgebra
 import Numeric.LinearAlgebra.Data hiding (find)
-import Data.List (findIndex)
+import Data.List (findIndex,groupBy)
 import Data.Maybe (fromJust)
 
 integrateToZero mP = integrateAll 0
@@ -42,4 +43,9 @@ getY0' a b = a + (scale m v)
 
 delta :: Bool -> b -> b -> b
 delta x y z = if x then y else z
+
+integrateAtomicPDOS pdosAtomicPilihan =
+          (\[us,ds] -> zipWith (\(iu,b) (idown,_) -> (iu,idown,b)) us ds )
+          $ groupBy (\(_,(s,_)) (_,(s',_)) -> s == s') -- [[(spin,label,iup)]]
+          $ map (\(mp,b) -> (integrateToZero mp,b)) $ pdosAtomicPilihan
 

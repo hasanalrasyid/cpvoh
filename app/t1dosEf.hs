@@ -5,6 +5,7 @@
 import CPVO.Numeric
 import CPVO.IO
 import CPVO.IO.Reader.Ecalj.Common
+import CPVO.IO.Reader.Ecalj.DOS
 
 
 
