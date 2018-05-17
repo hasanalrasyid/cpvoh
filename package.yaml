@@ -30,6 +30,7 @@ dependencies:
 - turtle
 - split
 - text-format
+- inline-c
 
 library:
   source-dirs: src

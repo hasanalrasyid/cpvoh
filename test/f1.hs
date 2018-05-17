@@ -2,15 +2,18 @@
 {-# LANGUAGE Strict #-}
 {-# LANGUAGE FlexibleContexts #-}
 
-import CPVO.Numeric
 import CPVO.IO
-import CPVO.IO.Reader.Ecalj.Common
+import CPVO.Numeric
+import CPVO.IO.DOS
+import CPVO.IO.Fortran
 import CPVO.IO.Reader.Ecalj.DOS
+import CPVO.IO.Reader.Ecalj.Common
+import CPVO.IO.Reader.Ecalj.MMOM
+import CPVO.IO.Plot.Gnuplot.DOS
+import CPVO.IO.Plot.Gnuplot.Common
+import CPVO.IO.Plot.PDOS
 
-
-
-
-
+import qualified Language.C.Inline as C
 
 import qualified Control.Foldl as Fold
 import System.Environment (getArgs)
@@ -49,6 +52,9 @@ testArgs = concat [ [ "GWtable01.tex"
                    ]
 
 main = do
+  putStrLn "=======end Test========="
+
+main1 = do
 --    allArgs <- getArgs
     (invStat, ymax, xmin, xmax, ctrlAtoms, uniqAtoms, ctrlAtomicAOs,jdTable, jdHeads, foldernya, tailer, colAlign, texFile) <- readHeaderData testArgs
     totalDOS <- readTotalDOSText tailer foldernya
