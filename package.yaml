@@ -41,7 +41,7 @@ executables:
     #c-sources:           app/test.c
     #cc-options:          -Wall -O2
     #extra-libraries:     -lm
-    extra-lib-dirs: foreign
+    extra-lib-dirs: foreign/lib
     extra-libraries: test
     main:                test.hs
     source-dirs:         app
