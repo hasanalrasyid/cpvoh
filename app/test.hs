@@ -97,7 +97,9 @@ sumVec vec = [C.block| double {
 
 main = do
   putStrLn "=======start: Test========="
-  x <- sumVec =<< V.thaw (V.fromList $ take 5 [1,2..])
+  -- V.thaw will copy the vector
+  -- V.unsafeThaw will not copy the vector
+  x <- sumVec =<< V.unsafeThaw (V.fromList $ take 5 [1,2..])
   print x
   putStrLn "=======end  : Test========="
 
