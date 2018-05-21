@@ -31,11 +31,30 @@ dependencies:
 - split
 - text-format
 - inline-c
+- vector
 
 library:
   source-dirs: src
 
 executables:
+  test:
+    #c-sources:           app/test.c
+    #cc-options:          -Wall -O2
+    #extra-libraries:     -lm
+    extra-lib-dirs: foreign
+    extra-libraries: test
+    main:                test.hs
+    source-dirs:         app
+    ghc-options:
+    - -threaded
+    - -rtsopts
+    - -with-rtsopts=-N
+    dependencies:
+    - hascpvo
+    - text-format
+    - split
+    - text
+  
   f1:
     main:                f1PdosTotAtomicMajorOrbitalVert.hs
     source-dirs:         app
