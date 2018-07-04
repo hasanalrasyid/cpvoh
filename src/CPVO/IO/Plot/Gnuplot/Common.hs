@@ -86,7 +86,7 @@ genLineType = unlines
 
 genTOP (xr:yr:poskey:_) = unlines [ "#!/home/aku/bin/gnuplot -persist"
                  , "reset"
-                 , "set term post  portrait enhanced color font 'Times-Roman'"
+                 , "set term post eps enhanced color font 'Times-Roman'"
                  , "set output 'plots/hasil.eps'"
 
                  , "if (!exists('MP_LEFT'))   MP_LEFT = .1"
