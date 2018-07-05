@@ -86,8 +86,8 @@ genLineType = unlines
 
 genTOP (xr:yr:poskey:_) = unlines [ "#!/home/aku/bin/gnuplot -persist"
                  , "reset"
-                 , "set term post eps enhanced color font 'Times-Roman'"
-                 , "set output 'plots/tmp.eps'"
+                 , "set term post portrait enhanced color font 'Times-Roman'"
+                 , "set output 'plots/tmp.ps'"
 
                  , "if (!exists('MP_LEFT'))   MP_LEFT = .1"
                  , "if (!exists('MP_RIGHT'))  MP_RIGHT = .91"
@@ -141,7 +141,7 @@ genTOP (xr:yr:poskey:_) = unlines [ "#!/home/aku/bin/gnuplot -persist"
 
 
 genEnder = unlines [ "unset multiplot"
-                   , "system 'cd plots && epstool --copy -b --quiet tmp.eps hasil.eps && epstopdf hasil.eps && pdftocairo -r 150 -singlefile -jpeg hasil.pdf tmp && convert tmp.jpg -rotate 0 hasil.png && rm -f tmp.jpg tmp.eps'"
+                   , "system 'cd plots && ps2eps tmp.ps && epstool --copy -b --quiet tmp.eps hasil.eps && epstopdf hasil.eps && pdftocairo -r 150 -singlefile -jpeg hasil.pdf tmp && convert tmp.jpg -rotate 0 hasil.png && rm -f tmp.jpg tmp.eps'"
                    ]
 
 totalHeader = unlines [ "###########Total Header#############"
