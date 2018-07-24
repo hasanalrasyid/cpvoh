@@ -13,6 +13,8 @@ import Language.Fortran.Parser.Utils (readReal)
 import Data.Maybe (fromJust)
 import qualified Data.Map.Strict as M (fromList,lookup)
 import Data.Tree (Tree(Node),drawTree)
+import Data.Sequence (fromList,(|>))
+import Data.Foldable (toList)
 
 main :: IO ()
 main = do
@@ -22,14 +24,15 @@ main = do
     let [struct,vars] = map (filter (not . null)) $ splitOn [["Variables:"]] $ drop 5 $ map words $ lines $ z
         varMap = M.fromList $ map (\[a,b] -> (a, fromJust $ readReal b)) vars
     putStrLn $ show $ M.lookup "R6" varMap
-    putStrLn $ show $ genCart [0,0,0] [0,0,0] struct []
+    putStrLn $ unlines $ map show $ toList $ genCart [0,0,0] [0,0,0] struct $ fromList []
+    -- putStrLn $ show $ genCart [0,0,0] [0,0,0] struct $ fromList []
 --    putStrLn $ drawTree $ fmap show (Node 1 [Node 2 [], Node 3 []])
 
 genCart v0 v1 [] res = res
-genCart v0 v1 ([s1]:xs) _ = genCart v0 v1 xs [(s1, v0)]
-genCart v0 v1 ([s2a,s2b,s2c]:xs) res = genCart v0 v1 xs ((s2a,[1,0,0]):res)
-genCart v0 v1 ([s3a,s3b,s3c,s3d,s3e]:xs) res = genCart v0 v1 xs ((s3a,[2,0,0]):res)
-genCart v0 v1 ((sna:_):xs) res = genCart v0 v1 xs ((sna,[9,0,0]):res)
+genCart v0 v1 ([s1]:xs) res = genCart v0 v1 xs $ res |> (s1, v0)
+genCart v0 v1 ([s2a,s2b,s2c]:xs) res = genCart v0 v1 xs $ res |> (s2a,[1,0,0])
+genCart v0 v1 ([s3a,s3b,s3c,s3d,s3e]:xs) res = genCart v0 v1 xs $ res |> (s3a,[2,0,0])
+genCart v0 v1 ((sna:_):xs) res = genCart v0 v1 xs $ res |> (sna,[9,0,0])
 
 data Opts = Opts {
     _outFormat    :: String,
