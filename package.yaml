@@ -32,6 +32,8 @@ dependencies:
 - text-format
 - inline-c
 - vector
+- optparse-applicative # ---  needed by zmat2xyz
+- fortran-src          # --- !needed by zmat2xyz
 
 library:
   source-dirs: src
