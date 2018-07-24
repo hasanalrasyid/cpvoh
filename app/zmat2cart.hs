@@ -1,6 +1,8 @@
 #!/usr/bin/env stack
 --stack --resolver lts-11.3 --install-ghc runghc --stack-yaml /home/aku/kanazawa/dev/hascpvo/stack.yaml
 
+{-# LANGUAGE FlexibleContexts #-}
+
 module Main where
 
 import           Options.Applicative
@@ -11,29 +13,38 @@ import System.IO (getContents)
 import Data.List.Split (splitOn)
 import Language.Fortran.Parser.Utils (readReal)
 import Data.Maybe (fromJust)
-import qualified Data.Map.Strict as M (fromList,lookup)
+import qualified Data.Map.Strict as M (fromList,lookup,Map)
 import Data.Tree (Tree(Node),drawTree)
-import Data.Sequence (fromList,(|>))
+import Data.Sequence (fromList,(|>),Seq)
 import Data.Foldable (toList)
+import qualified Numeric.LinearAlgebra as HM (norm_2,scale)
+import qualified Numeric.LinearAlgebra.Data as HM (fromList, Vector)
 
 main :: IO ()
 main = do
     opts <- execParser withHelp
     z <- getContents
+    let vInit0 = HM.fromList [0,0,0] :: HM.Vector Double
+    let dInit@(dInitDih,vInit1) =  (180, HM.fromList [3,2,0]) :: (Double,HM.Vector Double)
     putStrLn $ show opts
     let [struct,vars] = map (filter (not . null)) $ splitOn [["Variables:"]] $ drop 5 $ map words $ lines $ z
         varMap = M.fromList $ map (\[a,b] -> (a, fromJust $ readReal b)) vars
     putStrLn $ show $ M.lookup "R6" varMap
-    putStrLn $ unlines $ map show $ toList $ genCart [0,0,0] [0,0,0] struct $ fromList []
+    putStrLn $ unlines $ map show $ toList $ genCart varMap vInit0 dInit struct $ fromList []
     -- putStrLn $ show $ genCart [0,0,0] [0,0,0] struct $ fromList []
 --    putStrLn $ drawTree $ fmap show (Node 1 [Node 2 [], Node 3 []])
 
-genCart v0 v1 [] res = res
-genCart v0 v1 ([s1]:xs) res = genCart v0 v1 xs $ res |> (s1, v0)
-genCart v0 v1 ([s2a,s2b,s2c]:xs) res = genCart v0 v1 xs $ res |> (s2a,[1,0,0])
-genCart v0 v1 ([s3a,s3b,s3c,s3d,s3e]:xs) res = genCart v0 v1 xs $ res |> (s3a,[2,0,0])
-genCart v0 v1 ((sna:_):xs) res = genCart v0 v1 xs $ res |> (sna,[9,0,0])
-
+genCart :: M.Map String Double -> HM.Vector Double -> (Double,HM.Vector Double) -> [[String]] -> Seq (String, HM.Vector Double) -> Seq (String, HM.Vector Double)
+genCart _ _ _ [] res = res
+genCart vMap v0 d1@(dih,v1) (x:xs) res = genCart vMap v0 d1 xs $ res |> fromZMat x
+  where
+    fromZMat :: [String] -> (String, HM.Vector Double)
+    fromZMat [s1] = (s1,v0)
+    fromZMat [s2a,s2b,s2c] = (s2a, HM.scale ( fromJust $ M.lookup s2c vMap) $ vUnity v1)
+    fromZMat [s3a,s3b,s3c,s3d,s3e] = (s3a,HM.fromList [2,0,0])
+    fromZMat (sna:_) = (sna,HM.fromList [9,0,0])
+    vUnity :: HM.Vector Double -> HM.Vector Double
+    vUnity v = HM.scale (1/(HM.norm_2 v)) v
 data Opts = Opts {
     _outFormat    :: String,
     _outDir       :: FilePath,
