@@ -12,6 +12,7 @@ import Data.List.Split (splitOn)
 import Language.Fortran.Parser.Utils (readReal)
 import Data.Maybe (fromJust)
 import qualified Data.Map.Strict as M (fromList,lookup)
+import Data.Tree (Tree(Node),drawTree)
 
 main :: IO ()
 main = do
@@ -21,7 +22,14 @@ main = do
     let [struct,vars] = map (filter (not . null)) $ splitOn [["Variables:"]] $ drop 5 $ map words $ lines $ z
         varMap = M.fromList $ map (\[a,b] -> (a, fromJust $ readReal b)) vars
     putStrLn $ show $ M.lookup "R6" varMap
-    putStrLn $ show struct
+    putStrLn $ show $ genCart [0,0,0] struct []
+--    putStrLn $ drawTree $ fmap show (Node 1 [Node 2 [], Node 3 []])
+
+genCart v0 [] res = res
+genCart v0 ([s1]:xs) _ = genCart v0 xs [(s1, v0)]
+genCart v0 ([s2a,s2b,s2c]:xs) res = genCart v0 xs ((s2a,[1,0,0]):res)
+genCart v0 ([s3a,s3b,s3c,s3d,s3e]:xs) res = genCart v0 xs ((s3a,[2,0,0]):res)
+genCart v0 ((sna:_):xs) res = genCart v0 xs ((sna,[9,0,0]):res)
 
 data Opts = Opts {
     _outFormat    :: String,
