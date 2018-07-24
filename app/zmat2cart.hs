@@ -40,11 +40,12 @@ genCart vMap v0 d1@(dih,v1) (x:xs) res = genCart vMap v0 d1 xs $ res |> fromZMat
   where
     fromZMat :: [String] -> (String, HM.Vector Double)
     fromZMat [s1] = (s1,v0)
-    fromZMat [s2a,s2b,s2c] = (s2a, HM.scale ( fromJust $ M.lookup s2c vMap) $ vUnity v1)
+    fromZMat [s2a,s2b,s2c] = (s2a, HM.scale ( callVar s2c) $ vUnity v1)
     fromZMat [s3a,s3b,s3c,s3d,s3e] = (s3a,HM.fromList [2,0,0])
     fromZMat (sna:_) = (sna,HM.fromList [9,0,0])
     vUnity :: HM.Vector Double -> HM.Vector Double
     vUnity v = HM.scale (1/(HM.norm_2 v)) v
+    callVar s = fromJust $ M.lookup s vMap
 data Opts = Opts {
     _outFormat    :: String,
     _outDir       :: FilePath,
