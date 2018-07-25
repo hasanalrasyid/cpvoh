@@ -31,8 +31,31 @@ main = do
         varMap = M.fromList $ map (\[a,b] -> (a, fromJust $ readReal b)) vars
     putStrLn $ show $ M.lookup "R6" varMap
     putStrLn $ unlines $ map show $ toList $ genCart varMap vInit0 dInit struct $ fromList []
+--    putStrLn $ show $ genCartG varMap vInit0 dInit struct
     -- putStrLn $ show $ genCart [0,0,0] [0,0,0] struct $ fromList []
 --    putStrLn $ drawTree $ fmap show (Node 1 [Node 2 [], Node 3 []])
+
+type RefR a = ZCoord a
+type RefA a = ZCoord a
+type RefD a = ZCoord a
+
+data ZCoord a = Origin0 a
+                   | Origin1 a Length
+                   | Origin2 a (RefR a) Length (RefA a) Angle
+                   | NodeZ a (RefR a) Length (RefA a) Angle (RefD a) Dihedral
+                   deriving (Show, Eq)
+
+
+genCartG :: M.Map String Double -> HM.Vector Double -> (Double,HM.Vector Double) -> [[String]] -> ZCoord String
+--genCartG _ _ _ [] res = res
+--genCartG vMap v0 d1@(dih,v1) (x:xs) res = genCartG vMap v0 d1 xs $ insert res $ newNode x
+genCartG vMap v0 d1@(dih,v1) (x:xs) =  NodeZ "n1" ref1r 1.1 ref1a 120.0 ref1d 120.0
+  where ref1r = (Origin2 "or2"(Origin0 "or0") 1.5 (Origin1 "or1" 1.1) 120.0 )
+        ref1a = (Origin1 "or1" 1.1)
+        ref1d = (Origin0 "or0")
+
+
+
 
 genCart :: M.Map String Double -> HM.Vector Double -> (Double,HM.Vector Double) -> [[String]] -> Seq (String, HM.Vector Double) -> Seq (String, HM.Vector Double)
 genCart _ _ _ [] res = res
@@ -46,14 +69,30 @@ genCart vMap v0 d1@(dih,v1) (x:xs) res = genCart vMap v0 d1 xs $ res |> fromZMat
                                            vCm1 = snd $ index res 1
                                         in (s3a,vCm1 + HM.scale cr3 ( HM.fromList [cos ca3,sin ca3 ,0] ))
     fromZMat (sNa:rNref:rNs:aNref:aNs:dNref:dNs:_) =
-      let [rN,aN,dN] = map callVar [rNs,aNs,dNs]
-          [crr,cra,crd] = map (snd . (index res) . floor . callVar) [rNref,aNref,dNref]
-       in (sNa, HM.fromList [rN, aN, dN] )
+      let [rni,teta,phi] = map callVar [rNs,aNs,dNs]
+          --[rrC,arC,drC] = map (snd . (index res) . floor . (+ (-1)) . fromJust . readReal) [rNref,aNref,dNref] :: [HM.Vector Double]
+          [va_i,va_j,drC] = map (snd . (index res) . floor . (+ (-1)) . fromJust . readReal) [rNref,aNref,dNref] :: [HM.Vector Double]
+          vb_ij =
+          vb_ijk = HM.scale  (1/(sin teta)) $ cross vb_ij v_bik
+          vr_n = (+) va_i $ HM.scale
+                          $ foldr (+)  [ HM.scale (cos teta) vb_ij
+                                       , HM.scale ((sin teta) * (cos phi)) (vb_ijk cross vb_ij)
+                                       , HM.scale ((-1) * sin phi) vb_ijk
+                                       ]
+          in (sNa, va_i)
+       --in (sNa, HM.fromList [crr,1,1] )
     --fromZMat (sna:_) = (sna,HM.fromList [9,0,0])
     vUnity :: HM.Vector Double -> HM.Vector Double
     vUnity v = HM.scale (1/(HM.norm_2 v)) v
     callVar :: String -> Double
     callVar s = fromJust $ M.lookup s vMap
+
+type Angle = Double
+type Length = Double
+type Dihedral = Double
+
+
+
 data Opts = Opts {
     _outFormat    :: String,
     _outDir       :: FilePath,
