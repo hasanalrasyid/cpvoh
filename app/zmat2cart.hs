@@ -2,6 +2,7 @@
 --stack --resolver lts-11.3 --install-ghc runghc --stack-yaml /home/aku/kanazawa/dev/hascpvo/stack.yaml
 
 {-# LANGUAGE FlexibleContexts #-}
+{-# LANGUAGE FlexibleInstances #-}
 
 module Main where
 
@@ -17,8 +18,8 @@ import qualified Data.Map.Strict as M (fromList,lookup,Map)
 import Data.Tree (Tree(Node),drawTree)
 import Data.Sequence (fromList,(|>),Seq,index)
 import Data.Foldable (toList)
-import qualified Numeric.LinearAlgebra as HM (norm_2,scale)
-import qualified Numeric.LinearAlgebra.Data as HM (fromList, Vector)
+import qualified Numeric.LinearAlgebra as HM (norm_2,scale,cross,toList)
+import qualified Numeric.LinearAlgebra.Data as HM (fromList,fromRows,Vector,disps)
 
 main :: IO ()
 main = do
@@ -30,11 +31,17 @@ main = do
     let [struct,vars] = map (filter (not . null)) $ splitOn [["Variables:"]] $ drop 5 $ map words $ lines $ z
         varMap = M.fromList $ map (\[a,b] -> (a, fromJust $ readReal b)) vars
     putStrLn $ show $ M.lookup "R6" varMap
-    putStrLn $ unlines $ map show $ toList $ genCart varMap vInit0 dInit struct $ fromList []
+    putStrLn $ unlines $ map showCart $ toList $ genCart varMap vInit0 dInit struct $ fromList []
 --    putStrLn $ show $ genCartG varMap vInit0 dInit struct
     -- putStrLn $ show $ genCart [0,0,0] [0,0,0] struct $ fromList []
 --    putStrLn $ drawTree $ fmap show (Node 1 [Node 2 [], Node 3 []])
 
+showVec :: HM.Vector Double -> String
+showVec a = unwords $ map show $ HM.toList a
+
+showCart (nm,vec) = unwords $ [nm,  showVec vec]
+
+{-
 type RefR a = ZCoord a
 type RefA a = ZCoord a
 type RefD a = ZCoord a
@@ -54,8 +61,10 @@ genCartG vMap v0 d1@(dih,v1) (x:xs) =  NodeZ "n1" ref1r 1.1 ref1a 120.0 ref1d 12
         ref1a = (Origin1 "or1" 1.1)
         ref1d = (Origin0 "or0")
 
+ZCoord = Tuple String (HM.Vector Double) deriving Show
 
-
+showZCoord (ZCoord (nm,vec)) = nm ++ "===" ++ (show vec)
+-}
 
 genCart :: M.Map String Double -> HM.Vector Double -> (Double,HM.Vector Double) -> [[String]] -> Seq (String, HM.Vector Double) -> Seq (String, HM.Vector Double)
 genCart _ _ _ [] res = res
@@ -70,16 +79,17 @@ genCart vMap v0 d1@(dih,v1) (x:xs) res = genCart vMap v0 d1 xs $ res |> fromZMat
                                         in (s3a,vCm1 + HM.scale cr3 ( HM.fromList [cos ca3,sin ca3 ,0] ))
     fromZMat (sNa:rNref:rNs:aNref:aNs:dNref:dNs:_) =
       let [rni,teta,phi] = map callVar [rNs,aNs,dNs]
-          --[rrC,arC,drC] = map (snd . (index res) . floor . (+ (-1)) . fromJust . readReal) [rNref,aNref,dNref] :: [HM.Vector Double]
-          [va_i,va_j,drC] = map (snd . (index res) . floor . (+ (-1)) . fromJust . readReal) [rNref,aNref,dNref] :: [HM.Vector Double]
-          vb_ij =
-          vb_ijk = HM.scale  (1/(sin teta)) $ cross vb_ij v_bik
-          vr_n = (+) va_i $ HM.scale
-                          $ foldr (+)  [ HM.scale (cos teta) vb_ij
-                                       , HM.scale ((sin teta) * (cos phi)) (vb_ijk cross vb_ij)
-                                       , HM.scale ((-1) * sin phi) vb_ijk
-                                       ]
-          in (sNa, va_i)
+          [va_i,va_j,va_k] = map (snd . (index res) . floor . (+ (-1)) . fromJust . readReal)
+            [rNref,aNref,dNref] :: [HM.Vector Double]
+          vb_ik = vUnity $ va_k - va_i
+          vb_ij = vUnity $ va_j - va_i
+          vb_ijk = HM.scale  (1/(sin teta)) $ HM.cross vb_ij vb_ik
+          vr_n = (+) va_i
+                $ HM.scale rni $ foldl (+) (HM.fromList [0,0,0])  [ HM.scale (cos teta) vb_ij
+                                           , HM.scale ((sin teta) * (cos phi)) (HM.cross vb_ijk vb_ij)
+                                           , HM.scale ((-1) * sin phi) vb_ijk
+                                           ]
+          in (sNa, vr_n)
        --in (sNa, HM.fromList [crr,1,1] )
     --fromZMat (sna:_) = (sna,HM.fromList [9,0,0])
     vUnity :: HM.Vector Double -> HM.Vector Double
