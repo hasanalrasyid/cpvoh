@@ -18,7 +18,7 @@ import qualified Data.Map.Strict as M (fromList,lookup,Map)
 import Data.Tree (Tree(Node),drawTree)
 import Data.Sequence (fromList,(|>),Seq,index)
 import Data.Foldable (toList)
-import qualified Numeric.LinearAlgebra as HM (norm_2,scale,cross,toList)
+import qualified Numeric.LinearAlgebra as HM (norm_2,scale,cross,toList,dot)
 import qualified Numeric.LinearAlgebra.Data as HM (fromList,fromRows,Vector,disps)
 
 deg2rad deg = deg * pi / 180
@@ -86,6 +86,7 @@ genCart vMap v0 d1@(dih,v1) (x:xs) res = genCart vMap v0 d1 xs $ res |> fromZMat
       let rtp@[rni,teta,phi] = zipWith ($) [callVarR,callVarAngle,callVarDih] [rNs,aNs,dNs]
           [va_i,va_j,va_k] = map (snd . (index res) . floor . (+ (-1)) . fromJust . readReal)
             [rNref,aNref,dNref] :: [HM.Vector Double]
+            {-
           vb_ik = vUnity $ va_k - va_i
           vb_ij = vUnity $ va_j - va_i
           vb_ijk = HM.scale  (1/(sin teta)) $ HM.cross vb_ij vb_ik
@@ -94,7 +95,14 @@ genCart vMap v0 d1@(dih,v1) (x:xs) res = genCart vMap v0 d1 xs $ res |> fromZMat
                                            , HM.scale ((sin teta) * (cos phi)) (HM.cross vb_ijk vb_ij)
                                            , HM.scale ((sin teta) * (sin phi) * (-1)) vb_ijk
                                            ]
-      in (sNa, vr_n)
+                                         -}
+          vV = va_i - (HM.scale rni $ HM.fromList [cos teta, sin teta, 0])
+          vK = vUnity $ va_j - va_i  -- axis of rotation
+          vr_n_rodriguez = foldl (+) (HM.fromList [0,0,0]) [ HM.scale (cos phi) vV
+                                                           , HM.scale (sin phi) $ HM.cross vK vV
+                                                           , HM.scale ((1 - (cos phi)) * (HM.dot vK vV)) vK
+                                                           ]
+      in (sNa, vr_n_rodriguez)
        --in (sNa, HM.fromList [crr,1,1] )
     --fromZMat (sna:_) = (sna,HM.fromList [9,0,0])
     vUnity :: HM.Vector Double -> HM.Vector Double
