@@ -21,16 +21,20 @@ import Data.Foldable (toList)
 import qualified Numeric.LinearAlgebra as HM (norm_2,scale,cross,toList)
 import qualified Numeric.LinearAlgebra.Data as HM (fromList,fromRows,Vector,disps)
 
+deg2rad deg = deg * pi / 180
+
 main :: IO ()
 main = do
-    opts <- execParser withHelp
+--    opts <- execParser withHelp
     z <- getContents
     let vInit0 = HM.fromList [0,0,0] :: HM.Vector Double
     let dInit@(dInitDih,vInit1) =  (180, HM.fromList [1,0,0]) :: (Double,HM.Vector Double)
-    putStrLn $ show opts
-    let [struct,vars] = map (filter (not . null)) $ splitOn [["Variables:"]] $ drop 5 $ map words $ lines $ z
+--    putStrLn $ show opts
+    let (struct:vars:_) = map (filter (not . null)) $ splitOn [["Variables:"]] $ drop 5 $ map words $ lines z
         varMap = M.fromList $ map (\[a,b] -> (a, fromJust $ readReal b)) vars
-    putStrLn $ show $ M.lookup "R6" varMap
+    putStrLn $ show $ length struct
+    putStrLn "Judul---"
+--    putStrLn $ show $ M.lookup "R6" varMap
     putStrLn $ unlines $ map showCart $ toList $ genCart varMap vInit0 dInit struct $ fromList []
 --    putStrLn $ show $ genCartG varMap vInit0 dInit struct
     -- putStrLn $ show $ genCart [0,0,0] [0,0,0] struct $ fromList []
@@ -38,6 +42,7 @@ main = do
 
 showVec :: HM.Vector Double -> String
 showVec a = unwords $ map show $ HM.toList a
+
 
 showCart (nm,vec) = unwords $ [nm,  showVec vec]
 
@@ -71,14 +76,14 @@ genCart _ _ _ [] res = res
 genCart vMap v0 d1@(dih,v1) (x:xs) res = genCart vMap v0 d1 xs $ res |> fromZMat x
   where
     fromZMat :: [String] -> (String, HM.Vector Double)
-    fromZMat [s1] = (s1,v0)
-    fromZMat [s2a,_,r2] = (s2a, HM.scale ( callVar r2) $ vUnity v1)
-    fromZMat [s3a,r3ref,r3,a3ref,a3] = let ca3 = callVar a3
-                                           cr3 = callVar r3
+    fromZMat [s1] = (s1,v0)  -- C1
+    fromZMat [s2a,_,r2] = (s2a, HM.scale ( callVarR r2) $ vUnity v1)  -- C2
+    fromZMat [s3a,r3ref,r3,a3ref,a3] = let ca3 = callVarAngle a3   -- C3
+                                           cr3 = callVarR r3
                                            vCm1 = snd $ index res 1
-                                        in (s3a,vCm1 + HM.scale cr3 ( HM.fromList [cos ca3,sin ca3 ,0] ))
-    fromZMat (sNa:rNref:rNs:aNref:aNs:dNref:dNs:_) =
-      let [rni,teta,phi] = map callVar [rNs,aNs,dNs]
+                                        in (s3a,vCm1 - HM.scale cr3 ( HM.fromList [cos ca3,sin ca3 ,0] ))
+    fromZMat (sNa:rNref:rNs:aNref:aNs:dNref:dNs:_) = -- C4
+      let rtp@[rni,teta,phi] = zipWith ($) [callVarR,callVarAngle,callVarDih] [rNs,aNs,dNs]
           [va_i,va_j,va_k] = map (snd . (index res) . floor . (+ (-1)) . fromJust . readReal)
             [rNref,aNref,dNref] :: [HM.Vector Double]
           vb_ik = vUnity $ va_k - va_i
@@ -87,15 +92,21 @@ genCart vMap v0 d1@(dih,v1) (x:xs) res = genCart vMap v0 d1 xs $ res |> fromZMat
           vr_n = (+) va_i
                 $ HM.scale rni $ foldl (+) (HM.fromList [0,0,0])  [ HM.scale (cos teta) vb_ij
                                            , HM.scale ((sin teta) * (cos phi)) (HM.cross vb_ijk vb_ij)
-                                           , HM.scale ((-1) * sin phi) vb_ijk
+                                           , HM.scale ((sin teta) * (sin phi) * (-1)) vb_ijk
                                            ]
-          in (sNa, vr_n)
+      in (sNa, vr_n)
        --in (sNa, HM.fromList [crr,1,1] )
     --fromZMat (sna:_) = (sna,HM.fromList [9,0,0])
     vUnity :: HM.Vector Double -> HM.Vector Double
     vUnity v = HM.scale (1/(HM.norm_2 v)) v
     callVar :: String -> Double
     callVar s = fromJust $ M.lookup s vMap
+    callVarR s = callVar s
+    callVarDih s = deg2rad $ callVar s
+    callVarAngle s = deg2rad $ abs $ (flip remD) 180 $ callVar s
+
+remD a b = (fromIntegral $ rem (floor a) (floor b))
+-- remD a b = a - (fromIntegral $ rem (floor a) (floor b))
 
 type Angle = Double
 type Length = Double

@@ -1,4 +1,8 @@
-#ZMATRIX
+#P GFINPUT IOP(6/7=3) B3LYP/3-21G SCF=(QC,MaxCycle=200) Opt Freq
+
+title "R15"
+
+0 1
 C1
 C2                   1    R1
 C3                   2    R2       1    A1
@@ -14,7 +18,7 @@ H12                  4    R11      2    A10      1    D9       0
 H13                  5    R12      4    A11      2    D10      0
 H14                  5    R13      4    A12      2    D11      0
 H15                  5    R14      4    A13      2    D12      0
-
+ Variables:
 R1                    1.54                     
 R2                    1.31                     
 R3                    1.54                     
