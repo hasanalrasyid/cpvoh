@@ -3,6 +3,7 @@
 
 {-# LANGUAGE FlexibleContexts #-}
 {-# LANGUAGE FlexibleInstances #-}
+{-# LANGUAGE Strict #-}
 
 module Main where
 
@@ -86,23 +87,21 @@ genCart vMap v0 d1@(dih,v1) (x:xs) res = genCart vMap v0 d1 xs $ res |> fromZMat
       let rtp@[rni,teta,phi] = zipWith ($) [callVarR,callVarAngle,callVarDih] [rNs,aNs,dNs]
           [va_i,va_j,va_k] = map (snd . (index res) . floor . (+ (-1)) . fromJust . readReal)
             [rNref,aNref,dNref] :: [HM.Vector Double]
-            {-
-          vb_ik = vUnity $ va_k - va_i
-          vb_ij = vUnity $ va_j - va_i
+          vb_ik  = vUnity $ va_k - va_i
+          vb_ij  = vUnity $ va_j - va_i
           vb_ijk = HM.scale  (1/(sin teta)) $ HM.cross vb_ij vb_ik
-          vr_n = (+) va_i
-                $ HM.scale rni $ foldl (+) (HM.fromList [0,0,0])  [ HM.scale (cos teta) vb_ij
-                                           , HM.scale ((sin teta) * (cos phi)) (HM.cross vb_ijk vb_ij)
-                                           , HM.scale ((sin teta) * (sin phi) * (-1)) vb_ijk
-                                           ]
-                                         -}
-          vV = va_i - (HM.scale rni $ HM.fromList [cos teta, sin teta, 0])
-          vK = vUnity $ va_j - va_i  -- axis of rotation
-          vr_n_rodriguez = foldl (+) (HM.fromList [0,0,0]) [ HM.scale (cos phi) vV
-                                                           , HM.scale (sin phi) $ HM.cross vK vV
-                                                           , HM.scale ((1 - (cos phi)) * (HM.dot vK vV)) vK
+          vr_n   = (+) va_i
+                 $ HM.scale rni $ foldl (+) (HM.fromList [0,0,0])  [ HM.scale (cos teta) vb_ij
+                                            , HM.scale ((sin teta) * (cos phi)) (HM.cross vb_ijk vb_ij)
+                                            , HM.scale ((sin teta) * (sin phi) * (-1)) vb_ijk
+                                            ]
+          vV = va_k - va_j
+          vR = vUnity $ va_j - va_i  -- axis of rotation
+          vr_n_rodriguez = vV + foldl (+) (HM.fromList [0,0,0]) [ HM.scale (cos phi) vV
+                                                           , HM.scale (sin phi) $ HM.cross vR vV
+                                                           , HM.scale ((1 - (cos phi)) * (HM.dot vR vV)) vR
                                                            ]
-      in (sNa, vr_n_rodriguez)
+                                                        in (sNa, if (sNa /= "C5") then vr_n else va_i + vV)
        --in (sNa, HM.fromList [crr,1,1] )
     --fromZMat (sna:_) = (sna,HM.fromList [9,0,0])
     vUnity :: HM.Vector Double -> HM.Vector Double
