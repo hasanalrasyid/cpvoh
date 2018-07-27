@@ -21,6 +21,7 @@ import Data.Sequence (fromList,(|>),Seq,index)
 import Data.Foldable (toList)
 import qualified Numeric.LinearAlgebra as HM (norm_2,scale,cross,toList,dot)
 import qualified Numeric.LinearAlgebra.Data as HM (fromList,fromRows,Vector,disps)
+import Linear.Quaternion
 
 deg2rad deg = deg * pi / 180
 
