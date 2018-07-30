@@ -24,7 +24,7 @@ import qualified Numeric.LinearAlgebra.Data as HM (fromList,fromRows,Vector,disp
 import Linear.Quaternion
 import Linear.V3
 import Linear.Metric (norm)
-import Linear.Vector (unit,(^-^))
+import Linear.Vector
 
 deg2rad deg = deg * pi / 180
 
@@ -47,7 +47,7 @@ main = do
 --    putStrLn $ drawTree $ fmap show (Node 1 [Node 2 [], Node 3 []])
 
 showVec :: V3 Double -> String
-showVec a = show a
+showVec (V3 a b c) = unwords $ map show [a,b,c]
 
 
 showCart (nm,vec) = unwords $ [nm,  showVec vec]
@@ -83,15 +83,30 @@ genCart vMap v0 d1@(dih,v1) (x:xs) res = genCart vMap v0 d1 xs $ res |> fromZMat
   where
     fromZMat :: [String] -> (String, V3 Double)
     fromZMat [s1] = (s1,v0)  -- C1
-    fromZMat [s2a,_,r2] = (s2a, HM.scale ( callVarR r2) $ vUnity v1)  -- C2
-    fromZMat [s3a,r3ref,r3,a3ref,a3] = let ca3 = callVarAngle a3   -- C3
-                                           cr3 = callVarR r3
-                                           vCm1 = snd $ index res 1
-                                        in (s3a,vCm1 - ((V3 (cos ca3) (sin ca3) 0) * cr3))
+    fromZMat [s2a,_,r2] = (s2a, (callVarR r2) *^ (vUnity v1))  -- C2
+    fromZMat [s3a,r3ref,r3,a3ref,a3] =
+      let ca3 = callVarAngle a3   -- C3
+          cr3 = callVarR r3
+          [v_i,v_j] =
+            map (snd . (index res) . floor . (+ (-1)) . fromJust . readReal)
+              [r3ref,a3ref]  :: [V3 Double]
+          v_ij = v_j ^-^ v_i
+          vV = (*^) cr3 $ vUnity $ v_ij
+          vrQ = v_i ^+^ (rotateQ (V3 0 0 1) ca3 vV)
+       in (s3a, vrQ)
     fromZMat (sNa:rNref:rNs:aNref:aNs:dNref:dNs:_) = -- C4
       let rtp@[rni,teta,phi] = zipWith ($) [callVarR,callVarAngle,callVarDih] [rNs,aNs,dNs]
-          [va_i,va_j,va_k] = map (snd . (index res) . floor . (+ (-1)) . fromJust . readReal)
-            [rNref,aNref,dNref] -- :: [V3 Double]
+          [va_i,va_j,va_k] =
+            map (snd . (index res) . floor . (+ (-1)) . fromJust . readReal)
+              [rNref,aNref,dNref]  :: [V3 Double]
+          vAxis = va_j ^-^ va_i
+          vV = va_k ^-^ va_i
+          v_jk = va_k ^-^ va_j
+          v_ij = va_j ^-^ va_i
+          vn_ijk = vUnity $ cross vAxis v_jk
+          vA = (*^) rni $ rotateQ vn_ijk teta $ vAxis
+          vrQ = va_i ^+^ (rotateQ vAxis phi vA)
+           in (sNa,vA)
 {-
           vb_ik  = vUnity $ va_k - va_i
           vb_ij  = vUnity $ va_j - va_i
@@ -107,21 +122,23 @@ genCart vMap v0 d1@(dih,v1) (x:xs) res = genCart vMap v0 d1 xs $ res |> fromZMat
                                                            , HM.scale (sin phi) $ HM.cross vR vV
                                                            , HM.scale ((1 - (cos phi)) * (HM.dot vR vV)) vR
                                                            ]
-                                                           -}
           vV = va_k - va_j
-          vAxis = unit $ va_j ^-^ va_i  -- axis of rotation
+          vAxis = unit (va_j ^-^ va_i)  -- axis of rotation
           vrQ = rotateQ vAxis phi vV
        in (sNa, vrQ)
+                                                           -}
                                                         --in (sNa, if (sNa /= "C5") then vr_n else va_i + vV)
        --in (sNa, HM.fromList [crr,1,1] )
     --fromZMat (sna:_) = (sna,HM.fromList [9,0,0])
-    vUnity :: V3 Double -> V3 Double
-    vUnity v = HM.scale (1/(HM.norm_2 v)) v
+    --vUnity :: V3 Double -> V3 Double
+    --vUnity v = HM.scale (1/(HM.norm_2 v)) v
+    vUnity v = v ^/ (norm v)
     callVar :: String -> Double
     callVar s = fromJust $ M.lookup s vMap
     callVarR s = callVar s
     callVarDih s = deg2rad $ callVar s
-    callVarAngle s = deg2rad $ abs $ (flip remD) 180 $ callVar s
+    --callVarAngle s = deg2rad $ abs $ (flip remD) 180 $ callVar s
+    callVarAngle s = abs $ (flip remD) 180 $ callVar s
 
 rotateQ axis thetaDeg v = rotate q v
   where
