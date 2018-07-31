@@ -8,19 +8,14 @@
 module Main where
 
 import           Options.Applicative
-import           Text.Pandoc.JSON
 import Data.Semigroup
 
-import System.IO (getContents)
 import Data.List.Split (splitOn)
 import Language.Fortran.Parser.Utils (readReal)
 import Data.Maybe (fromJust)
 import qualified Data.Map.Strict as M (fromList,lookup,Map)
-import Data.Tree (Tree(Node),drawTree)
 import Data.Sequence (fromList,(|>),Seq,index)
 import Data.Foldable (toList)
-import qualified Numeric.LinearAlgebra as HM (norm_2,scale,cross,toList,dot)
-import qualified Numeric.LinearAlgebra.Data as HM (fromList,fromRows,Vector,disps)
 import Linear.Quaternion
 import Linear.V3
 import Linear.Metric (norm)
