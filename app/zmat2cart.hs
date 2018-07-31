@@ -25,6 +25,7 @@ import Linear.Quaternion
 import Linear.V3
 import Linear.Metric (norm)
 import Linear.Vector
+import Text.Printf (printf)
 
 deg2rad deg = deg * pi / 180
 
@@ -47,7 +48,7 @@ main = do
 --    putStrLn $ drawTree $ fmap show (Node 1 [Node 2 [], Node 3 []])
 
 showVec :: V3 Double -> String
-showVec (V3 a b c) = unwords $ map show [a,b,c]
+showVec (V3 a b c) = unwords $ map (printf "%.6f") [a,b,c]
 
 
 showCart (nm,vec) = unwords $ [nm,  showVec vec]
@@ -83,10 +84,10 @@ genCart vMap v0 d1@(dih,v1) (x:xs) res = genCart vMap v0 d1 xs $ res |> fromZMat
   where
     fromZMat :: [String] -> (String, V3 Double)
     fromZMat [s1] = (s1,v0)  -- C1
-    fromZMat [s2a,_,r2] = (s2a, (callVarR r2) *^ (vUnity v1))  -- C2
+    fromZMat [s2a,_,r2] = (s2a, (callVar r2) *^ (vUnity v1))  -- C2
     fromZMat [s3a,r3ref,r3,a3ref,a3] =
       let ca3 = callVarAngle a3   -- C3
-          cr3 = callVarR r3
+          cr3 = callVar r3
           [v_i,v_j] =
             map (snd . (index res) . floor . (+ (-1)) . fromJust . readReal)
               [r3ref,a3ref]  :: [V3 Double]
@@ -95,57 +96,29 @@ genCart vMap v0 d1@(dih,v1) (x:xs) res = genCart vMap v0 d1 xs $ res |> fromZMat
           vrQ = v_i ^+^ (rotateQ (V3 0 0 1) ca3 vV)
        in (s3a, vrQ)
     fromZMat (sNa:rNref:rNs:aNref:aNs:dNref:dNs:_) = -- C4
-      let rtp@[rni,teta,phi] = zipWith ($) [callVarR,callVarAngle,callVarDih] [rNs,aNs,dNs]
+      let rtp@[rni,teta,phi] = zipWith ($) [callVar,callVarAngle,callVar] [rNs,aNs,dNs]
           [va_i,va_j,va_k] =
             map (snd . (index res) . floor . (+ (-1)) . fromJust . readReal)
               [rNref,aNref,dNref]  :: [V3 Double]
-          vAxis = va_j ^-^ va_i
-          vV = va_k ^-^ va_i
-          v_jk = va_k ^-^ va_j
           v_ij = va_j ^-^ va_i
-          vn_ijk = vUnity $ cross vAxis v_jk
-          vA = (*^) rni $ rotateQ vn_ijk teta $ vAxis
-          vrQ = va_i ^+^ (rotateQ vAxis phi vA)
-           in (sNa,vA)
-{-
-          vb_ik  = vUnity $ va_k - va_i
-          vb_ij  = vUnity $ va_j - va_i
-          vb_ijk = HM.scale  (1/(sin teta)) $ HM.cross vb_ij vb_ik
-          vr_n   = (+) va_i
-                 $ HM.scale rni $ foldl (+) (HM.fromList [0,0,0])  [ HM.scale (cos teta) vb_ij
-                                            , HM.scale ((sin teta) * (cos phi)) (HM.cross vb_ijk vb_ij)
-                                            , HM.scale ((sin teta) * (sin phi) * (-1)) vb_ijk
-                                            ]
-          vV = va_k - va_j
-          vAxis = vUnity $ va_j - va_i  -- axis of rotation
-          vr_n_rodriguez = vV + foldl (+) (HM.fromList [0,0,0]) [ HM.scale (cos phi) vV
-                                                           , HM.scale (sin phi) $ HM.cross vR vV
-                                                           , HM.scale ((1 - (cos phi)) * (HM.dot vR vV)) vR
-                                                           ]
-          vV = va_k - va_j
-          vAxis = unit (va_j ^-^ va_i)  -- axis of rotation
-          vrQ = rotateQ vAxis phi vV
-       in (sNa, vrQ)
-                                                           -}
-                                                        --in (sNa, if (sNa /= "C5") then vr_n else va_i + vV)
-       --in (sNa, HM.fromList [crr,1,1] )
-    --fromZMat (sna:_) = (sna,HM.fromList [9,0,0])
-    --vUnity :: V3 Double -> V3 Double
-    --vUnity v = HM.scale (1/(HM.norm_2 v)) v
+          v_ik = va_k ^-^ va_i
+          vn_ijk = vUnity $ cross v_ij v_ik
+          q2 = axisAngle v_ij $ deg2rad phi
+          q1 = axisAngle vn_ijk $ deg2rad teta
+          totQ = q2 * q1 -- we do q1 first, then q2
+          vrQ = (*^) rni $ vUnity $ rotate totQ v_ij
+      in (sNa, va_i ^+^ vrQ)
     vUnity v = v ^/ (norm v)
     callVar :: String -> Double
     callVar s = fromJust $ M.lookup s vMap
-    callVarR s = callVar s
-    callVarDih s = deg2rad $ callVar s
-    --callVarAngle s = deg2rad $ abs $ (flip remD) 180 $ callVar s
     callVarAngle s = abs $ (flip remD) 180 $ callVar s
+
+remD a b = (fromIntegral $ rem (floor a) (floor b))
+
 
 rotateQ axis thetaDeg v = rotate q v
   where
     q = axisAngle axis $ deg2rad thetaDeg
-
-remD a b = (fromIntegral $ rem (floor a) (floor b))
--- remD a b = a - (fromIntegral $ rem (floor a) (floor b))
 
 type Angle = Double
 type Length = Double
