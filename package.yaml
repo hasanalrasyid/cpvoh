@@ -33,6 +33,7 @@ dependencies:
 - inline-c
 - vector
 - optparse-applicative # ---  needed by zmat2xyz
+- linear
 - fortran-src          # --- !needed by zmat2xyz
 
 library:
