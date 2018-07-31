@@ -34,49 +34,17 @@ main = do
 --    opts <- execParser withHelp
     z <- getContents
     let vInit0 = (V3 0 0 0) :: V3 Double
-    --let vInit0 = HM.fromList [0,0,0] :: V3 Double
     let dInit@(dInitDih,vInit1) =  (180, (V3 1 0 0)) :: (Double,V3 Double)
---    putStrLn $ show opts
     let (struct:vars:_) = map (filter (not . null)) $ splitOn [["Variables:"]] $ drop 5 $ map words $ lines z
         varMap = M.fromList $ map (\[a,b] -> (a, fromJust $ readReal b)) vars
     putStrLn $ show $ length struct
-    putStrLn "Judul---"
---    putStrLn $ show $ M.lookup "R6" varMap
+    putStrLn "DummyTitle"
     putStrLn $ unlines $ map showCart $ toList $ genCart varMap vInit0 dInit struct $ fromList []
---    putStrLn $ show $ genCartG varMap vInit0 dInit struct
-    -- putStrLn $ show $ genCart [0,0,0] [0,0,0] struct $ fromList []
---    putStrLn $ drawTree $ fmap show (Node 1 [Node 2 [], Node 3 []])
 
 showVec :: V3 Double -> String
 showVec (V3 a b c) = unwords $ map (printf "%.6f") [a,b,c]
 
-
 showCart (nm,vec) = unwords $ [nm,  showVec vec]
-
-{-
-type RefR a = ZCoord a
-type RefA a = ZCoord a
-type RefD a = ZCoord a
-
-data ZCoord a = Origin0 a
-                   | Origin1 a Length
-                   | Origin2 a (RefR a) Length (RefA a) Angle
-                   | NodeZ a (RefR a) Length (RefA a) Angle (RefD a) Dihedral
-                   deriving (Show, Eq)
-
-
-genCartG :: M.Map String Double -> V3 Double -> (Double,V3 Double) -> [[String]] -> ZCoord String
---genCartG _ _ _ [] res = res
---genCartG vMap v0 d1@(dih,v1) (x:xs) res = genCartG vMap v0 d1 xs $ insert res $ newNode x
-genCartG vMap v0 d1@(dih,v1) (x:xs) =  NodeZ "n1" ref1r 1.1 ref1a 120.0 ref1d 120.0
-  where ref1r = (Origin2 "or2"(Origin0 "or0") 1.5 (Origin1 "or1" 1.1) 120.0 )
-        ref1a = (Origin1 "or1" 1.1)
-        ref1d = (Origin0 "or0")
-
-ZCoord = Tuple String (V3 Double) deriving Show
-
-showZCoord (ZCoord (nm,vec)) = nm ++ "===" ++ (show vec)
--}
 
 genCart :: M.Map String Double -> V3 Double -> (Double,V3 Double) -> [[String]] -> Seq (String, V3 Double) -> Seq (String, V3 Double)
 genCart _ _ _ [] res = res
@@ -119,11 +87,6 @@ remD a b = (fromIntegral $ rem (floor a) (floor b))
 rotateQ axis thetaDeg v = rotate q v
   where
     q = axisAngle axis $ deg2rad thetaDeg
-
-type Angle = Double
-type Length = Double
-type Dihedral = Double
-
 
 
 data Opts = Opts {
