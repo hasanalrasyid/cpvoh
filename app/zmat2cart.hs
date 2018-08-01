@@ -32,15 +32,20 @@ main :: IO ()
 main = do
     opts <- execParser withHelp
     let vTranslation = v3fromList $ map (fromJust . readReal) $ words $ _translationVector opts
+        aRotRad = deg2rad $ fromJust $ readReal $ _rotationAngle opts
+        vRot = vUnity $ v3fromList $ map (fromJust . readReal) $ words $ _rotationAxis opts
     z <- getContents
     let vInit0 = (V3 0 0 0) :: V3 Double
-    let dInit@(dInitDih,vInit1) =  (180, (V3 1 0 0)) :: (Double,V3 Double)
-    let (struct:vars:_) = map (filter (not . null)) $ splitOn [["Variables:"]] $ drop 5 $ map words $ lines z
+        dInit@(dInitDih,vInit1) =  (180, (V3 1 0 0)) :: (Double,V3 Double)
+        (struct:vars:_) = map (filter (not . null)) $ splitOn [["Variables:"]] $ drop 5 $ map words $ lines z
         varMap = M.fromList $ map (\[a,b] -> (a, fromJust $ readReal b)) vars
+    let cart0 = genCart varMap vInit0 dInit struct $ fromList []
+    ---------------------------PRINTING-----------------------------
     putStrLn $ show $ length struct
     putStrLn "DummyTitle"
-    let cart0 = genCart varMap vInit0 dInit struct $ fromList []
-    putStrLn $ unlines $ map showCart $ map (\(s,v) -> (s, v ^+^ vTranslation)) $ toList cart0
+    putStrLn $ unlines $ map showCart
+      $ map (\(s,v) -> (s, (^+^) vTranslation $ (flip rotate) v $ axisAngle vRot aRotRad))
+      $ toList cart0
 
 showVec :: V3 Double -> String
 showVec (V3 a b c) = unwords $ map (printf "%.6f") [a,b,c]
@@ -77,11 +82,11 @@ genCart vMap v0 d1@(dih,v1) (x:xs) res = genCart vMap v0 d1 xs $ res |> fromZMat
           totQ = q2 * q1 -- we do q1 first, then q2
           vrQ = (*^) rni $ vUnity $ rotate totQ v_ij
       in (sNa, va_i ^+^ vrQ)
-    vUnity v = v ^/ (norm v)
     callVar :: String -> Double
     callVar s = fromJust $ M.lookup s vMap
     callVarAngle s = abs $ (flip remD) 180 $ callVar s
 
+vUnity v = v ^/ (norm v)
 remD a b = (fromIntegral $ rem (floor a) (floor b))
 
 
@@ -95,6 +100,8 @@ data Opts = Opts {
     _outDir       :: FilePath,
     _expression   :: String,
     _absolutePath :: Bool,
+    _rotationAngle :: String,
+    _rotationAxis :: String,
     _translationVector :: String
                  } deriving Show
 
@@ -107,10 +114,14 @@ optsParser = Opts
                             metavar "NAME" <>
                             help "name of Diagram value in Haskell snippet" <>
                             value "example")
-             <*> switch    (long "absolute" <> short 'a' <>
+             <*> switch    (long "absolute" <> short 'z' <>
                             help "output the name of Diagram in Haskell snippet as absolute path")
-             <*> strOption (long "translation-vector" <> short 't' <> metavar "TV"
-                            <> help "i j k vector/coordinate to move the molecule" <> value "0 0 0")
+             <*> strOption (long "rotation-angle" <> short 'a' <> metavar "DEGREE"
+                            <> help "rotational angle, in Degree, the default would be \"0\", if negative, put it inside double-tick, i.e. \"-32\"" <> value "0")
+             <*> strOption (long "rotation-axis" <> short 'r' <> metavar "\"x y z\""
+                            <> help "i j k vector for rotational axis, default would be z-axis, 0 0 1" <> value "0 0 1")
+             <*> strOption (long "translation-vector" <> short 't' <> metavar "\"x y z\""
+                            <> help "i j k vector/coordinate to move the system" <> value "0 0 0")
 
 withHelp :: ParserInfo Opts
 withHelp = info
