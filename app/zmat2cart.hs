@@ -21,12 +21,17 @@ import Linear.V3
 import Linear.Metric (norm)
 import Linear.Vector
 import Text.Printf (printf)
+import Linear.V as V
+import qualified Data.IntMap as IM
 
 deg2rad deg = deg * pi / 180
 
+v3fromList [a,b,c] = V3 a b c
+
 main :: IO ()
 main = do
---    opts <- execParser withHelp
+    opts <- execParser withHelp
+    let vTranslation = v3fromList $ map (fromJust . readReal) $ words $ _translationVector opts
     z <- getContents
     let vInit0 = (V3 0 0 0) :: V3 Double
     let dInit@(dInitDih,vInit1) =  (180, (V3 1 0 0)) :: (Double,V3 Double)
@@ -34,7 +39,8 @@ main = do
         varMap = M.fromList $ map (\[a,b] -> (a, fromJust $ readReal b)) vars
     putStrLn $ show $ length struct
     putStrLn "DummyTitle"
-    putStrLn $ unlines $ map showCart $ toList $ genCart varMap vInit0 dInit struct $ fromList []
+    let cart0 = genCart varMap vInit0 dInit struct $ fromList []
+    putStrLn $ unlines $ map showCart $ map (\(s,v) -> (s, v ^+^ vTranslation)) $ toList cart0
 
 showVec :: V3 Double -> String
 showVec (V3 a b c) = unwords $ map (printf "%.6f") [a,b,c]
@@ -88,7 +94,8 @@ data Opts = Opts {
     _outFormat    :: String,
     _outDir       :: FilePath,
     _expression   :: String,
-    _absolutePath :: Bool
+    _absolutePath :: Bool,
+    _translationVector :: String
                  } deriving Show
 
 optsParser :: Parser Opts
@@ -102,6 +109,8 @@ optsParser = Opts
                             value "example")
              <*> switch    (long "absolute" <> short 'a' <>
                             help "output the name of Diagram in Haskell snippet as absolute path")
+             <*> strOption (long "translation-vector" <> short 't' <> metavar "TV"
+                            <> help "i j k vector/coordinate to move the molecule" <> value "0 0 0")
 
 withHelp :: ParserInfo Opts
 withHelp = info
