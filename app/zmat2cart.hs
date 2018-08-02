@@ -12,7 +12,7 @@ import Data.Semigroup
 
 import Data.List.Split (splitOn)
 import Language.Fortran.Parser.Utils (readReal)
-import Data.Maybe (fromJust)
+import Data.Maybe (fromJust,fromMaybe)
 import qualified Data.Map.Strict as M (fromList,lookup,Map)
 import Data.Sequence (fromList,(|>),Seq,index)
 import Data.Foldable (toList)
@@ -22,7 +22,8 @@ import Linear.Metric (norm)
 import Linear.Vector
 import Text.Printf (printf)
 import Linear.V as V
-import qualified Data.IntMap as IM
+import Data.Char (isAlpha,toUpper)
+import Data.List (groupBy)
 
 deg2rad deg = deg * pi / 180
 
@@ -31,7 +32,11 @@ v3fromList [a,b,c] = V3 a b c
 main :: IO ()
 main = do
     opts <- execParser withHelp
-    putStrLn $ show opts
+--    putStrLn $ show opts
+    processZMatrix opts
+
+
+processZMatrix opts = do
     let vTranslation = v3fromList $ map (fromJust . readReal) $ words $ _translationVector opts
         aRotRad = deg2rad $ fromJust $ readReal $ _rotationAngle opts
         vRot = vUnity $ v3fromList $ map (fromJust . readReal) $ words $ _rotationAxis opts
@@ -41,17 +46,34 @@ main = do
         (struct:vars:_) = map (filter (not . null)) $ splitOn [["Variables:"]] $ drop 5 $ map words $ lines z
         varMap = M.fromList $ map (\[a,b] -> (a, fromJust $ readReal b)) vars
     let cart0 = genCart varMap vInit0 dInit struct $ fromList []
+        nAtoms = map (\x -> (fst $ head x, length x)) $ groupBy (\x y -> fst x == fst y)
+                 $ map (\(s,v) -> (upCase $ takeWhile isAlpha s,v)) $ toList cart0
+        atomicHeaders = mkHeaders nAtoms $ map words $ lines $ _cpvoAtHeads opts
     ---------------------------PRINTING-----------------------------
-    putStrLn $ show $ length struct
-    putStrLn "DummyTitle"
-    putStrLn $ unlines $ map showCart
+    let chosenFormat = if (_cpvoFormat opts) then cpvoFormat atomicHeaders else xyzFormat (length struct)
+    putStrLn $ unlines
+      $ chosenFormat
       $ map (\(s,v) -> (s, (^+^) vTranslation $ (flip rotate) v $ axisAngle vRot aRotRad))
       $ toList cart0
+
+mkHeaders :: [(String,Int)] -> [[String]] -> [(String,String)]
+mkHeaders nas lhs = let newLhs = map (\(s:nAt:_:ss) -> (s,(nAt,unwords ss))) lhs
+                        mkHead (x,nx) = (,) x $ case (lookup x newLhs) of
+                                             Just (n,a) -> unwords [ n, show nx, a]
+                                             Nothing -> unwords ["ERROR: HEADER FOR ATOM ", show x , " IS NOT DEFINED"]
+                                          in map mkHead nas
 
 showVec :: V3 Double -> String
 showVec (V3 a b c) = unwords $ map (printf "%.6f") [a,b,c]
 
 showCart (nm,vec) = unwords $ [nm,  showVec vec]
+
+upCase s = map toUpper s
+
+xyzFormat l c = (show l : "DummyTitle" : map showCart c)
+cpvoFormat atHeaders x = concat $ map (\x -> concat [[fromJust $ lookup (upCase $ fst $ head x) atHeaders] , map snd x])
+  $ groupBy (\(a,_) (b,_) -> a == b)
+  $ map (\(s,v) -> (takeWhile isAlpha s, showVec v)) x
 
 genCart :: M.Map String Double -> V3 Double -> (Double,V3 Double) -> [[String]] -> Seq (String, V3 Double) -> Seq (String, V3 Double)
 genCart _ _ _ [] res = res
@@ -95,7 +117,6 @@ rotateQ axis thetaDeg v = rotate q v
   where
     q = axisAngle axis $ deg2rad thetaDeg
 
-
 data Opts = Opts {
     _outFormat    :: String,
     _outDir       :: FilePath,
@@ -104,6 +125,7 @@ data Opts = Opts {
     _rotationAngle :: String,
     _rotationAxis :: String,
     _cpvoFormat :: Bool,
+    _cpvoAtHeads :: String,
     _translationVector :: String
                  } deriving Show
 
@@ -124,6 +146,9 @@ optsParser = Opts
                             <> help "i j k vector for rotational axis, default would be z-axis, 0 0 1" <> value "0 0 1")
              <*> switch    (long "cpvo" <> short 'c' <>
                help "output in CPVO format. Due to different preference in RATS, please provide your own header using -i. defaulted to False.")
+             <*> strOption (long "cpvo-atomic-headers" <> short 'd' <> metavar "FILENAME"
+                  <> help (unlines [ "file consisted of atomic data in CPVO format. defaulted as:"
+                                  , head defAtHeaders ]) <> value (unlines defAtHeaders))
              <*> strOption (long "translation-vector" <> short 't' <> metavar "\"x y z\""
                             <> help "i j k vector/coordinate to move the system, defaulted to 0 0 0" <> value "0 0 0")
 
@@ -132,3 +157,20 @@ withHelp = info
        (helper <*> optsParser)
        (fullDesc <> progDesc "interpret inline Haskell code to insert images in Pandoc output\nhttps://github.com/bergey/diagrams-pandoc"
        <> header "diagrams-pandoc - a Pandoc filter for inline Diagrams")
+
+defAtHeaders = [ "H   1 1  1.00 0.800   1.000   0.80  0.80  NZA NA ZV RCMAX PMASS RATS RATS1"
+               , "C   6 4  4.0  1.0    12.0000  1.33  1.33  NZA NA ZV RCMAX PMASS RATS RATS1"
+               , "N   7 2  5.0  1.0    14.007   1.3   1.3   NZA NA ZV RCMAX PMASS RATS RATS1"
+               , "O   8 6  6.00 1.000  15.999   1.3   1.3   NZA NA ZV RCMAX PMASS RATS RATS1"
+               , "Mg 12 6  8.00 1.000  24.305   1.7   1.7   NZA NA ZV RCMAX PMASS RATS RATS1"
+               , "Si 14 8  4.00 1.0    28.086   1.75  1.75  NZA NA ZV RCMAX PMASS RATS RATS1"
+               , "Ar 18 1  8.00 1.000  39.948   1.4   1.4   NZA NA ZV RCMAX PMASS RATS RATS1"
+               , "Co 27 2 17.0  1.0    58.9332  2.2   2.2   NZA NA ZV RCMAX PMASS RATS RATS1"
+               , "Sb 51 2 15.00 1.000 121.75000 2.500 2.500 NZA NA ZV RCMAX PMASS RATS RATS1"
+               , "Ba 56 7 10.00 1.000 137.327   2.6   2.6   NZA NA ZV RCMAX PMASS RATS RATS1"
+               , "Pt 78 1 10.0  1.0   195.09    2.32  2.32  NZA NA ZV RCMAX PMASS RATS RATS1"
+               , "Au 79 1 11.0  1.0   196.9665  2.7   2.7   NZA NA ZV RCMAX PMASS RATS RATS1"
+               , "Ti 81 2 13.0  1.0   204.37    2.5   2.5   NZA NA ZV RCMAX PMASS RATS RATS1"
+               , "Pb 82 4 14.0  1.0   207.2     2.5   2.5   NZA NA ZV RCMAX PMASS RATS RATS1"
+               ]
+
