@@ -31,6 +31,7 @@ v3fromList [a,b,c] = V3 a b c
 main :: IO ()
 main = do
     opts <- execParser withHelp
+    putStrLn $ show opts
     let vTranslation = v3fromList $ map (fromJust . readReal) $ words $ _translationVector opts
         aRotRad = deg2rad $ fromJust $ readReal $ _rotationAngle opts
         vRot = vUnity $ v3fromList $ map (fromJust . readReal) $ words $ _rotationAxis opts
@@ -102,6 +103,7 @@ data Opts = Opts {
     _absolutePath :: Bool,
     _rotationAngle :: String,
     _rotationAxis :: String,
+    _cpvoFormat :: Bool,
     _translationVector :: String
                  } deriving Show
 
@@ -120,8 +122,10 @@ optsParser = Opts
                             <> help "rotational angle, in Degree, the default would be \"0\", if negative, put it inside double-tick, i.e. \"-32\"" <> value "0")
              <*> strOption (long "rotation-axis" <> short 'r' <> metavar "\"x y z\""
                             <> help "i j k vector for rotational axis, default would be z-axis, 0 0 1" <> value "0 0 1")
+             <*> switch    (long "cpvo" <> short 'c' <>
+               help "output in CPVO format. Due to different preference in RATS, please provide your own header using -i. defaulted to False.")
              <*> strOption (long "translation-vector" <> short 't' <> metavar "\"x y z\""
-                            <> help "i j k vector/coordinate to move the system" <> value "0 0 0")
+                            <> help "i j k vector/coordinate to move the system, defaulted to 0 0 0" <> value "0 0 0")
 
 withHelp :: ParserInfo Opts
 withHelp = info
