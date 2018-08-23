@@ -43,6 +43,7 @@ showTotPDOS allArgs = do
                           , jdTable
                           ]
   putStrLn rIntgAll
+  {-
     -------------------------------generating LaTex Representation------------------------
   resIntAll' <- markdownToTex rIntgAll
   let resIntAll = T.replace "\\}" "}"
@@ -51,6 +52,8 @@ showTotPDOS allArgs = do
                           "\\begin{longtable}[]{" ++ colAlign ++ "}"
                           , unlines $ tail $ lines $ T.unpack resIntAll'
                           ]
-  T.writeFile texFile resIntAll
+  -}
+
+  T.writeFile texFile $ T.pack rIntgAll
   putStrLn "====done===="
 

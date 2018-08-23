@@ -66,6 +66,8 @@ main = do
               $ groupBy (\(_,(s,_)) (_,(s',_)) ->  s == s')
               $ map (\(mp,b) -> ((* rydberg) $ last $ toList $ getY0 mp, b)) pdosAtAll
     let rs = unlines [ rs' , jdTable ]
+    T.writeFile texFile $ T.pack rs
+{-
     res' <- markdownToTex rs
     let res = T.replace "\\}" "}"
             $ T.replace "\\{" "{"
@@ -73,6 +75,7 @@ main = do
                                 , unlines $ tail $ lines $ T.unpack res'
                                 ]
     T.writeFile texFile res
+    -}
     putStrLn $ texFile ++ "=============done:t1dosEf.hs=========="
       where
         processCols [u,d] = [u,d,u+d]

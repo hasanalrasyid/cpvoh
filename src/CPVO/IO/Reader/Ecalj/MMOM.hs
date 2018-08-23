@@ -73,6 +73,7 @@ getMMOM allArgs@(texFile:jd:jdHead:colAlign:xr:ymax':wTot:tumpuk:invS:tailer:fol
                             rIntgAll'
                             , jdTable
                             ]
+    {-
     resIntAll' <- markdownToTex rIntgAll
     let resIntAll = T.replace "\\}" "}"
                   $ T.replace "\\{" "{" $ T.pack
@@ -82,5 +83,6 @@ getMMOM allArgs@(texFile:jd:jdHead:colAlign:xr:ymax':wTot:tumpuk:invS:tailer:fol
                             ]
     putStrLn rIntgAll
     T.putStrLn resIntAll
-    T.writeFile texFile resIntAll
+    -}
+    T.writeFile texFile $ T.pack rIntgAll
     putStrLn "===done CPVO.IO.Reader.Ecalj.MMOM: getMMOM ==="
