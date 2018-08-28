@@ -10,6 +10,7 @@ module Main where
 import           Options.Applicative
 import Data.Semigroup
 
+
 import Data.List.Split (splitOn)
 import Language.Fortran.Parser.Utils (readReal)
 import Data.Maybe (fromJust,fromMaybe)
@@ -24,7 +25,12 @@ import Text.Printf (printf)
 import Linear.V as V
 import Data.Char (isAlpha,toUpper)
 import Data.List (groupBy)
-
+import System.Directory (doesFileExist)
+-- linear-accelerate 0.6.0.0
+-- inv33 ternyata cuma ada di Data.Array.Accelerate.Linear.Matrix
+--import qualified Data.Array.Accelerate as A -- lift
+--import Data.Array.Accelerate.Linear.Matrix (inv33) -- inv33
+import Linear.Matrix -- inv33, M33
 deg2rad deg = deg * pi / 180
 
 v3fromList [a,b,c] = V3 a b c
@@ -32,14 +38,20 @@ v3fromList [a,b,c] = V3 a b c
 main :: IO ()
 main = do
     opts <- execParser withHelp
---    putStrLn $ show opts
-    genPrimitive opts
+    bOK <- doesFileExist $ _inputConVasp opts
+    if bOK then genPrimitive opts
+           else putStrLn "Error... input needed"
 
 
 genPrimitive opts = do
-  let vAConv = (V3 5.0770001411 0.0000000000 0.0000000000) :: V3 Double
-      vBConv = (V3 (-2.5385000706) 4.3968110972 0.0000000000) :: V3 Double
-      vCConv = (V3 0.0000000000 0.0000000000 13.9621000290) :: V3 Double
+  fCVasp <- readFile $ _inputConVasp opts
+  let sMir_Ref = _newBasisVectors opts
+  let (headerfCVasp,coordfCVasp) = splitAt 8 $ lines fCVasp
+  let a@[vAConv,vBConv,vCConv] = map v3fromLine $ drop 2 $ take 5 $ headerfCVasp
+      matConv2Origin = transpose $ V3 vAConv vBConv vCConv :: M33 Double
+      matOrigin2Conv = inv33 matConv2Origin
+
+      coordVCart = map v3fromLine coordfCVasp
       vRef = (V3 0.00000  0.00000  0.14523 ) :: V3 Double
       vAMir = (V3 0.33333  0.66667  0.52144) :: V3 Double
       vBMir = (V3 0.33333 (-0.33333)  0.52144) :: V3 Double
@@ -47,7 +59,21 @@ genPrimitive opts = do
       vAFracPrim = vAMir ^-^ vRef
       vPrim = map (getPrim vAConv vBConv vCConv)
             $ map ((flip (^-^)) vRef) [vAMir,vBMir,vCMir]
+  putStrLn $ unlines $ map show coordVCart
   putStrLn $ unlines $ map (showVec 4) vPrim
+  let coordVConv = map (matOrigin2Conv !*) coordVCart
+      iRef = 7
+      sA   = "12 -  7"
+      sB   = "12 - 10"     -- vB = 12 - 10
+      sC   = " 8 - 12"     -- vC =  8 - 12
+      vRef = coordVConv
+  let coordVCart' = map (matConv2Origin !*) coordVConv
+  putStrLn $ show matConv2Origin
+  putStrLn $ show $ head coordVCart
+  putStrLn $ unlines $ map show $ zip [1,2..] $ map (showVec 6) $ coordVCart ^-^ coordVCart'  -- dari sini transformasinya sudah benar tampaknya....
+  putStrLn $ unlines $ map show $ zip [1,2..] $ map (showVec 6) $ coordVConv
+
+v3fromLine l = v3fromList $ map (fromJust . readReal) $ words l
 
 getPrim :: V3 Double -> V3 Double -> V3 Double -> V3 Double -> V3 Double
 getPrim vAConv vBConv vCConv (V3 xiF yiF ziF) =
@@ -145,6 +171,8 @@ data Opts = Opts {
     _rotationAxis :: String,
     _cpvoFormat :: Bool,
     _cpvoAtHeads :: String,
+    _inputConVasp :: FilePath,
+    _newBasisVectors :: String,
     _translationVector :: String
                  } deriving Show
 
@@ -168,6 +196,10 @@ optsParser = Opts
              <*> strOption (long "cpvo-atomic-headers" <> short 'd' <> metavar "FILENAME"
                   <> help (unlines [ "file consisted of atomic data in CPVO format. defaulted as:"
                                   , head defAtHeaders ]) <> value (unlines defAtHeaders))
+             <*> strOption (long "input-vasp" <> short 'i' <> metavar "VASP"
+                            <> help "VASP file input, in Cartesian, not Niggli-reduced" <> value "input.vasp")
+             <*> strOption (long "new-basis" <> short 'n' <> metavar "NEW_BASIS_VECTORS"
+                            <> help "new basis vectors pairs in format \"m1-r1,m2-r2,m3-r3\"" <> value "")
              <*> strOption (long "translation-vector" <> short 't' <> metavar "\"x y z\""
                             <> help "i j k vector/coordinate to move the system, defaulted to 0 0 0" <> value "0 0 0")
 
