@@ -35,33 +35,43 @@ dependencies:
 - optparse-applicative # ---  needed by zmat2xyz
 - linear
 - fortran-src          # --- !needed by zmat2xyz
+  #- cryptohash           # ---  temporary needed
+  #- base16-bytestring           # --- !temporary needed
+  #- bytestring           # --- !temporary needed
 
 library:
-  source-dirs: src
+  source-dirs     : src
+  c-sources       :
+    - ./c-src/A_C.cpp
+  include-dirs    :
+    - ./c-src
+    - ./cpp-includes
+  extra-libraries : stdc++
+  ghc-options     : -Wall -pgmlg++
 
 executables:
   test:
     #c-sources:           app/test.c
     #cc-options:          -Wall -O2
     #extra-libraries:     -lm
-    extra-lib-dirs: foreign/lib
-    extra-libraries: test
-    main:                test.hs
-    source-dirs:         app
-    ghc-options:
+    extra-lib-dirs  : foreign/lib
+    extra-libraries : test
+    main            : test.hs
+    source-dirs     : app
+    ghc-options     :
     - -threaded
     - -rtsopts
     - -with-rtsopts=-N
-    dependencies:
+    dependencies    :
     - hascpvo
     - text-format
     - split
     - text
   
   f1:
-    main:                f1PdosTotAtomicMajorOrbitalVert.hs
-    source-dirs:         app
-    ghc-options:
+    main        : f1PdosTotAtomicMajorOrbitalVert.hs
+    source-dirs : app
+    ghc-options :
     - -threaded
     - -rtsopts
     - -with-rtsopts=-N
@@ -72,9 +82,9 @@ executables:
     - text
   
   t1:
-    main:                t1dosEf.hs
-    source-dirs:         app
-    ghc-options:
+    main        : t1dosEf.hs
+    source-dirs : app
+    ghc-options :
     - -threaded
     - -rtsopts
     - -with-rtsopts=-N
@@ -85,9 +95,9 @@ executables:
     - text
   
   t2:
-    main:                t2DOSintegration.hs
-    source-dirs:         app
-    ghc-options:
+    main        : t2DOSintegration.hs
+    source-dirs : app
+    ghc-options :
     - -threaded
     - -rtsopts
     - -with-rtsopts=-N
@@ -98,9 +108,9 @@ executables:
     - text
 
   t3:
-    main:                t3atomicMagneticMoment.hs
-    source-dirs:         app
-    ghc-options:
+    main        : t3atomicMagneticMoment.hs
+    source-dirs : app
+    ghc-options :
     - -threaded
     - -rtsopts
     - -with-rtsopts=-N
@@ -111,9 +121,9 @@ executables:
     - text
 
   x:
-    main:                Main.hs
-    source-dirs:         app
-    ghc-options:
+    main        : Main.hs
+    source-dirs : app
+    ghc-options :
     - -threaded
     - -rtsopts
     - -with-rtsopts=-N
@@ -122,9 +132,9 @@ executables:
 
 tests:
   tf1:
-    main:                f1.hs
-    source-dirs:         test
-    ghc-options:
+    main        : f1.hs
+    source-dirs : test
+    ghc-options :
     - -threaded
     - -rtsopts
     - -with-rtsopts=-N
@@ -134,9 +144,9 @@ tests:
     - split
     - text
   hascpvo-test:
-    main:                Spec.hs
-    source-dirs:         test
-    ghc-options:
+    main        : Spec.hs
+    source-dirs : test
+    ghc-options :
     - -threaded
     - -rtsopts
     - -with-rtsopts=-N
