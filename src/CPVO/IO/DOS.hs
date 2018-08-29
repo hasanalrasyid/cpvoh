@@ -11,17 +11,15 @@ import CPVO.IO
 import CPVO.IO.Reader.Ecalj.Common
 import CPVO.IO.Reader.Ecalj.DOS
 
-import Data.Char
 import qualified Data.Text as T
 import qualified Data.Text.IO as T
-import Data.List.Split
 import Data.List
-import Data.Maybe
 import Numeric.LinearAlgebra
 
 showTotPDOS :: [String] -> IO ()
 showTotPDOS allArgs = do
-  (invStat, ymax, xmin, xmax, ctrlAtoms, uniqAtoms, ctrlAtomicAOs,jdTable, cleanedJdHead, foldernya, tailer, colAlign, texFile) <- readHeaderData allArgs
+--  (invStat, ymax, xmin, xmax, ctrlAtoms, uniqAtoms, ctrlAtomicAOs,jdTable, cleanedJdHead, foldernya, tailer, colAlign, texFile) <- readHeaderData allArgs
+  Right (invStat, _ , _ , _ , _ , _ , ctrlAtomicAOs,jdTable, cleanedJdHead, foldernya, tailer, _ , texFile) <- readHeaderData allArgs
 
   -------------------------------generating DOS data------------------------
   totalDOS <- readTotalDOSText tailer foldernya
@@ -35,9 +33,9 @@ showTotPDOS allArgs = do
         $ (:) cleanedJdHead
         $ nub
         $ (:) (concat [ ["Total"]
-                      , map (showDouble 2) $ (\[a,b] -> [a,b,a-b,a+b]) $ intgTot
+                      , map (showDouble (2::Integer)) $ (\[a,b] -> [a,b,a-b,a+b]) $ intgTot
                       ])
-        $ map (\(iu,id,(_,(j,_))) -> j:map (showDouble 2) [iu,id,iu-id,iu+id] ) integratedAtPDOS
+        $ map (\(iu,idn,(_,(j,_))) -> j:map (showDouble (2::Integer)) [iu,idn,iu-idn,iu+idn] ) integratedAtPDOS
   let rIntgAll = unlines  [
                           rIntgAll'
                           , jdTable

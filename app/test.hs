@@ -5,49 +5,13 @@
 {-# LANGUAGE QuasiQuotes #-}
 {-# LANGUAGE TemplateHaskell #-}
 
-import CPVO.IO
-import CPVO.Numeric
-import CPVO.IO.DOS
-import CPVO.IO.Fortran
-import CPVO.IO.Reader.Ecalj.DOS
-import CPVO.IO.Reader.Ecalj.Common
-import CPVO.IO.Reader.Ecalj.MMOM
-import CPVO.IO.Plot.Gnuplot.DOS
-import CPVO.IO.Plot.Gnuplot.Common
-import CPVO.IO.Plot.PDOS
-
 import qualified Language.C.Inline as C
 import qualified Data.Vector.Storable as V
 import qualified Data.Vector.Storable.Mutable as VM
 import           Data.Monoid ((<>))
 import           Foreign.C.Types
 
-import qualified Control.Foldl as Fold
-import System.Environment (getArgs)
-import qualified Data.Text as T
-import qualified Data.Text.IO as T
-import qualified Data.Text.Read as T
-import qualified Data.Text.Format as T
-import Text.Printf
-import Data.List.Split
-import Data.List
-import Data.Maybe
-import Data.Either
 -------------------------
-
-import Numeric.LinearAlgebra
-import Numeric.LinearAlgebra.Devel (readMatrix)
-import Numeric.LinearAlgebra.Data hiding (find)
-import Data.Char
-import System.Process
-import System.IO
--------------------------
-import Text.PrettyPrint.Boxes hiding ((<>),cols,rows)
-import qualified Text.PrettyPrint.Boxes as TB
-import Data.List
--------------------------
-import Text.Pandoc
-import Control.Monad ((<=<),forM)
 
 foreign import ccall safe "add" f_add :: IO ()
 
@@ -56,11 +20,13 @@ C.include "<stdio.h>"
 C.include "<math.h>"
 C.verbatim "extern double add_ (int *, double [], int *, double []);"
 
+test1 :: CInt -> IO ()
 test1 n = do
   s <- readAndSum n
   [C.exp| void{ printf( "SuminC: %.2d\n", $(int s)) } |]
   putStrLn $ "Sum: " ++ show s
 
+readAndSum :: CInt -> IO CInt
 readAndSum n =
   [C.block| int {
       int i, sum = 0, tmp;
@@ -95,6 +61,7 @@ sumVec vec = [C.block| double {
     return sum;
   } |]
 
+main :: IO ()
 main = do
   putStrLn "=======start: Test========="
   -- V.thaw will copy the vector
@@ -103,8 +70,10 @@ main = do
   print x
   putStrLn "=======end  : Test========="
 
+rydberg :: Double
 rydberg=1/13.605
 
+testArgs :: [String]
 testArgs = concat [ [ "GWtable01.tex"
                    , "Total and partial DOS at *E*~F~ in states/eV/unit-cell, QSGW method."
                    , "|*N*$_\\uparrow$(*E*~F~)|*N*$_\\downarrow$(*E*~F~)|*N*(*E*~F~)"
@@ -112,6 +81,7 @@ testArgs = concat [ [ "GWtable01.tex"
                    , words "@{}lSSS@{} -9:6 25 T o flipSpin nico2o4 extendedNiCo2O4.normal/nico2o4.6G10 Ni:Ni#3d:6:7:9:8:10 Co:Co#3d:6:7:8:9:10 O:O#2p:3:4:5"
                    ]
 
+{-
 main1 = do
 --    allArgs <- getArgs
     (invStat, ymax, xmin, xmax, ctrlAtoms, uniqAtoms, ctrlAtomicAOs,jdTable, jdHeads, foldernya, tailer, colAlign, texFile) <- readHeaderData testArgs
@@ -142,4 +112,4 @@ main1 = do
         processCols [u,d] = [u,d,u+d]
         sumIt x [] = x
         sumIt [u0,d0] ([up,dn]:xs) = sumIt [u0+up,d0+dn] xs
-
+-}

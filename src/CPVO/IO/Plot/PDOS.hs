@@ -2,13 +2,12 @@
 {-# LANGUAGE Strict #-}
 {-# LANGUAGE FlexibleContexts #-}
 {-# LANGUAGE TypeApplications #-}
+{-# LANGUAGE ScopedTypeVariables #-} -- untuk let x :: Int = 5
 
 module CPVO.IO.Plot.PDOS
   where
 
-import CPVO.Numeric
 import CPVO.IO
-import CPVO.IO.DOS
 import CPVO.IO.Plot.Gnuplot.DOS
 import CPVO.IO.Plot.Gnuplot.Common
 
@@ -22,27 +21,21 @@ import System.Process as SP
   --          flipSpin : flip it
   --          otherwise: keep it straight
   --
+plotPDOS :: [String] -> IO ()
 plotPDOS (fOut:xr:yr:over:invStat:poskey':total:foldernya:daftarOrbital) = do
   putStrLn "====start: CPVO.IO.Plot.PDOS===="
 -------------draft---------------------------------------
   let poskey = unwords $ splitOn ":" poskey'
-  let xticsnya = "-100,2,100"
-  let yticsnya = concat ["-", yr, "+5, 5,", yr, "-5"]
-  -- yticsnya = (echo $yr | awk '{print "-"$1"+5,5,"$1"-5"}')
   tailer <- fmap (T.unpack . last . T.splitOn "." . head ) $ inshell2text $ unwords [ "ls", foldernya ++ "/dos.tot.*" ]
-  let mainTitle = ""
   putStrLn $ show poskey
   -- tailer="$(ls "${dirs[0]}" |grep dos.tot | awk -F '.' '{print $NF}' )"
   -- over=$3
   -- mkdir -p plots
-  let tempGLT = genTOP [xr,yr,poskey]
   let ender = genEnder
-  let pre = "plot "
   let akhiran = unlines [ ender
                         , "system 'cd plots && rm -f tmp*jpg && for i in {eps,pdf,png}; do mv hasil.$i " ++ fOut ++ ".$i; done '"
                         ]
   let plotplate = "set format x '% h'; set xtics format '' nomirror ; unset xlabel; unset ylabel "
-  let urutan = 0
   let topTitle' = (last $ T.splitOn "." $ T.pack foldernya)
   let topTitle = case topTitle' of
                       "0GGA" -> "GGA(PBE)"
@@ -67,4 +60,5 @@ plotPDOS (fOut:xr:yr:over:invStat:poskey':total:foldernya:daftarOrbital) = do
 
   ------------------------------
   putStrLn "====finish: CPVO.IO.Plot.PDOS===="
-
+plotPDOS _ =
+  putStrLn "====Error: CPVO.IO.Plot.PDOS : incomplete Arguments===="

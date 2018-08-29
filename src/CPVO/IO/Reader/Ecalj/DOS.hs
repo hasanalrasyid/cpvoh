@@ -14,10 +14,9 @@ import Text.Printf as TP
 import Numeric.LinearAlgebra
 import qualified System.Process as SP
 import System.IO (openTempFile,hClose)
-import qualified Data.Text as T
-import qualified Data.Text.IO as T
 -- ===============================================
 
+getPDOS' :: Matrix Double -> String -> [Int] -> [String] -> IO (Matrix Double)
 getPDOS' res _ _ []  = return res
 getPDOS' res tmpf intAOs (nf:nfiles)  = do
   _ <- SP.system $ "mkdir -p temp; more +2 " ++ nf ++ " > " ++ tmpf
@@ -35,11 +34,16 @@ readPDOS invStat tailer dir ctrlAtAOs = do
   sequence
     $ (\x ->  [f a | f <- (readPDOS' invStat dir tailer), a <- x]) ctrlAtAOs
 
+readPDOS' :: Double -> String -> String -> [(Int, (String, (String, [Int])))
+         -> IO (Matrix Double, (Int, (String, (Int, String))))]
 readPDOS' invStat foldernya tailer = fmap (readOnePDOS foldernya tailer) $ flipBy invStat [1,2] -- spin 1 up n spin 2 down
 
 --readPDOS :: String -> String -> Int -> ((String, String, [Int]), [(Int, String)]) -> IO (Int,String, Matrix Double)
 --readPDOS ::(spin, (noAt, (symAt, (labelAt, PDOS :: Matrix Double))))
-readOnePDOS theFolder tailing spin inp@(noAt,(symAt,(labelAt,intAOs))) = do
+readOnePDOS :: String
+            -> String -> Int -> (Int, (String, (String, [Int])))
+            -> IO (Matrix Double, (Int, (String, (Int, String))))
+readOnePDOS theFolder tailing spin (noAt,(symAt,(labelAt,intAOs))) = do
   let namaFao = theFolder ++ "/dos.isp" ++ show spin ++ ".site" ++ (TP.printf "%03d" noAt) ++ "." ++ tailing
   (tmpfile,h) <- openTempFile "temp" "aEDOS.suffix"
   hClose h

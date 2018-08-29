@@ -1,6 +1,7 @@
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE Strict #-}
 {-# LANGUAGE FlexibleContexts #-}
+{-# LANGUAGE ScopedTypeVariables #-}
 
 module CPVO.IO (
     showDouble,
@@ -12,14 +13,11 @@ module CPVO.IO (
     hashSpaceText
   ) where
 
-import CPVO.Numeric
-
 import Text.Printf as TP
 import Text.Pandoc
 import qualified Data.Text as T
 
 import Turtle hiding (sortBy,char,text)
-import qualified Control.Foldl as Fold
 import Data.List
 
 import Text.PrettyPrint.Boxes hiding ((<>),cols,rows)
@@ -42,25 +40,21 @@ main1 = do
 --    CPU.run $ dotp (use xs) (use ys)
 -}
 
-showDouble _ 0 = show 0
-showDouble i x = (flip TP.printf) x $ concat ["%0.",show i,"f"]
+showDouble :: Integer -> Double -> String
+showDouble _ (0 :: Double) = show (0 :: Integer)
+showDouble i a = (flip TP.printf) a $ concat ["%0.",show i,"f"]
 
 
 -- Prosesor untuk pandoc
 -- LaTeX writer...
 --
+markdownToTex :: String -> IO Text
 markdownToTex str = runIOorExplode
               $ ((writeLaTeX def) <=< (readMarkdown def{
                   readerExtensions = foldr enableExtension pandocExtensions [Ext_tex_math_dollars, Ext_raw_tex, Ext_table_captions]
                                                        }))
               $ T.pack $ str
 --------------------------------------------------------------------------------------
-shell2list :: MonadIO io =>  Shell a->  io [a]
-shell2list xx = fold (xx) Fold.list
-
-shell2text :: MonadIO io => Shell Line -> io [Text]
-shell2text xx = fmap (map lineToText) $ shell2list xx
-
 inshell2text :: MonadIO io => String -> io [Text]
 inshell2text xx = do
   (_,a,_) <- shellStrictWithErr ( T.pack xx) empty
@@ -69,42 +63,36 @@ inshell2text xx = do
 --------------------------------------------------------------------------------------
 -- Text Formatting
 --
-pad width x = x ++ replicate k ' '
-  where k = width - length x
+pad :: Int -> String -> String
+pad width xx = xx ++ replicate k ' '
+  where k = width - length xx
 
 fmt_column :: [String] -> Box
 fmt_column items = vcat left (addHead $ map (text.pad width) items)
   where width = maximum $ map length items
-        hsep = text ( replicate width '-' )
-        addHead (a:as) = a:hsep:as
+        hsepp = text ( replicate width '-' )
+        addHead (a:as) = a:hsepp:as
+        addHead _ = [hsepp]
 
 --table :: [[String]] -> Box
-rendertable rs = render $ vsep TB.<> hcat top (intersperse vsep (map fmt_column columns)) TB.<> vsep
+rendertable :: [[String]] -> String
+rendertable rs = render $ vsepp TB.<> hcat top (intersperse vsepp (map fmt_column columnss)) TB.<> vsepp
   where
-    columns = transpose rs
+    columnss = transpose rs
     nrows = length rs
-    vsep =  vcat left $ map char ("|" ++ (concat $ replicate nrows "|"))
+    vsepp =  vcat left $ map char ("|" ++ (concat $ replicate nrows "|"))
 
-caller :: T.Text
-caller = T.unlines  [ "callme with : genPDOSAtomicOrbital.hs [Atom:Orbital]                tailer    folder"
-                    , "ex.         : genPDOSAtomicOrbital.hs 'O NiTd:2:3:4:5 CoTd:2:3:4:5' nico2o4   nico2o4.invB.0GGA"
-                    ]
-
+hashSpaceText :: String -> String
 hashSpaceText t = T.unpack $ T.replace "#" " " $ T.pack t
 
 ---------------------------------------------------------------------------
-getAllPDOS (s,n,pd) = do
-  let pdTot = getY0 pd
-  return (s,n,pdTot)
 
+takeAOs :: (Int, String) -> [(String,String,[Int])] -> [(Int, (String, (String, [Int])))]
 takeAOs _ [] = []
-takeAOs k@(x,i) (ao@(n,l,m):as) = if (i == n) then [(x,(n,(l,m)))]
-                                            else takeAOs k as
+takeAOs k@(xx,i) ((n,ll,m):as) = if (i == n) then [(xx,(n,(ll,m)))]
+                                           else takeAOs k as
 
-takeAO i [] = []
-takeAO i (a@(n,_,_):as) = if (i == n) then [a]
-                                     else takeAO i as
-
-flipBy invStat x = if (invStat < 0) then reverse x
-                                    else x
+flipBy :: Double -> [Int] -> [Int]
+flipBy invStat xx = if (invStat < 0) then reverse xx
+                                     else xx
 

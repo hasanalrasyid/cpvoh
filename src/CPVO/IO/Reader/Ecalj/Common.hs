@@ -6,17 +6,16 @@ module CPVO.IO.Reader.Ecalj.Common where
 import CPVO.Numeric
 import CPVO.IO
 
-import System.Environment (getArgs)
 import qualified Data.Text as T
 import qualified Data.Text.IO as T
-import qualified Data.Text.Read as T
 import Data.List.Split
 import Data.List
 import Data.Maybe
-import Data.Either (rights)
 import Numeric.LinearAlgebra
 import Data.Char (ord)
+import Control.Monad.IO.Class (MonadIO)
 
+readCtrlAtoms :: String -> String -> IO [T.Text]
 readCtrlAtoms tailer foldernya = do
     fCtrl <- T.readFile $ foldernya ++ "/ctrl." ++ tailer
     return $ catMaybes
@@ -29,42 +28,57 @@ readCtrlAtoms tailer foldernya = do
       $ T.lines fCtrl
 
     -- uniqAtoms : [(count,noFirstAtom,atomicSymbol)]
+type CntN1Atsym = (Int,Int,T.Text)
+readUniqAtoms :: [T.Text] -> [CntN1Atsym]
 readUniqAtoms allAtoms =
           map (\a -> (length a, snd $ head a, fst $ head a)) $
           groupBy (\a b -> fst a == fst b) $
-          zip  allAtoms [1..]
+          zip  allAtoms ([1..] :: [Int])
 
 -- daftarCetak :: [((notCtk,((count,noFrstAtom,atomSymbol),label  ,[    AOs ])),spin)]
 -- daftarCetak :: [(( 1    ,((  2  ,    13    ,  "Ni"    ),"Ni#2p",["3","4","5"])),1)]
-genDaftarCetak listAtoms tailer foldernya aos = do
+genDaftarCetak :: [CntN1Atsym] -> String -> String -> [String]
+               -> IO [((Integer,(CntN1Atsym,String,[String])),Integer)]
+genDaftarCetak listAtoms _ _ aos = do
   return $ [ (i,j) | i <- daftarCetak' listAtoms , j <- [1,2] ]
   where
-    daftarCetak' listAtoms = zip [1..]
-                      $ map (\(a,label,b) -> (head $ filter (\(_,_,aa) -> aa == (T.pack a)) listAtoms , label, b) )
+    daftarCetak' lAtoms = zip [1..]
+                      $ map (\(a,label,b) -> (head $ filter (\(_,_,aa) -> aa == (T.pack a)) lAtoms , label, b) )
                       $ map ( (\(a:label:as) -> (a,label,as)) . splitOn ":") aos
 
 -- ctrlAtomicAOs :: [(atomNumber,(atomSym,(label ,[intAOs])))]
 -- ctrlAtomicAOs :: [(    1     ,(  "O"  ,("O#2p",[ 2,3,4])))]
 -- ctrlAtomicAOs :: 14 atoms
+genCtrlAtomicAOs :: [(String, String, [Int])]
+                 -> [T.Text]
+                 -> [(Int, (String, (String, [Int])))]
 genCtrlAtomicAOs aoSet ctrlAtoms =  map (\x -> (head $ takeAOs x aoSet))
           $ concat
           $ groupBy (\(_,a:_) (_,b:_) -> (ord a) == (ord b))
           $ zip ([1..]::[Int]) $ map T.unpack ctrlAtoms
 
 -- totalDOS :: Matrix Double [ energy, DOSspinUp, DOSspinDown ]
+readTotalDOSText :: String -> String -> IO (Matrix Double)
 readTotalDOSText tailer foldernya = loadMatrix $ foldernya ++ "/dos.tot." ++ tailer
 
 -----------------------------------------------------------
+getLastLLMF :: MonadIO io =>
+  String -> io [T.Text]
 getLastLLMF foldernya = inshell2text $ concat ["ls -laht ", foldernya,"/llmf{,_gwscend.*} | head -1|awk '{print $NF}'" ]
 -----------------------------------------------------------
 
-readHeaderData (texFile:jd:jdHead:colAlign:xr:ymax':wTot:tumpuk:invS:tailer:foldernya:aos) = do
+--readHeaderData (texFile:jd:jdHead:colAlign:xr:ymax':wTot::invS:tailer:foldernya:aos) = do
+readHeaderData :: [String]
+               -> IO ( Either String ( Double, Double, Double, Double, [T.Text]
+                      , [CntN1Atsym]
+                      , [(Int, (String, (String,[Int])))]
+                      , String, [String], String, String, String, String))
+readHeaderData (texFile:jd:jdHead:colAlign:xr:ymax':_:_:invS:tailer:foldernya:aos) = do
   -------------------------------reading data------------------------
     let invStat = if (invS == "flipSpin") then (-1) else 1
     let ymax = read ymax' :: Double
     let [xmin,xmax] = map (read :: String -> Double) $ splitOn ":" xr
     ctrlAtoms <- readCtrlAtoms tailer foldernya
-    let nAtom = length ctrlAtoms
     let jdHeads = splitOn "|" jdHead
     let uniqAtoms = readUniqAtoms ctrlAtoms
     putStrLn $ show ctrlAtoms
@@ -97,6 +111,8 @@ readHeaderData (texFile:jd:jdHead:colAlign:xr:ymax':wTot:tumpuk:invS:tailer:fold
 --    let integratedAtomicPDOS = integrateAtomicPDOS pdosAtomicPilihan
 --    putStrLn $ show $ integratedAtomicPDOS
     putStrLn "===done:readHeaderData@CPVO/IO/Reader/Common ====================="
-    return
+    return $ Right
       (invStat, ymax, xmin, xmax, ctrlAtoms, uniqAtoms, ctrlAtomicAOs,jdTable, jdHeads, foldernya, tailer, colAlign, texFile)
 
+readHeaderData _ = return $ Left
+  "===Error:readHeaderData@CPVO/IO/Reader/Common wrong args ========"

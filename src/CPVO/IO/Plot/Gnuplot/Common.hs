@@ -79,11 +79,12 @@ warna = [
 -- shell2list xx = fold (xx) Fold.list
 --
 -- diracDelta f x = if ( f x == 0 ) then 1 else 0
-
+genLineType :: String
 genLineType = unlines
         $ map (\(nomor,warnanya) -> Text.Printf.printf "set style line %d lt %d lw 1 lc rgb '%s'" nomor nomor warnanya )
         $ zip [1..(length warna)] warna
 
+genTOP :: [String] -> String
 genTOP (xr:yr:poskey:_) = unlines [ "#!/home/aku/bin/gnuplot -persist"
                  , "reset"
                  , "set term post portrait enhanced color font 'Times-Roman'"
@@ -136,14 +137,16 @@ genTOP (xr:yr:poskey:_) = unlines [ "#!/home/aku/bin/gnuplot -persist"
                    where
                      xticsnya = "-100,2,100"
                      yticsnya = concat ["-", yta, ", ",show subytics,",", yta ]
-                     subytics = (\x -> x - (mod x 5)) $ floor $ (10 + (read yr :: Double))/3
+                     subytics = (\x -> x - (mod x (5::Int))) $ floor $ (10 + (read yr :: Double))/3
                      yta = show $ subytics * 3
+genTOP _ = "Error: genTOP @CPVO/IO/Plot/Gnuplot/Common.hs:142"
 
-
+genEnder :: String
 genEnder = unlines [ "unset multiplot"
                    , "system 'cd plots && ps2eps tmp.ps && epstool --copy -b --quiet tmp.eps hasil.eps && epstopdf hasil.eps && pdftocairo -r 150 -singlefile -jpeg hasil.pdf tmp && convert tmp.jpg -rotate 0 hasil.png && rm -f tmp.jpg tmp.eps'"
                    ]
 
+totalHeader :: String
 totalHeader = unlines [ "###########Total Header#############"
                       , "set label 'Total' at 2.5,15 font 'Bold,8'"
                       , "set label 'spin-up' at 2.5,7.5 font ',8'"

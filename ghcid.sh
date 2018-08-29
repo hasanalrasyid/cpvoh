@@ -3,4 +3,4 @@ if [ -z "$1" ]; then
 else
   tipe=$1
 fi
-ghcid -c "stack ghci --main-is hascpvo:${tipe} --only-main"
+LD_LIBRARY_PATH=./foreign/lib:$LD_LIBRARY_PATH ghcid -c "stack ghci --main-is hascpvo:${tipe} --only-main --ghci-options -Wall"
