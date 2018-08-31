@@ -1,2 +1,2 @@
 #!/bin/bash
-stack exec ./build.sh
+stack exec ./build.shake.sh
