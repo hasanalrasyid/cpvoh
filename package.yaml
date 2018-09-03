@@ -35,6 +35,7 @@ dependencies:
 - optparse-applicative # ---  needed by zmat2xyz
 - linear
 - fortran-src          # --- !needed by zmat2xyz
+- shake
   #- cryptohash           # ---  temporary needed
   #- base16-bytestring           # --- !temporary needed
   #- bytestring           # --- !temporary needed
