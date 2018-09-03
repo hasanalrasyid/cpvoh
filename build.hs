@@ -18,14 +18,20 @@ main = shakeArgs shakeOptions{shakeFiles="_build"} $ do
         removeFilesAfter "_build" ["//*"]
 
     "_build/run" <.> exe %> \out -> do
-        cs <- getDirectoryFiles "c-shake" ["//*.c"]
-        liftIO $ putStrLn $ show cs
-        let os = ["_build" </> "c-shake" </> c -<.> "o" | c <- cs]
+        cs <- getDirectoryFiles "" ["cpp-src//*.cpp","c-src//*.c"]
+        let os = ["_build" </> c -<.> "o" | c <- cs]
+        putNormal $ show os
+        --let ocpps = ["_build" </> "cpp-src" </> c -<.> "o" | c <- cpps]
         need os
+        --need ocpps
         cmd "gcc -o" [out] os
 
     "_build//*.o" %> \out -> do
-        let c = dropDirectory1 $ out -<.> "c"
+        let (cmp,fSrc) = case (takeDirectory1 $ dropDirectory1 out) of
+                       "c-src" -> ("gcc",dropDirectory1 $ out -<.> "c")
+                       "cpp-src" -> ("g++",dropDirectory1 $ out -<.> "cpp")
+                       "f-src" -> ("gfortran",dropDirectory1 $ out -<.> "cpp")
+                       otherwise -> ("echo compiler undefined","")
         let m = out -<.> "m"
-        () <- cmd "gcc -c" [c] "-o" [out] "-MMD -MF" [m]
+        cmd_ cmp "-Icpp-includes -c" [fSrc] "-o" [out] "-MMD -MF" [m]
         needMakefileDependencies m
