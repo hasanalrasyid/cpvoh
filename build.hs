@@ -1,3 +1,9 @@
+#!/usr/bin/env stack
+--stack --resolver lts-11.3  --install-ghc runghc --stack-yaml /home/aku/kanazawa/dev/hascpvo/stack.yaml
+
+
+
+
 import Development.Shake
 import Development.Shake.Command
 import Development.Shake.FilePath
