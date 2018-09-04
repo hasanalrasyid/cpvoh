@@ -9,6 +9,9 @@ import Development.Shake.Command
 import Development.Shake.FilePath
 import Development.Shake.Util
 
+cxxFlags = "-Wall -Werror -g -static -Icpp-includes"
+linkFlags = "-lstdc++"
+
 main :: IO ()
 main = shakeArgs shakeOptions{shakeFiles="_build"} $ do
     want ["_build/run" <.> exe]
@@ -24,7 +27,7 @@ main = shakeArgs shakeOptions{shakeFiles="_build"} $ do
         --let ocpps = ["_build" </> "cpp-src" </> c -<.> "o" | c <- cpps]
         need os
         --need ocpps
-        cmd "gcc -o" [out] os
+        cmd "gcc -o" [out] os linkFlags
 
     "_build//*.o" %> \out -> do
         let (cmp,fSrc) = case (takeDirectory1 $ dropDirectory1 out) of
@@ -33,5 +36,5 @@ main = shakeArgs shakeOptions{shakeFiles="_build"} $ do
                        "f-src" -> ("gfortran",dropDirectory1 $ out -<.> "cpp")
                        otherwise -> ("echo compiler undefined","")
         let m = out -<.> "m"
-        cmd_ cmp "-Icpp-includes -c" [fSrc] "-o" [out] "-MMD -MF" [m]
+        cmd_ cmp cxxFlags "-c" [fSrc] "-o" [out] "-MMD -MF" [m]
         needMakefileDependencies m
