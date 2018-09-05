@@ -1,3 +1,5 @@
+*.hi
+*_stub.h
 _shake
 _build
 foreign

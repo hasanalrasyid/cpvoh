@@ -10,7 +10,8 @@ import Development.Shake.FilePath
 import Development.Shake.Util
 
 cxxFlags = "-cpp -Wall -Werror -g -static -Iincludes"
-linkFlags = "-lstdc++ -lgfortran"
+linkFlags = "-lstdc++ -lgfortran -lm"
+ghcFlags = "-O"
 
 main :: IO ()
 main = shakeArgs shakeOptions{shakeFiles="_build"} $ do
@@ -21,18 +22,22 @@ main = shakeArgs shakeOptions{shakeFiles="_build"} $ do
         removeFilesAfter "_build" ["//*"]
 
     "_build/run" <.> exe %> \out -> do
-        cs <- getDirectoryFiles "" ["f-src//*.f90","cpp-src//*.cpp","c-src//*.c"]
+        cs <- getDirectoryFiles "" ["src/Test.hs","f-src//*.f90","cpp-src//*.cpp","c-src//*.c"]
         let os = ["_build" </> c -<.> "o" | c <- cs]
         putNormal $ show os
         need os
-        cmd "gcc -o" [out] os linkFlags
+        cmd "ghc -no-hs-main -o" [out] os linkFlags
 
     "_build//*.o" %> \out -> do
         let (cmp,fSrc) = case (takeDirectory1 $ dropDirectory1 out) of
                        "c-src" -> ("gcc",dropDirectory1 $ out -<.> "c")
                        "cpp-src" -> ("g++",dropDirectory1 $ out -<.> "cpp")
                        "f-src" -> ("gfortran",dropDirectory1 $ out -<.> "f90")
+                       "src" -> ("ghc",dropDirectory1 $ out -<.> "hs")
                        otherwise -> ("echo compiler undefined","")
         let m = out -<.> "m"
-        cmd_ cmp cxxFlags "-c" [fSrc] "-o" [out] "-MMD -MF" [m]
-        needMakefileDependencies m
+        case cmp of
+          "ghc" -> cmd_ cmp ghcFlags "-c" [fSrc] "-o" [out]
+          otherwise -> do
+            cmd_ cmp cxxFlags "-c" [fSrc] "-o" [out] "-MMD -MF" [m]
+            needMakefileDependencies m
