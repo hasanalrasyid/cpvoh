@@ -20,6 +20,6 @@ int main (int argc, char** argv){
   A_static_function();
   _A a = A_new();
   A_member_function(a);
-  printf("=========%f",z);
+  printf("@call_a.c=========%f",z);
   return 0;
 }
