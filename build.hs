@@ -1,7 +1,7 @@
 #!/usr/bin/env stack
 --stack --resolver lts-11.3  --install-ghc runghc --stack-yaml /home/aku/kanazawa/dev/hascpvo/stack.yaml
 
-
+-- {-# LANGUAGE OverloadedStrings #-}
 
 
 import Development.Shake
@@ -9,7 +9,7 @@ import Development.Shake.Command
 import Development.Shake.FilePath
 import Development.Shake.Util
 
-cxxFlags = "-cpp -Wall -Werror -g -static -Iincludes"
+cxxFlags = "-cpp -Wall -g -static -Iincludes"
 linkFlags = "-lstdc++ -lgfortran -lm"
 ghcFlags = "-O"
 
@@ -35,9 +35,15 @@ main = shakeArgs shakeOptions{shakeFiles="_build"} $ do
                        "f-src" -> ("gfortran",dropDirectory1 $ out -<.> "f90")
                        "src" -> ("ghc",dropDirectory1 $ out -<.> "hs")
                        otherwise -> ("echo compiler undefined","")
-        let m = out -<.> "m"
+            m = out -<.> "m"
+            incDir = fmap (</> "includes") takeDirectory1 out
+        putNormal $ show out
+        Stdout incGHC' <- cmd "ghc-pkg field rts include-dirs"
+        let incGHC = last $ words $ incGHC'
         case cmp of
-          "ghc" -> cmd_ cmp ghcFlags "-c" [fSrc] "-o" [out]
+          "ghc" -> do
+--            putNormal $ show (incGHC :: String)
+            cmd_ cmp ghcFlags "-c" [fSrc] "-o" [out] "-stubdir" [ incDir ]
           otherwise -> do
-            cmd_ cmp cxxFlags "-c" [fSrc] "-o" [out] "-MMD -MF" [m]
+            cmd_ cmp cxxFlags "-c" [fSrc] "-o" [out] "-MMD -MF" [m] $ concat ["-I",incDir," -I",incGHC]
             needMakefileDependencies m

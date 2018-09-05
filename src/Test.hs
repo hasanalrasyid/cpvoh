@@ -7,6 +7,7 @@
 module Test where
 
 import Foreign
+import Foreign.C
 --import Foreign.Ptr
 --
 -- import CPVO.Numeric
@@ -44,16 +45,21 @@ import Foreign
 --import Control.Monad ((<=<),forM)
 
 
-foreign export ccall sumRootsInH :: Ptr Int -> Ptr Double -> Ptr Double -> IO ()
+foreign export ccall sumRootsInH :: Ptr Int -> Ptr CDouble -> Ptr CDouble -> IO ()
+foreign export ccall hiHask :: IO ()
 
-sumRootsInH :: Ptr Int -> Ptr Double -> Ptr Double -> IO ()
+hiHask :: IO ()
+hiHask = putStrLn "=====HASK======"
+
+sumRootsInH :: Ptr Int -> Ptr CDouble -> Ptr CDouble -> IO ()
 sumRootsInH n' xs' result = do
   n <- peek n'
+  putStrLn $ "============" ++ (show n)
   xs <- peekArray n xs'
   poke result $ sumRoots xs
   return ()
 
-sumRoots :: [Double] -> Double
+sumRoots :: [CDouble] -> CDouble
 sumRoots xs = sum (map sqrt xs)
 
 testArgs :: [String]
