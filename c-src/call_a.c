@@ -7,6 +7,7 @@ extern double add_ (int*,double*,int*,double*);
 
 
 int main (int argc, char** argv){
+  hs_init(&argc,&argv);
   double ar1[4]={1.0, 2.0, 3.0, 4.0};
   double ar2[4]={5.0, 6.0, 7.0, 8.0};
   int ifile = 0;
@@ -25,7 +26,6 @@ int main (int argc, char** argv){
   A_member_function(a);
   printf("@call_a.c===called from C======%f\n",z);
   printf("=====but me first====\n");
-  hs_init(&argc,&argv);
   sumRootsInH(&x,ar1,&z);
   //printf("@call_a.c===called sumRootsInH from C======%f",z);
   hiHask();
