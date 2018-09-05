@@ -1,4 +1,4 @@
-shake: clean
+shake: 
 	./build.hs
 #	stack exec ./build.shake.sh
 
