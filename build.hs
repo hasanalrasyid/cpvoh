@@ -10,7 +10,7 @@ import Development.Shake.FilePath
 import Development.Shake.Util
 
 cxxFlags = "-cpp -Wall -Werror -g -static -Iincludes"
-linkFlags = "-lstdc++"
+linkFlags = "-lstdc++ -lgfortran"
 
 main :: IO ()
 main = shakeArgs shakeOptions{shakeFiles="_build"} $ do
@@ -21,7 +21,7 @@ main = shakeArgs shakeOptions{shakeFiles="_build"} $ do
         removeFilesAfter "_build" ["//*"]
 
     "_build/run" <.> exe %> \out -> do
-        cs <- getDirectoryFiles "" ["f-src//*.f*","cpp-src//*.cpp","c-src//*.c"]
+        cs <- getDirectoryFiles "" ["f-src//*.f90","cpp-src//*.cpp","c-src//*.c"]
         let os = ["_build" </> c -<.> "o" | c <- cs]
         putNormal $ show os
         need os
