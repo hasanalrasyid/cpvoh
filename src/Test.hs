@@ -4,32 +4,13 @@
 {-# LANGUAGE ForeignFunctionInterface #-}
 
 
-module Test where
+module Test (
+    hiHask
+  , sumRootsInH
+  ) where
 
-import Foreign
-import Foreign.C
---import Foreign.Ptr
---
--- import CPVO.Numeric
--- import CPVO.IO
--- import CPVO.IO.Reader.Ecalj.Common
---
---
---
---
--- import qualified Control.Foldl as Fold
--- import System.Environment (getArgs)
--- import qualified Data.Text as T
--- import qualified Data.Text.IO as T
--- import qualified Data.Text.Read as T
--- import qualified Data.Text.Format as T
--- import Text.Printf
--- import Data.List.Split
--- import Data.List
--- import Data.Maybe
--- import Data.Either
--- -------------------------
---
+import Foreign -- Ptr
+import Foreign.C -- CDouble
 -- import Numeric.LinearAlgebra
 -- import Numeric.LinearAlgebra.Devel (readMatrix)
 -- import Numeric.LinearAlgebra.Data hiding (find)

@@ -14,7 +14,7 @@ linkFlags = "-lstdc++ -lgfortran -lm"
 ghcFlags = "-O"
 
 main :: IO ()
-main = shakeArgs shakeOptions{shakeFiles="_build"} $ do
+main = shakeArgs shakeOptions{shakeFiles="_build",shakeChange=ChangeDigest} $ do
     want ["_build/run" <.> exe]
 
     phony "clean" $ do
@@ -22,11 +22,14 @@ main = shakeArgs shakeOptions{shakeFiles="_build"} $ do
         removeFilesAfter "_build" ["//*"]
 
     "_build/run" <.> exe %> \out -> do
-        cs <- getDirectoryFiles "" ["src/Test.hs","f-src//*.f90","cpp-src//*.cpp","c-src//*.c"]
+        cs <- getDirectoryFiles "" ["f-src//*.f90","cpp-src//*.cpp","c-src//*.c"]
+        hs <- getDirectoryFiles "" ["src//*.hs"]
         let os = ["_build" </> c -<.> "o" | c <- cs]
+        let ohs = ["_build" </> c -<.> "o" | c <- hs]
         putNormal $ show os
         need os
-        cmd "ghc -no-hs-main -o" [out] os linkFlags
+        need hs
+        cmd "ghc -no-hs-main -o" [out] os hs linkFlags
 
     "_build//*.o" %> \out -> do
         let (cmp,fSrc) = case (takeDirectory1 $ dropDirectory1 out) of
@@ -42,8 +45,7 @@ main = shakeArgs shakeOptions{shakeFiles="_build"} $ do
         let incGHC = last $ words $ incGHC'
         case cmp of
           "ghc" -> do
---            putNormal $ show (incGHC :: String)
-            cmd_ cmp ghcFlags "-c" [fSrc] "-o" [out] "-stubdir" [ incDir ]
+            cmd_ cmp ghcFlags "-c" [fSrc] "-o" [out] "-stubdir" [incDir]
           otherwise -> do
             cmd_ cmp cxxFlags "-c" [fSrc] "-o" [out] "-MMD -MF" [m] $ concat ["-I",incDir," -I",incGHC]
             needMakefileDependencies m
