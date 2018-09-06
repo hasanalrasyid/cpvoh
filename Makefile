@@ -6,4 +6,4 @@ clean:
 	rm -rf _build
 
 test:
-	stack build hascpvo:exe:test
+	stack build cpvoh:exe:test

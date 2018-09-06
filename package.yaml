@@ -1,6 +1,6 @@
-name:                hascpvo
+name:                cpvoh
 version:             0.1.0.0
-github:              "githubuser/hascpvo"
+github:              "githubuser/cpvoh"
 license:             BSD3
 author:              "Hasan Al Rasyid"
 maintainer:          "hasan@compscience.itb.ac.id"
@@ -17,7 +17,7 @@ extra-source-files:
 # To avoid duplicated efforts in documentation and dealing with the
 # complications of embedding Haddock markup inside cabal files, it is
 # common to point users to the README.md file.
-description:         Please see the README on GitHub at <https://github.com/githubuser/hascpvo#readme>
+description:         Please see the README on GitHub at <https://github.com/githubuser/cpvoh#readme>
 
 dependencies:
 - base >= 4.7 && < 5
@@ -64,7 +64,7 @@ executables:
     - -rtsopts
     - -with-rtsopts=-N
     dependencies    :
-    - hascpvo
+    - cpvoh
     - text-format
     - split
     - text
@@ -77,7 +77,7 @@ executables:
     - -rtsopts
     - -with-rtsopts=-N
     dependencies:
-    - hascpvo
+    - cpvoh
     - text-format
     - split
     - text
@@ -90,7 +90,7 @@ executables:
     - -rtsopts
     - -with-rtsopts=-N
     dependencies:
-    - hascpvo
+    - cpvoh
     - text-format
     - split
     - text
@@ -103,7 +103,7 @@ executables:
     - -rtsopts
     - -with-rtsopts=-N
     dependencies:
-    - hascpvo
+    - cpvoh
     - text-format
     - split
     - text
@@ -116,7 +116,7 @@ executables:
     - -rtsopts
     - -with-rtsopts=-N
     dependencies:
-    - hascpvo
+    - cpvoh
     - text-format
     - split
     - text
@@ -129,7 +129,7 @@ executables:
     - -rtsopts
     - -with-rtsopts=-N
     dependencies:
-    - hascpvo
+    - cpvoh
 
 tests:
   tf1:
@@ -140,11 +140,11 @@ tests:
     - -rtsopts
     - -with-rtsopts=-N
     dependencies:
-    - hascpvo
+    - cpvoh
     - text-format
     - split
     - text
-  hascpvo-test:
+  cpvoh-test:
     main        : Spec.hs
     source-dirs : test
     ghc-options :
@@ -152,7 +152,7 @@ tests:
     - -rtsopts
     - -with-rtsopts=-N
     dependencies:
-    - hascpvo
+    - cpvoh
     - text-format
     - split
     - text
