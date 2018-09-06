@@ -12,6 +12,7 @@ module CPVO.IO.Fortran (
 --import Data.Maybe (fromJust)
 --import qualified Language.C.Inline as C
 
+loadFile :: IO ()
 loadFile = do
   putStrLn "=======done : loadFile@CPVO.IO.Fortran"
 

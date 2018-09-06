@@ -42,12 +42,12 @@ dependencies:
 
 library:
   source-dirs     : src
-  c-sources       :
-    - ./c-src/A_C.cpp
-  include-dirs    :
-    - ./c-src
-    - ./cpp-includes
-  extra-libraries : stdc++
+  #  c-sources       :
+  #  - ./c-src/A_C.cpp
+  #include-dirs    :
+  #  - ./c-src
+  #  - ./cpp-includes
+  #extra-libraries : stdc++
   ghc-options     : -Wall -pgmlg++
 
 executables:
