@@ -14,7 +14,7 @@ linkFlags = "-lstdc++ -lgfortran -lm"
 ghcFlags = "-O"
 
 main :: IO ()
-main = shakeArgs shakeOptions{shakeFiles="_build",shakeChange=ChangeDigest} $ do
+main = shakeArgs shakeOptions{shakeFiles="_build"} $ do
     want ["_build/run" <.> exe]
 
     phony "clean" $ do
@@ -28,8 +28,8 @@ main = shakeArgs shakeOptions{shakeFiles="_build",shakeChange=ChangeDigest} $ do
         let ohs = ["_build" </> c -<.> "o" | c <- hs]
         putNormal $ show os
         need os
-        need hs
-        cmd "ghc -no-hs-main -o" [out] os hs linkFlags
+        need ohs
+        cmd "ghc -no-hs-main -o" [out] os ohs linkFlags
 
     "_build//*.o" %> \out -> do
         let (cmp,fSrc) = case (takeDirectory1 $ dropDirectory1 out) of

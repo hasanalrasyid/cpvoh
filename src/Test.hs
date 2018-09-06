@@ -3,7 +3,6 @@
 {-# LANGUAGE FlexibleContexts #-}
 {-# LANGUAGE ForeignFunctionInterface #-}
 
-
 module Test (
     hiHask
   , sumRootsInH
@@ -11,20 +10,6 @@ module Test (
 
 import Foreign -- Ptr
 import Foreign.C -- CDouble
--- import Numeric.LinearAlgebra
--- import Numeric.LinearAlgebra.Devel (readMatrix)
--- import Numeric.LinearAlgebra.Data hiding (find)
---import Data.Char
---import System.Process
---import System.IO
--------------------------
---import Text.PrettyPrint.Boxes hiding ((<>),cols,rows)
---import qualified Text.PrettyPrint.Boxes as TB
---import Data.List
--------------------------
---import Text.Pandoc
---import Control.Monad ((<=<),forM)
-
 
 foreign export ccall sumrootsinh_ :: Ptr Int -> Ptr CDouble -> Ptr CDouble -> IO ()
 foreign export ccall sumRootsInH :: Ptr Int -> Ptr CDouble -> Ptr CDouble -> IO ()
