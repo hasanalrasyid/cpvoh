@@ -29,7 +29,7 @@ main = shakeArgs shakeOptions{shakeFiles="_build"} $ do
         putNormal $ show os
         need os
         need ohs
-        cmd "ghc -no-hs-main -o" [out] os ohs linkFlags
+        cmd_ "ghc -no-hs-main -o" [out] os ohs linkFlags
 
     "_build//*.o" %> \out -> do
         let (cmp,fSrc) = case (takeDirectory1 $ dropDirectory1 out) of
