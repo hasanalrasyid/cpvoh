@@ -45,8 +45,13 @@ import Foreign.C
 --import Control.Monad ((<=<),forM)
 
 
+foreign export ccall sumrootsinh_ :: Ptr Int -> Ptr CDouble -> Ptr CDouble -> IO ()
 foreign export ccall sumRootsInH :: Ptr Int -> Ptr CDouble -> Ptr CDouble -> IO ()
+foreign export ccall hihask_ :: IO ()
 foreign export ccall hiHask :: IO ()
+
+hihask_ = hiHask
+sumrootsinh_ = sumRootsInH
 
 hiHask :: IO ()
 hiHask = putStrLn "=====HASK======"

@@ -4,5 +4,7 @@
       DIMENSION B(4), D(4)
       ADD = B(A) + D(C)
       call dbgstamp(0,' '// __FILE__ ,__LINE__)
+      call hiHask()
+      call sumRootsInH(A,B,ADD)
       RETURN
       END

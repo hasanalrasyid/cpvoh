@@ -24,7 +24,7 @@ int main (int argc, char** argv){
   A_static_function();
   _A a = A_new();
   A_member_function(a);
-  printf("@call_a.c===called from C======%f\n",z);
+  printf("@call_a.c===called from C====== z: %f\n",z);
   printf("=====but me first====\n");
   sumRootsInH(&x,ar1,&z);
   //printf("@call_a.c===called sumRootsInH from C======%f",z);
