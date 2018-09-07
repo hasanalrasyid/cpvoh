@@ -6,7 +6,7 @@ extern void dbgstamp_ (int*,char*,int*);
 extern double add_ (int*,double*,int*,double*);
 
 
-int main (int argc, char** argv){
+int main2 (int argc, char** argv){
   hs_init(&argc,&argv);
   double ar1[4]={1.0, 2.0, 3.0, 4.0};
   double ar2[4]={5.0, 6.0, 7.0, 8.0};
