@@ -9,10 +9,9 @@ import Development.Shake.Command
 import Development.Shake.FilePath
 import Development.Shake.Util
 
---cxxFlags = "-cpp -Wall -g -static -Iincludes -L/usr/lib64/openmpi3/lib -I/usr/include/openmpi3-x86_64"
---linkFlags = "-lstdc++ -lgfortran -lm -lmpi -L/usr/lib64/openmpi3/lib"
-cxxFlags = "-fno-underscoring -cpp -Wall -g -static -Iincludes -L/usr/lib64/openmpi3/lib"
-linkFlags = "-L/usr/lib64/openmpi3/lib -lmpi -lstdc++ -lgfortran -lm"
+-- -g for debugging information
+cxxFlags = "-cpp -Wall -Iincludes"
+linkFlags = "-pgml mpifort"
 ghcFlags = "-O"
 
 main :: IO ()
@@ -37,18 +36,12 @@ main = shakeArgs shakeOptions{ shakeFiles="_build"
         need ohs
         need os
         cmd_ "ghc -no-hs-main -o" [out] os ohs linkFlags
-        {-
-        Stdout lh' <- cmd "ghc-pkg field base include-dirs"
-        let libHs = takeDirectory $ last $ words $ lh'
-        cmd_ "mpifort -o" [out] os ohs $ linkFlags ++ libHs
-        -}
-
 
     "_build//*.o" %> \out -> do
         let (cmp,fSrc) = case (takeDirectory1 $ dropDirectory1 out) of
                        "c-src" -> ("mpicc",dropDirectory1 $ out -<.> "c")
                        "cpp-src" -> ("mpic++",dropDirectory1 $ out -<.> "cpp")
-                       "f-src" -> ("mpifort",dropDirectory1 $ out -<.> "f90")
+                       "f-src" -> ("mpif90",dropDirectory1 $ out -<.> "f90")
                        "src" -> ("ghc",dropDirectory1 $ out -<.> "hs")
                        otherwise -> ("echo compiler undefined","")
             m = out -<.> "m"
