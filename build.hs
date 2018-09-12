@@ -11,7 +11,7 @@ import Development.Shake.Util
 
 -- -g for debugging information
 cxxFlags = "-cpp -Wall -Iincludes"
-linkFlags = "-pgml mpifort"
+linkFlags = "-threaded -pgml mpifort"
 ghcFlags = "-O"
 
 main :: IO ()
