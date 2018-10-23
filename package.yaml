@@ -36,6 +36,7 @@ dependencies:
 - linear
 - fortran-src          # --- !needed by zmat2xyz
 - shake
+- template-haskell
   #- cryptohash           # ---  temporary needed
   #- base16-bytestring           # --- !temporary needed
   #- bytestring           # --- !temporary needed
@@ -68,7 +69,7 @@ executables:
     - text-format
     - split
     - text
-  
+
   f1:
     main        : f1PdosTotAtomicMajorOrbitalVert.hs
     source-dirs : app
@@ -81,7 +82,7 @@ executables:
     - text-format
     - split
     - text
-  
+
   t1:
     main        : t1dosEf.hs
     source-dirs : app
@@ -94,7 +95,7 @@ executables:
     - text-format
     - split
     - text
-  
+
   t2:
     main        : t2DOSintegration.hs
     source-dirs : app
