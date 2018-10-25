@@ -35,7 +35,7 @@ main = do
 genPrimitive opts = do
   fFort19 <- readFile $ _inFort19CPVO opts
   fCellDM <- readFile $ _inCellDM0 opts
-  let (s1:s2:s3:_)  = map (((flip (-)) 1) . floor . getReal)
+  let allSize@(s1:s2:s3:_)  = map (((flip (-)) 1) . floor . getReal)
                     $ wordsBy (=='x') $ _inSize opts
   let (ibrav:cell_a:_) = map getReal $ words fCellDM
       fort19 = getAtomCoords [] $ lines fFort19
@@ -49,6 +49,10 @@ genPrimitive opts = do
   let xnel = genXNEL 0 $ map words $ filter (isInfixOf "IS") h
   putStrLn $ "XNEL " ++ show xnel
   putStrLn $ show (floor $ xnel/2) ++ "*1.0"
+  putStrLn $ "allSize = " ++ show (map (+1) allSize)
+  let newCell_a = cell_a * fromIntegral (1 + maximum allSize)
+  putStrLn $ "cell_a * maxSize = " ++ show newCell_a
+  putStrLn $ unwords [show ibrav, show newCell_a, unwords $ drop 2 $ words fCellDM]
 
 genXNEL res [] = res
 genXNEL res ((_:sAts:sZV:_):ls) =
