@@ -1,8 +1,10 @@
--- This file has been generated from package.yaml by hpack version 0.28.2.
+cabal-version: 1.12
+
+-- This file has been generated from package.yaml by hpack version 0.31.0.
 --
 -- see: https://github.com/sol/hpack
 --
--- hash: 4fa16c6faca3fe718a40fe5eac9ff548c7bea19dbc9cd0035fbe2836a8d7f1fe
+-- hash: ccff46ecf8bbd02bb1c12373581ab9a710b206e987367cb9f22cec2f82a98718
 
 name:           cpvoh
 version:        0.1.0.0
@@ -15,10 +17,9 @@ copyright:      2018 Hasan Al Rasyid
 license:        BSD3
 license-file:   LICENSE
 build-type:     Simple
-cabal-version:  >= 1.10
 extra-source-files:
-    ChangeLog.md
     README.md
+    ChangeLog.md
 
 source-repository head
   type: git
@@ -55,6 +56,7 @@ library
     , process
     , shake
     , split
+    , template-haskell
     , text
     , text-format
     , turtle
@@ -83,6 +85,7 @@ executable f1
     , process
     , shake
     , split
+    , template-haskell
     , text
     , text-format
     , turtle
@@ -111,6 +114,7 @@ executable t1
     , process
     , shake
     , split
+    , template-haskell
     , text
     , text-format
     , turtle
@@ -139,6 +143,7 @@ executable t2
     , process
     , shake
     , split
+    , template-haskell
     , text
     , text-format
     , turtle
@@ -167,6 +172,7 @@ executable t3
     , process
     , shake
     , split
+    , template-haskell
     , text
     , text-format
     , turtle
@@ -199,6 +205,7 @@ executable test
     , process
     , shake
     , split
+    , template-haskell
     , text
     , text-format
     , turtle
@@ -226,6 +233,7 @@ executable x
     , process
     , shake
     , split
+    , template-haskell
     , text
     , text-format
     , turtle
@@ -254,6 +262,7 @@ test-suite cpvoh-test
     , process
     , shake
     , split
+    , template-haskell
     , text
     , text-format
     , turtle
@@ -283,6 +292,7 @@ test-suite tf1
     , process
     , shake
     , split
+    , template-haskell
     , text
     , text-format
     , turtle
