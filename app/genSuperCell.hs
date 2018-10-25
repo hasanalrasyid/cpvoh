@@ -15,7 +15,7 @@ import Data.Maybe (fromJust)
 import Linear.V3
 import Linear.Vector ((*^))
 import Text.Printf (printf)
-import Data.List (isInfixOf,findIndex)
+import Data.List (isInfixOf,findIndex,intercalate)
 import System.Directory (doesFileExist)
 import Linear.Matrix -- inv33, M33
 
@@ -44,7 +44,15 @@ genPrimitive opts = do
                         , y <- [0..s2]
                         , z <- [0..s3]
               ]
-  putStrLn $ unlines $ concat $ map (reverse . genMirror target mLatVec [] ) fort19
+  let h = concat $ map (reverse . genMirror target mLatVec [] ) fort19
+  putStrLn $ unlines $ filter (not . null) $ concat $ map lines h
+  let xnel = genXNEL 0 $ map words $ filter (isInfixOf "IS") h
+  putStrLn $ "XNEL " ++ show xnel
+  putStrLn $ show (floor $ xnel/2) ++ "*1.0"
+
+genXNEL res [] = res
+genXNEL res ((_:sAts:sZV:_):ls) =
+  genXNEL ((+) res $ foldr (*) 1.0 $ map getReal [sAts,sZV]) ls
 
 showVec n (V3 a b c) = unwords $ map (printf (concat ["  %.",show n,"f"])) [a,b,c]
 
