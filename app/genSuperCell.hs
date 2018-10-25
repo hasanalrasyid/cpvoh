@@ -11,7 +11,7 @@ import           Options.Applicative
 import Data.Semigroup
 
 
-import Data.List.Split (splitOn)
+import Data.List.Split (splitOn,splitWhen)
 import Language.Fortran.Parser.Utils (readReal)
 import Data.Maybe (fromJust,fromMaybe)
 import qualified Data.Map.Strict as M (fromList,lookup,Map)
@@ -24,13 +24,15 @@ import Linear.Vector (zero, (*^),(^/),(^+^),(^-^),(*^))
 import Text.Printf (printf)
 import Linear.V as V
 import Data.Char (isAlpha,toUpper)
-import Data.List (groupBy)
+import Data.List (groupBy,isInfixOf,findIndices,findIndex,intercalate)
 import System.Directory (doesFileExist)
 -- linear-accelerate 0.6.0.0
 -- inv33 ternyata cuma ada di Data.Array.Accelerate.Linear.Matrix
 --import qualified Data.Array.Accelerate as A -- lift
 --import Data.Array.Accelerate.Linear.Matrix (inv33) -- inv33
 import Linear.Matrix -- inv33, M33
+import Control.Monad (zipWithM_)
+
 deg2rad deg = deg * pi / 180
 
 v3fromList [a,b,c] = V3 a b c
@@ -42,12 +44,67 @@ main = do
     if bOK then genPrimitive opts
            else do
              putStrLn "Error... input needed"
-             putStrLn "genSurface.hs -i fort.19 -c celldm0"
+             putStrLn "genSurface.hs -i fort.19 -c celldm0 -s 2x2x1"
 
 
 genPrimitive opts = do
   fFort19 <- readFile $ _inFort19CPVO opts
-  print fFort19
+  fCellDM <- readFile $ _inCellDM0 opts
+
+  let (ibrav:cell_a:_) = map getReal $ words fCellDM
+      fort19 = getAtomCoords [] $ lines fFort19
+        {-
+  putStrLn $ show [ibrav,cell_a]
+  putStrLn $ unlines $ intercalate ["====="] fort19
+  -}
+  let mLatVec = genLatticeVector ibrav [cell_a]
+  --putStrLn $ show $ mLatVec
+      target =[ (x,y,z) | x <- [0..1]
+                        , y <- [0..1]
+                        , z <- [0..1]
+              ]
+  putStrLn $ unlines $ concat $ map (reverse . genMirror target mLatVec [] ) fort19
+
+--genMirror :: (Double,Double,Double) -> M33 Double -> String -> [String] -> String
+genMirror _ _ r [] = r
+genMirror t m res (a:cs)
+  | (isInfixOf "IS" a) = let
+                          (noAt:_:sisa) = words a
+                          numAts = (length t * length cs)
+                          newA = unwords (noAt:show numAts:sisa)
+                          in genMirror t m (newA:res) cs
+
+  | otherwise = let
+                  r' = map (showVec 6)
+                     $ map (genMirrorFromSingle m (v3fromLine a)) t
+                  ender = ("  " ++) $ unwords $ drop 3 $ words a
+                  r  = unlines $ map (++ ender) r'
+                 in genMirror t m (r:res) cs
+
+genMirrorFromSingle :: M33 Double -> V3 Double -> (Integer,Integer,Integer)
+                    -> V3 Double
+genMirrorFromSingle m@(V3 v1 v2 v3) l all@(n1,n2,n3) =
+  foldr (+) l $ zipWith calcMove [v1,v2,v3] [n1,n2,n3]
+  --putStrLn $ showVec 6 $ foldr (+) l $ zipWith calcMove [v1,v2,v3] [n1,n2,n3]
+    where
+      calcMove v' n' = fromIntegral n' *^ v'
+
+getAtomCoords res [] = res
+getAtomCoords res xa@(x:xs) =
+  let (r1,rs) = case (findIndex (isInfixOf "IS") xs) of
+                  Just a -> splitAt (a+1) xa
+                  Nothing -> (xa,[])
+  in getAtomCoords (r1:res) rs
+
+genLatticeVector :: Double -> [Double] -> M33 Double
+genLatticeVector 2 (a:_) = (a/2) *!! V3 (V3 0.0 1.0 1.0)
+                                        (V3 1.0 0.0 1.0)
+                                        (V3 1.0 1.0 0.0)
+
+
+getReal s = case readReal s of
+              Just x -> x
+              _ -> 0
     {-
   let sMir_Ref = _newBasisVectors opts
   let (headerfFort19,coordfFort19) = splitAt 8 $ lines fFort19
@@ -78,7 +135,7 @@ genPrimitive opts = do
   putStrLn $ unlines $ map show $ zip [1,2..] $ map (showVec 6) $ coordVConv
   -}
 
-v3fromLine l = v3fromList $ map (fromJust . readReal) $ words l
+v3fromLine l = v3fromList $ map (fromJust . readReal) $ take 3 $ words l
 
 getPrim :: V3 Double -> V3 Double -> V3 Double -> V3 Double -> V3 Double
 getPrim vAConv vBConv vCConv (V3 xiF yiF ziF) =
@@ -114,7 +171,7 @@ mkHeaders nas lhs = let newLhs = map (\(s:nAt:_:ss) -> (s,(nAt,unwords ss))) lhs
                                           in map mkHead nas
 
 showVec :: Integer -> V3 Double -> String
-showVec n (V3 a b c) = unwords $ map (printf (concat ["%.",show n,"f"])) [a,b,c]
+showVec n (V3 a b c) = unwords $ map (printf (concat ["  %.",show n,"f"])) [a,b,c]
 
 showCart (nm,vec) = unwords $ [nm,  showVec 6 vec]
 
