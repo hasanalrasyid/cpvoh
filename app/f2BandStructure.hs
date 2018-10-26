@@ -57,7 +57,9 @@ plotBand (fOut:useOldBw:judulUtama:yr:atomOs:daftarLengkap) = do
   let plotplate = T.intercalate ", " $ map genPlotPlate $ map (\x -> T.concat["'",x,"'"]) bandFiles
   valBand@(valBandX:valBandY:_) <- fmap (T.words . head) $ inshell2text $ unwords ["cat",concat [foldernya,"/bnd*spin*",spinnya],"|sed -e '/^#/d' |awk '{if ($3>0.1) print $2,$3}'|sort -k 2n|head -1"]
 
+  condBand <- inshell2text $ unwords ["cat", concat[foldernya,"/bnd*spin*",spinnya],"| sed -e '/^#/d' |awk '{if ($3<=0) print $2,$3}'|sort -k 2nr -u|sed -e '/^ *$/d'|head -1"]
   putStrLn $ "===valBand==" ++ show valBand
+  putStrLn $ "===conBand==" ++ show condBand
 
     {-
   putStrLn $ show plotplate
