@@ -13,14 +13,6 @@ import qualified Data.Text as T
 import qualified Data.Text.Read as T
 import Data.List -- intercalate
 import Text.Printf (printf)
---import qualified Control.Foldl as Fold
---import System.Environment (getArgs)
---import qualified Data.Text as T
---import qualified Data.Text.IO as T
---import qualified Data.Text.Format as T
---import Text.Printf
---import Data.List.Split
---import Data.Maybe
 import Data.Either -- rights
 import Numeric.LinearAlgebra.Data -- toLists, fromLists
 import Data.Maybe -- fromJust
@@ -52,29 +44,26 @@ plotBand (fOut:useOldBw:judulUtama:yr:atomOs:daftarLengkap) = do
   putStrLn "===start: plotBand===="
   tempDir <- (T.unpack . head) <$> inshell2text "mktemp -d -p ./"
   let ender = unlines [ "unset multiplot"
-                      , "system \"cd plots && epstopdf hasil.eps && pdftocairo -r 150 -singlefile -jpeg hasil.pdf tmp && convert tmp.jpg -rotate 90 hasil.jpg && rm -f tmp.jpg\""
+                      , "system \"cd " ++ tempDir ++ " && epstopdf hasil.eps && pdftocairo -r 150 -singlefile -jpeg hasil.pdf tmp && convert tmp.jpg -rotate 90 hasil.jpg && rm -f tmp.jpg\""
                       ]
   let isi = unlines [ "set datafile missing '-'"
-                    , "plot 0 lt -1 lc rgb 'black' title ''"
+                    , "plot 0 lt -1 lc rgb 'black' title '' , \\"
                     ]
   putStrLn ender
 
-
   putStrLn $ unlines daftarLengkap
-  let inp@(foldernya:spinnya:legend:_) = splitOn ":" $ head daftarLengkap
+  let (foldernya:spinnya:legend:_) = splitOn ":" $ head daftarLengkap
   bandFiles <- inshell2text $ unwords ["ls",concat[foldernya,"/bnd*spin",spinnya]]
-  --batasAtasX <- fmap (head . (drop 1) . T.words . head ) $ inshell2text $ unwords ["tail -1",T.unpack lastBandFile]
-  batasAtasX <- fmap (head . (drop 1) . last . filter (not . null). map T.words) $ inshell2text $ unwords ["tail -2",T.unpack $ last bandFiles]
+  --batasAtasX <- fmap (head . (drop 1) . last . filter (not . null). map T.words) $ inshell2text $ unwords ["tail -2",T.unpack $ last bandFiles]
   let daftarFolder = ":" ++ intercalate "@" [legend,spinnya,foldernya]
 
--- for i in $(ls $foldernya/bnd0*spin$spinnya);do
-  let subjudul = "title ''"
+--  let subjudul = "title ''"
   let plotplate = T.intercalate ", " $ map genPlotPlate $ map (\x -> T.concat["'",x,"'"]) bandFiles
   valBand@(valBandX:valBandY:_) <- fmap (words . T.unpack . head) $ inshell2text $ unwords ["cat",concat [foldernya,"/bnd*spin*",spinnya],"|sed -e '/^#/d' |awk '{if ($3>0.1) print $2,$3}'|sort -k 2n|head -1"]
 
-  condBand@(condBandX:condBandY:_) <- fmap (words . T.unpack . head) $ inshell2text $ unwords ["cat", concat[foldernya,"/bnd*spin*",spinnya],"| sed -e '/^#/d' |awk '{if ($3<=0) print $2,$3}'|sort -k 2nr -u|sed -e '/^ *$/d'|head -1"]
+  (_:condBandY:_) <- fmap (words . T.unpack . head) $ inshell2text $ unwords ["cat", concat[foldernya,"/bnd*spin*",spinnya],"| sed -e '/^#/d' |awk '{if ($3<=0) print $2,$3}'|sort -k 2nr -u|sed -e '/^ *$/d'|head -1"]
   putStrLn $ "===valBand==" ++ show (valBand :: [String])
-  putStrLn $ "===conBand==" ++ show (condBand :: [String])
+--  putStrLn $ "===conBand==" ++ show (condBand :: [String])
   --allBand <- fmap (runGAPband . head) $ inshell2text $ "cat " ++ concat [foldernya,"/bnd*spin*",spinnya]
   gapCoordBandGap <- fmap runGAPband $ inshell2text $ "cat " ++ concat [foldernya,"/bnd*spin*",spinnya]
   let bandGap = last $ words gapCoordBandGap
@@ -83,7 +72,7 @@ plotBand (fOut:useOldBw:judulUtama:yr:atomOs:daftarLengkap) = do
         if (bandGap == "0")
            then (Nothing,Nothing)
            else (,) (Just $ "0:" ++ bandGap ++ "@" ++ valBandY)
-                    (Just $ unlines [ concat ["label sprintf ('{/Symbol D}=%.2feV',"
+                    (Just $ unlines [ concat ["set label sprintf ('{/Symbol D}=%.2feV',"
                                       , bandGap
                                       , ") at (" ++ valBandX ++ "-0.55),"
                                       ,"(" ++ valBandY ++ "-0.4) font ',12'"
@@ -108,16 +97,21 @@ plotBand (fOut:useOldBw:judulUtama:yr:atomOs:daftarLengkap) = do
   (xrangeatas,ticksbaru) <- genBandTicks foldernya
   putStrLn $ "========" ++ show xrangeatas ++ "=====" ++ show ticksbaru
   writeFile (T.unpack tempGLT) $ genTEMPGLT tempDir judulUtama yr xrangeatas ticksbaru (fromJust arrow) isi plotplate2 ender
-    {-
-  putStrLn $ show plotplate
-  putStrLn $ show batasAtasX
-  putStrLn $ show daftarFolder
-  putStrLn $ show inp
--}
+  _ <- inshell2text $ "gnuplot " ++ T.unpack tempGLT
+  _ <- inshell2text $ unwords ["convert", tempDir ++ "/hasil.jpg"
+                              , "-fuzz 5% -trim +repage"
+                              , tempDir ++ "/hasil.jpg"
+                              ]
+  let target = map (\x -> unwords [ "mv"
+                                  , tempDir ++ "/hasil" ++ x
+                                  , fOut ++ x
+                                  ]) [".eps",".jpg"]
+  _ <- mapM inshell2text target
   putStrLn "===end  : plotBand===="
 
 plotBand _ = putStrLn "Error: complete arguments needed"
 
+genPBAND :: String -> String -> String -> String -> [String] -> IO T.Text
 genPBAND oldBw spin invStat atomNos foldernya = do
     let daftaratomOs =  map (splitOn "@") $ splitOn "-" atomNos
         daftarJudulSpinFolders = filter (/=[""]) $ map (splitOn "@") $ splitOn ":" $ unwords foldernya
@@ -183,7 +177,6 @@ genBandTicks foldernya = do
     namaTicks'' <- inshell2text $ unwords ["cat ",foldernya ++ "/syml.* "]
     let lTicks = (:) "0.0" $ map T.unpack $ filter (not . T.null) lTicks''
     let namaTicks =  map (\a -> if a == "Gamma" then "{/Symbol G}" else a) $ (map head $ filter (/=[]) $ map (snd . (splitAt 7) . words . T.unpack)  namaTicks'')
-    --putStrLn $ show $ (\a -> zip a $ ("0.0" ++ filter (/="") $ map T.unpack lTicks)) namaTicks
     return $ (,) (last lTicks)
            $ unwords $ intersperse "," $ map (\(a,b) -> unwords ["'"++a++"'",b]) $ zip  namaTicks lTicks
 
@@ -227,84 +220,6 @@ susunOrbs job ((urutan,((jumlah,nomor,nama),judul,listOrbital)),spin) foldernya 
                     urutan
                     (unwords [judul,"a",show nomor,"s", show spin,foldernya])
 
-  {-
-mainalt tumpuk invS tailer foldernya aos  = do
---    (tumpuk:invS:tailer:foldernya:aos) <- getArgs
-    fCtrl <- T.readFile $ foldernya ++ "/ctrl." ++ tailer
-    let invStat = read invS :: Int
-    let ctrlAtoms =
-          catMaybes $
-          map ( T.stripPrefix "ATOM=" .  head) $
-          filter (/=[]) $
-          map ( T.words . T.takeWhile (/='#') ) $
-          head $
-          splitWhen (T.isPrefixOf "SPEC") $
-          last $ splitWhen (T.isPrefixOf "SITE")
-          $ T.lines fCtrl
-        nAtom = length ctrlAtoms
-    let uniqAtoms =
-          map (\a -> (length a, snd $ head a, fst $ head a)) $
-          groupBy (\a b -> fst a == fst b) $
-          zip  ctrlAtoms [1..nAtom]
-    let daftarCetak' =
-          zip [1..] $
-          map (\(a,label,b) -> (head $ filter (\(_,_,aa) -> aa == (T.pack a)) uniqAtoms , label, b) ) $
-          map ( (\(a:label:as) -> (a,label,as)) . splitOn ":") $
-          aos
-        daftarCetak = [ (i,j) | i <- daftarCetak' , j <- [1,2] ]
-    putStrLn $ if tumpuk == "p" then  (", " ++) $ intercalate ", " $ map (\dc -> susunPDOS "dos" dc  foldernya tailer invStat) daftarCetak
-                                else unlines $  (\a ->  concat [ (init a)
-                                                              , [ "set format x '% h';"
-                                                                , "set xtics 1 font 'Arial Bold,10' nomirror offset -.3,.6 out;"
-                                                                , (last a)
-                                                                ]
-                                                               ]
-                                                       ) $
-                                                (\(x:xs) -> (", " ++ x):map ("plot " ++) xs) $
-                                                map (intercalate ", ") $ chunksOf 2 $ map (\dc -> susunOrbs "dos" dc  foldernya tailer invStat) daftarCetak
-
-
-susunPDOS :: T.Text
-            -> ((Int,((Int, Int, T.Text),String,[String])),Int)
-            -> String
-            -> String
-            -> Int
-            -> String
-susunPDOS job ((urutan,((jumlah,nomor,nama),judul,listOrbital)),spin) foldernya tailer invStat = unwords [
-                                        Text.Printf.printf "'%s/%s.isp%d.site%03d.%s' u ($1*rydberg):(( %s ) * %d * ( %d ) * ( %d ) / rydberg ) w l ls %d title '%s'"
-                                          (T.pack foldernya)
-                                          job
-                                          spin
-                                          nomor
-                                          (T.pack tailer)
-                                          ("$" ++ (intercalate "+$" $ delta (listOrbital /= []) listOrbital $ map show [2..26] ))
-                                          jumlah
-                                          invStat
-                                          (delta (spin < 2) 1 (-1) :: Int)
-                                          urutan
-                                          judul]
-
-
-
-
-
-{-
-    let mmoms1 = map (\a -> inshell (T.concat ["tail -49 ",a,"|grep mmom|sed -e 's/^c//g'|awk '{print $1,$2}'|sed -e 's/mmom.//g' -e 's/ehf.//g'| tr '\n' ' '"]) empty) fLLMFs
-    mmoms2 <- mapM shell2list mmoms1
-    let mmoms = chunksOf (2+nAtom) $ map fst $ rights $ map T.double $ concat $ map T.words $ concat mmoms2
-    putStrLn $  T.unpack $ T.unwords $ map ( T.justifyRight 5 ' ' ) $ concat [["Steps"], ctrlAtoms , ["total" , "EnergyEHF"]]
-    putStrLn $ unlines $ zipWith (\a b -> T.unpack $ T.unwords [T.justifyRight 5 ' ' a,b]) llmfs $ map showMmom mmoms
-    where
-      showMmom :: [Double] -> Text
-      showMmom aa = T.unwords $  concat [ map (T.justifyRight 5 ' ' . T.pack . Text.Printf.printf "%.2f")  $ init aa
-                                  , [T.pack $ show $ last aa] ]
-
-
--}
-
-
--}
-
 genTEMPGLT tempDir judulUtama yr xrangeatas ticksbaru arrow isi plotplate ender =
              unlines [ "#!/home/aku/bin/gnuplot -persist"
                      , "reset"
@@ -316,8 +231,10 @@ genTEMPGLT tempDir judulUtama yr xrangeatas ticksbaru arrow isi plotplate ender 
                      , "if (!exists('MP_BOTTOM')) MP_BOTTOM = .1"
                      , "if (!exists('MP_TOP'))    MP_TOP = .9"
                      , "if (!exists('MP_GAP'))    MP_GAP = 0.05"
-                     , "set multiplot layout 1,2 \\ "
-                     , "  margins screen MP_LEFT, MP_RIGHT, MP_BOTTOM, MP_TOP spacing screen MP_GAP"
+                     , unwords [ "set multiplot layout 1,2"
+                               , "margins screen MP_LEFT, MP_RIGHT, MP_BOTTOM, MP_TOP"
+                               , "spacing screen MP_GAP"
+                               ]
                      , "set xzeroaxis"
                      , "set grid"
                      , "set key right top Left"
@@ -357,6 +274,6 @@ genTEMPGLT tempDir judulUtama yr xrangeatas ticksbaru arrow isi plotplate ender 
                      , "set style arrow 1 heads size screen 0.01,90 lw 2 lc rgb 'navy'"
                      , "set key bottom left Left"
                      , "set xtics (" ++ ticksbaru ++ ")"
-                     , unwords [arrow, isi,plotplate]
+                     , unwords [arrow, isi ,plotplate]
                      , ender
                      ]
