@@ -1,5 +1,3 @@
-#!/usr/bin/env stack
---stack --resolver lts-11.3 --install-ghc runghc --stack-yaml /home/aku/kanazawa/dev/cpvoh/stack.yaml
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE Strict #-}
 {-# LANGUAGE FlexibleContexts #-}
@@ -12,11 +10,10 @@ import Data.List.Split (splitOn)
 import qualified Data.Text as T
 import qualified Data.Text.Read as T
 import Data.List -- intercalate
-import Text.Printf (printf)
 import Data.Either -- rights
 import Numeric.LinearAlgebra.Data -- toLists, fromLists
 import Data.Maybe -- fromJust
-
+import Data.String  -- IsString
 
 main :: IO ()
 main = do
@@ -97,43 +94,44 @@ plotBand (fOut:useOldBw:judulUtama:yr:atomOs:daftarLengkap) = do
   (xrangeatas,ticksbaru) <- genBandTicks foldernya
   putStrLn $ "========" ++ show xrangeatas ++ "=====" ++ show ticksbaru
   writeFile (T.unpack tempGLT) $ genTEMPGLT tempDir judulUtama yr xrangeatas ticksbaru (fromJust arrow) isi plotplate2 ender
-  _ <- inshell2text $ "gnuplot " ++ T.unpack tempGLT
-  _ <- inshell2text $ unwords ["convert", tempDir ++ "/hasil.jpg"
-                              , "-fuzz 5% -trim +repage"
-                              , tempDir ++ "/hasil.jpg"
-                              ]
+  let converter = unwords ["convert", tempDir ++ "/hasil.jpg"
+                          , "-fuzz 5% -trim +repage"
+                          , tempDir ++ "/hasil.jpg"
+                          ]
   let target = map (\x -> unwords [ "mv"
                                   , tempDir ++ "/hasil" ++ x
                                   , fOut ++ x
                                   ]) [".eps",".jpg"]
-  _ <- mapM inshell2text target
+  _ <- mapM inshell2text $ (("gnuplot " ++ T.unpack tempGLT) : converter : target )
+
   putStrLn "===end  : plotBand===="
 
 plotBand _ = putStrLn "Error: complete arguments needed"
 
 genPBAND :: String -> String -> String -> String -> [String] -> IO T.Text
-genPBAND oldBw spin invStat atomNos foldernya = do
+--genPBAND oldBw spin invStat atomNos foldernya = do
+genPBAND   oldBw  _   invStat atomNos foldernya = do
     let daftaratomOs =  map (splitOn "@") $ splitOn "-" atomNos
         daftarJudulSpinFolders = filter (/=[""]) $ map (splitOn "@") $ splitOn ":" $ unwords foldernya
-        folder = last $ last daftarJudulSpinFolders
-        daftarAOJSF = zip [1..] $ concat $ map (\a -> zip daftaratomOs $ repeat a) daftarJudulSpinFolders
+--        folder = last $ last daftarJudulSpinFolders
+        daftarAOJSF = zip ([1..] :: [Integer]) $ concat $ map (\a -> zip daftaratomOs $ repeat a) daftarJudulSpinFolders
 
-    let err'' = map ( \(_,([o,a],[j,s,folder])) -> concat [ "cd ", folder, "; echo BandWeight.py PROCAR.",cekSpin s invStat "1" "UP" "DN" , " ",a, " ", o]) daftarAOJSF
-    theErr <- if (oldBw /= "1") then mapM inshell2text err'' else return []
+    let err'' = map ( \(_,([o,a],[_,s,folder'])) -> concat [ "cd ", folder', "; echo BandWeight.py PROCAR.",cekSpin s invStat "1" "UP" "DN" , " ",a, " ", o]) daftarAOJSF
+    _ <- if (oldBw /= "1") then mapM inshell2text err'' else return []
 
 {--
   (\$2>6.08991818?0.4+\$2:\$2):(\$2>6.08991818&&\$2<6.09991818?1/0:\$3)
 --}
     return $ T.pack $ concat $ intercalate [", "]
-        $ map ( \(i,([o,a],[j,s,folder])) -> ["'",folder,"/bw.",a,".",o,".PROCAR.",cekSpin s invStat "1" "UP" "DN" ,".dat' u ($1>6.09971818?0.4+$1:$1):2:($1>6.08991818&&$1<6.09991818?0:$3*3) ls ",show (i)," ps variable title '",concat $ intersperse "." [o,a,j],"'"] :: [String] )
-        $ daftarAOJSF
+      $ map ( \(i,([o,a],[j,s,folder])) -> ["'",folder,"/bw.",a,".",o,".PROCAR.",cekSpin s invStat "1" "UP" "DN" ,".dat' u ($1>6.09971818?0.4+$1:$1):2:($1>6.08991818&&$1<6.09991818?0:$3*3) ls ",show i," ps variable title '",concat $ intersperse "." [o,a,j],"'"] :: [String] )
+      $ daftarAOJSF
 
-
+genPlotPlate :: T.Text -> T.Text
 genPlotPlate bnd = T.concat [ bnd , T.pack " u ($2>6.08991818?0.4+$2:$2):($2>6.08991818&&$2<6.09991818?1/0:$3) with line lc rgb 'black' title ''"]
 
 -- import Turtle                       --
 
-
+runGAPband :: [T.Text] -> String
 runGAPband bndSpin =
   let (valencePoint, conductionPoint) =
         (\(a,b) -> (last a,head b)) $
@@ -151,27 +149,11 @@ runGAPband bndSpin =
                                                            else unwords $ map show  [head valencePoint, head conductionPoint, last conductionPoint - last valencePoint]
 
 
+cekSpin :: (Eq a, IsString a) => a -> a -> a-> p -> p -> p
 cekSpin s "0" ok sOk sNo = if s == ok then sOk else sNo
 cekSpin s _ ok sOk sNo = if s == ok then sNo else sOk
 
-
-
-
-susun tailer spin (urutan, [legend, foldernya]) =
-    concat  [ "'", foldernya, "/dos.tot.", tailer, "'"
-            , " u ($",show spin , "/rydberg):($1*rydberg)   w l ls ", show urutan
-            , " title '", legend, "'"
-            ]
-
-susunGap :: (Integer, [String]) -> String
-susunGap (urutan, [bandgap,condBandY]) = concat [ "set label sprintf ('{/Symbol D}=%.2feV',"
-                                     , bandgap
-                                     , ") at 4+", show urutan ,",(",condBandY,"-0.4) font ',12' ;"
-                                     , "set arrow from ",show urutan ,",", condBandY, " to ",show urutan ,",", condBandY, "-", bandgap, " heads noborder lw 2 lc rgb 'blue'"
-                                     ]
-susunGap _ = "#no bandgap"
-
-
+genBandTicks :: String -> IO (String,String)
 genBandTicks foldernya = do
     lTicks'' <- inshell2text $ unwords ["tail -n2  ", foldernya ++ "/bnd*spin1|sed -e '/^ $\\|==/d'|sort -u|awk '{print $2}' "]
     namaTicks'' <- inshell2text $ unwords ["cat ",foldernya ++ "/syml.* "]
@@ -180,46 +162,7 @@ genBandTicks foldernya = do
     return $ (,) (last lTicks)
            $ unwords $ intersperse "," $ map (\(a,b) -> unwords ["'"++a++"'",b]) $ zip  namaTicks lTicks
 
-
-
-gantiSpin sp ((urutan,((jumlah,nomor,nama),judul,listOrbital)),_) = ((urutan,((jumlah,nomor,nama),judul,listOrbital)),(read sp :: Int))
-pilihOrbs "py" = [3]
-pilihOrbs "pz" = [4]
-pilihOrbs "px" = [5]
-pilihOrbs "dxy" = [6]
-pilihOrbs "dyz" = [7]
-pilihOrbs "dz2" = [8]
-pilihOrbs "dxz" = [9]
-pilihOrbs "dx2My2" = [10]
-pilihOrbs "eg" = [8,10]
-pilihOrbs "t2g" = [6,7,9]
-pilihOrbs "p" = [3,4,5]
-pilihOrbs _ = [6,7,8,9,10]
-
-
-delta :: Bool -> b -> b -> b
-delta x y z = if x then y else z
-
-susunOrbs :: T.Text
-            -> ((Int,((Int, Int, T.Text),String,[String])),Int)
-            -> String
-            -> String
-            -> Int
-            -> String
-susunOrbs job ((urutan,((jumlah,nomor,nama),judul,listOrbital)),spin) foldernya tailer invStat = Text.Printf.printf "'%s/%s.isp%d.site%03d.%s' u (( %s ) * %d * ( %d ) * ( %d ) / rydberg ):($1*rydberg) w l ls %d title '%s'"
-                    (T.pack foldernya)
-                    job
-                    spin
-                    nomor
-                    (T.pack tailer)
-                    ("$" ++ (intercalate "+$" $ delta (listOrbital /= []) listOrbital $ map show [2..26] ))
-                    jumlah
-                    (if (invStat == 0) then 1 else (-1) :: Int)
---                    (delta (spin < 2) 1 (-1) :: Int)
-                    ( 1 :: Int)
-                    urutan
-                    (unwords [judul,"a",show nomor,"s", show spin,foldernya])
-
+genTEMPGLT :: String -> String -> String -> String -> String -> String -> String -> String -> String -> String
 genTEMPGLT tempDir judulUtama yr xrangeatas ticksbaru arrow isi plotplate ender =
              unlines [ "#!/home/aku/bin/gnuplot -persist"
                      , "reset"

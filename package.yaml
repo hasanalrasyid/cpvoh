@@ -90,6 +90,7 @@ executables:
     - -threaded
     - -rtsopts
     - -with-rtsopts=-N
+    - -Wall
     dependencies:
     - cpvoh
     - text-format
