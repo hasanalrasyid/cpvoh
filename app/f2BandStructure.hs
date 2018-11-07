@@ -53,7 +53,31 @@ plotBand (fOut:useOldBw:judulUtama:yr:atomOs:daftarLengkap) = do
   putStrLn ender
 
   putStrLn $ unlines daftarLengkap
-  let (foldernya:spinnya:legend:_) = splitOn ":" $ head daftarLengkap
+
+  (xrangeatas,ticksbaru,arrow,plotplate,generatedPBAND) <- plotSingleBand useOldBw atomOs $ head daftarLengkap
+
+  let plotplate2 = T.unpack $ T.unwords [plotplate, ",", generatedPBAND]
+  putStrLn $ show plotplate2
+  putStrLn $ "============bikin TEMPGLT"
+  tempGLT <- head <$> inshell2text "mktemp -p ./"
+  putStrLn $ show tempGLT
+  writeFile (T.unpack tempGLT) $ genTEMPGLT tempDir judulUtama yr xrangeatas ticksbaru (fromMaybe "" arrow) isi plotplate2 ender
+  let converter = unwords ["convert", tempDir ++ "/hasil.jpg"
+                          , "-fuzz 5% -trim +repage"
+                          , tempDir ++ "/hasil.jpg"
+                          ]
+  let target = map (\x -> unwords [ "mv"
+                                  , tempDir ++ "/hasil" ++ x
+                                  , fOut ++ x
+                                  ]) [".eps",".jpg"]
+  _ <- mapM inshell2text $ (("gnuplot " ++ T.unpack tempGLT) : converter : target )
+  putStrLn "===end  : plotBand===="
+  putStrLn plotplate2
+
+plotBand _ = putStrLn "Error: complete arguments needed"
+
+plotSingleBand useOldBw atomOs daftarLengkap = do
+  let (foldernya:spinnya:legend:_) = splitOn ":" daftarLengkap
   bandFiles <- inshell2text $ unwords ["ls",concat[foldernya,"/bnd*spin",spinnya]]
   let daftarFolder = ":" ++ intercalate "@" [legend,spinnya,foldernya]
 
@@ -85,27 +109,11 @@ plotBand (fOut:useOldBw:judulUtama:yr:atomOs:daftarLengkap) = do
 --    "genPDOSvert.hs ", atomOs, fromJust gapnya, spinnya, daftarFolder]
   generatedPBAND <- genPBAND useOldBw spinnya "0" atomOs [daftarFolder]
   putStrLn $ show generatedPBAND
-  let plotplate2 = T.unpack $ T.unwords [plotplate, ",", generatedPBAND]
-  putStrLn $ show plotplate2
-  putStrLn $ "============bikin TEMPGLT"
-  tempGLT <- head <$> inshell2text "mktemp -p ./"
-  putStrLn $ show tempGLT
   (xrangeatas,ticksbaru) <- genBandTicks foldernya
   putStrLn $ "========" ++ show xrangeatas ++ "=====" ++ show ticksbaru
-  writeFile (T.unpack tempGLT) $ genTEMPGLT tempDir judulUtama yr xrangeatas ticksbaru (fromMaybe "" arrow) isi plotplate2 ender
-  let converter = unwords ["convert", tempDir ++ "/hasil.jpg"
-                          , "-fuzz 5% -trim +repage"
-                          , tempDir ++ "/hasil.jpg"
-                          ]
-  let target = map (\x -> unwords [ "mv"
-                                  , tempDir ++ "/hasil" ++ x
-                                  , fOut ++ x
-                                  ]) [".eps",".jpg"]
-  _ <- mapM inshell2text $ (("gnuplot " ++ T.unpack tempGLT) : converter : target )
+  putStrLn $ "=== FINISHED PROCESSING : " ++ daftarLengkap
+  return $ (xrangeatas,ticksbaru,arrow,plotplate,generatedPBAND)
 
-  putStrLn "===end  : plotBand===="
-
-plotBand _ = putStrLn "Error: complete arguments needed"
 
 genPBAND :: String -> String -> String -> String -> [String] -> IO T.Text
 --genPBAND oldBw spin invStat atomNos foldernya = do
