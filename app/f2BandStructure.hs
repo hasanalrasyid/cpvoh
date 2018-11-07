@@ -18,21 +18,7 @@ import Data.String  -- IsString
 main :: IO ()
 main = do
   allArgs <- getArgs
-  {-
-  let testArgs1 = [ "fig2"
-                 , "-9:2"
-                 , "55" , "o" ,"1", "top:right", "T"
-                 , "extendedNiCo2O4.normal/nico2o4.1G0"
-                 , "Ni:Ni#3d:6:7:9:8:10", "Co:Co#3d:6:7:8:9:10", "O:O#2p:3:4:5"
-                 ]
-  let testArgs = [ "QSGW_{0}"
-                 , "-9:2", "55", "T"
-                 , "o", "1"
-                 , "nico2o4"
-                 , "extendedNiCo2O4.normal/nico2o4.0GGA"
-                 ,"Ni:Ni#3d:6:7:9:8:10", "Co:Co#3d:6:7:8:9:10", "O:O#2p:3:4:5"
-                 ]
-  -}
+
   plotBand allArgs
   putStrLn "========beres======="
 
@@ -60,8 +46,6 @@ plotBand (fOut:useOldBw:judulUtama:yr:atomOs:daftarLengkap) = do
 
   (_:condBandY:_) <- fmap (words . T.unpack . head) $ inshell2text $ unwords ["cat", concat[foldernya,"/bnd*spin*",spinnya],"| sed -e '/^#/d' |awk '{if ($3<=0) print $2,$3}'|sort -k 2nr -u|sed -e '/^ *$/d'|head -1"]
   putStrLn $ "===valBand==" ++ show (valBand :: [String])
---  putStrLn $ "===conBand==" ++ show (condBand :: [String])
-  --allBand <- fmap (runGAPband . head) $ inshell2text $ "cat " ++ concat [foldernya,"/bnd*spin*",spinnya]
   gapCoordBandGap <- fmap runGAPband $ inshell2text $ "cat " ++ concat [foldernya,"/bnd*spin*",spinnya]
   let bandGap = last $ words gapCoordBandGap
   putStrLn $ "===allBand=== " ++ show (bandGap :: String)
@@ -129,8 +113,6 @@ genPBAND   oldBw  _   invStat atomNos foldernya = do
 genPlotPlate :: T.Text -> T.Text
 genPlotPlate bnd = T.concat [ bnd , T.pack " u ($2>6.08991818?0.4+$2:$2):($2>6.08991818&&$2<6.09991818?1/0:$3) with line lc rgb 'black' title ''"]
 
--- import Turtle                       --
-
 runGAPband :: [T.Text] -> String
 runGAPband bndSpin =
   let (valencePoint, conductionPoint) =
@@ -140,8 +122,7 @@ runGAPband bndSpin =
         toLists $
         (¿ [1,2]) . fromLists $
         filter (/=[]) $  -- kolom $2 x (k-point) -- $3 y Energy
---      map ( T.words ) $ -- mengubah column based text number jadi [[Double]]
-        map ( (map fst) . rights . (map T.double) . T.words ) $ -- mengubah column based text number jadi [[Double]]
+        map ( (map fst) . rights . (map T.double) . T.words ) $
         filter (not . T.isPrefixOf "#") $
         bndSpin
 

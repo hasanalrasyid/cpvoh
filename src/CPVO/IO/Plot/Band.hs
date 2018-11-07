@@ -14,7 +14,7 @@ import CPVO.IO.Plot.Gnuplot.Common
 import qualified Data.Text as T
 import qualified Data.Text.IO as T
 import Data.List.Split
-import System.Process as SP
+--import System.Process as SP
 
 --plotPDOS plotStatementDOS_args@(jd:xr:ymax':wTot:tumpuk:invS:tailer:foldernya:aos) = do
   --invStat : spin inversal... it means switching between up n down spin
@@ -23,9 +23,22 @@ import System.Process as SP
   --
 
 plotBand :: [String] -> IO ()
-plotBand (fOut:xr:yr:over:invStat:poskey':total:foldernya:daftarOrbital) = do
+--plotBand (fOut:xr:yr:over:invStat:poskey':total:foldernya:daftarOrbital) = do
+plotBand (fOut:useOldBw:judulUtama:yr:atomOs:daftarLengkap) = do
   putStrLn "===start: CPVO.IO.Plot.Band===="
+  let ender = unlines [ "unset multiplot"
+                      , "system \"cd plots && epstopdf hasil.eps && pdftocairo -r 150 -singlefile -jpeg hasil.pdf tmp && convert tmp.jpg -rotate 90 hasil.jpg && rm -f tmp.jpg\""
+                      ]
+  let isi = unlines [ "set datafile missing '-'"
+                    , "plot 0 lt -1 lc rgb 'black' title ''"
+                    ]
+  putStrLn ender
+  let daftar1 = daftarLengkap
+
   putStrLn "===end  : CPVO.IO.Plot.Band===="
+
+plotBand _ =
+  putStrLn "====Error: CPVO.IO.Plot.Band : incomplete Arguments===="
 
 plotPDOS :: [String] -> IO ()
 plotPDOS (fOut:xr:yr:over:invStat:poskey':total:foldernya:daftarOrbital) = do
@@ -58,7 +71,7 @@ plotPDOS (fOut:xr:yr:over:invStat:poskey':total:foldernya:daftarOrbital) = do
                      , plotplate1
                      , akhiran
                      ]
-  _ <- SP.system "gnuplot temp.glt"
+--  _ <- SP.system "gnuplot temp.glt"
     -- #---#dimensi=$(convert plots/hasil.jpg -fuzz 5% -transparent white sparse-color:-|sed -e 's/ /\n/g'|awk -F ',' 'BEGIN{a=0; b=0;aa=10000;bb=10000}{if (a<$1) a=$1; if ($1<aa) aa=$1;  if (b<$2) b=$2; if (bb>$2) bb=$2 }END{print a-(10-a%10)"x"b-bb+(10-b%10)"+"aa-(30+aa%10)"+"bb-(10-aa%10)}')
     -- #---#convert plots/hasil.jpg -crop $dimensi plots/hasil.jpg
     -- #---##convert plots/hasil.jpg -pointsize 24 -font "monofur" label:'Energy (eV)' -gravity Center -append plots/hasil.jpg
@@ -66,5 +79,3 @@ plotPDOS (fOut:xr:yr:over:invStat:poskey':total:foldernya:daftarOrbital) = do
 
   ------------------------------
   putStrLn "====finish: CPVO.IO.Plot.PDOS===="
-plotPDOS _ =
-  putStrLn "====Error: CPVO.IO.Plot.PDOS : incomplete Arguments===="
