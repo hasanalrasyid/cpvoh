@@ -54,11 +54,11 @@ plotBand (fOut:useOldBw:judulUtama:yr:atomOs:daftarLengkap) = do
 
   putStrLn $ unlines daftarLengkap
 
-  allPBAND@((xrangeatas,ticksbaru,arrow,_,_):_) <- mapM (plotSingleBand useOldBw atomOs) daftarLengkap
+  allPBAND@((xrangeatas,ticksbaru,arrow,_,_):_) <- plotSingleBand daftarLengkap useOldBw atomOs 1 []
   let generatedPFBAND = (map takePFBAND allPBAND)
-  let generatedPBAND = T.intercalate "," (map fst generatedPFBAND)
-  let generatedFATBAND = T.intercalate "," (map snd generatedPFBAND)
-  let plotplate2 = T.unpack $ T.unwords [generatedPBAND, ",", generatedFATBAND]
+  let generatedPBAND = T.intercalate "," $ filter (not . T.null) $ map fst generatedPFBAND
+  let generatedFATBAND = T.intercalate "," $ filter (not . T.null) $ map snd generatedPFBAND
+  let plotplate2 = T.unpack $ T.intercalate "," $ filter (not . T.null) [generatedPBAND, generatedFATBAND]
   putStrLn $ show plotplate2
   putStrLn $ show allPBAND
   putStrLn $ "============bikin TEMPGLT"
@@ -81,21 +81,41 @@ plotBand (fOut:useOldBw:judulUtama:yr:atomOs:daftarLengkap) = do
 
 plotBand _ = putStrLn "Error: complete arguments needed"
 
-plotSingleBand :: String -> String -> String
-               -> IO (String, String, Maybe String, T.Text, T.Text)
-plotSingleBand useOldBw atomOs daftarLengkap = do
+--plotSingleBand :: String -> String -> String
+--               -> IO (String, String, Maybe String, T.Text, T.Text)
+plotSingleBand :: [String]
+               -> String
+               -> String
+               -> Int
+               -> [(String, String, Maybe String, T.Text, T.Text)]
+               -> IO [(String, String, Maybe String, T.Text, T.Text)]
+
+plotSingleBand []                   _        _       _      res = return res
+plotSingleBand (daftarLengkap:sisa) useOldBw atomOs colorId res = do
   let (foldernya:spinnya:legend:_) = splitOn ":" daftarLengkap
   bandFiles <- inshell2text $ unwords ["ls",concat[foldernya,"/bnd*spin",spinnya]]
   let daftarFolder = ":" ++ intercalate "@" [legend,spinnya,foldernya]
 
-  let generatedPBAND = T.intercalate ", " $ map genPlotPlate $ map (\x -> T.concat["'",x,"'"]) bandFiles
+  let generatedPBAND = T.intercalate ", " $ map (genPlotPlate colorId) $ map (\x -> T.concat["'",x,"'"]) bandFiles
   valBand@(valBandX:valBandY:_) <- fmap (words . T.unpack . head) $ inshell2text $ unwords ["cat",concat [foldernya,"/bnd*spin*",spinnya],"|sed -e '/^#/d' |awk '{if ($3>0.1) print $2,$3}'|sort -k 2n|head -1"]
   (_:condBandY:_) <- fmap (words . T.unpack . head) $ inshell2text $ unwords ["cat", concat[foldernya,"/bnd*spin*",spinnya],"| sed -e '/^#/d' |awk '{if ($3<=0) print $2,$3}'|sort -k 2nr -u|sed -e '/^ *$/d'|head -1"]
   putStrLn $ "===valBand==" ++ show (valBand :: [String])
   gapCoordBandGap <- fmap runGAPband $ inshell2text $ "cat " ++ concat [foldernya,"/bnd*spin*",spinnya]
   let bandGap = last $ words gapCoordBandGap
   putStrLn $ "===allBand=== " ++ bandGap
-  let arrow =
+  let arrow = genArrow bandGap valBandX valBandY condBandY
+--  putStrLn $ show gapArrow
+--  putStrLn $ "perintahDOS Removed == " ++ unwords [
+--    "genPDOSvert.hs ", atomOs, fromJust gapnya, spinnya, daftarFolder]
+  generatedFATBAND <- genPBAND useOldBw spinnya "0" atomOs [daftarFolder]
+  putStrLn $ show generatedFATBAND
+  (xrangeatas,ticksbaru) <- genBandTicks foldernya
+  putStrLn $ "========" ++ show xrangeatas ++ "=====" ++ show ticksbaru
+  putStrLn $ "=== FINISHED PROCESSING : " ++ daftarLengkap
+  plotSingleBand sisa useOldBw atomOs (colorId+1) ((xrangeatas,ticksbaru,arrow,generatedPBAND,generatedFATBAND):res)
+
+genArrow :: [Char] -> [Char] -> [Char] -> [Char] -> Maybe String
+genArrow bandGap valBandX valBandY condBandY =
         if (bandGap == "0")
            then Nothing
            else --(,) (Just $ "0:" ++ bandGap ++ "@" ++ valBandY)
@@ -111,16 +131,6 @@ plotSingleBand useOldBw atomOs daftarLengkap = do
                                       ]
                              ]
                     )
---  putStrLn $ show gapArrow
---  putStrLn $ "perintahDOS Removed == " ++ unwords [
---    "genPDOSvert.hs ", atomOs, fromJust gapnya, spinnya, daftarFolder]
-  generatedFATBAND <- genPBAND useOldBw spinnya "0" atomOs [daftarFolder]
-  putStrLn $ show generatedFATBAND
-  (xrangeatas,ticksbaru) <- genBandTicks foldernya
-  putStrLn $ "========" ++ show xrangeatas ++ "=====" ++ show ticksbaru
-  putStrLn $ "=== FINISHED PROCESSING : " ++ daftarLengkap
-  return $ (xrangeatas,ticksbaru,arrow,generatedPBAND,generatedFATBAND)
-
 
 genPBAND :: String -> String -> String -> String -> [String] -> IO T.Text
 --genPBAND oldBw spin invStat atomNos foldernya = do
@@ -140,8 +150,8 @@ genPBAND   oldBw  _   invStat atomNos foldernya = do
       $ map ( \(i,([o,a],[j,s,folder])) -> ["'",folder,"/bw.",a,".",o,".PROCAR.",cekSpin s invStat "1" "UP" "DN" ,".dat' u ($1>6.09971818?0.4+$1:$1):2:($1>6.08991818&&$1<6.09991818?0:$3*3) ls ",show i," ps variable title '",concat $ intersperse "." [o,a,j],"'"] :: [String] )
       $ daftarAOJSF
 
-genPlotPlate :: T.Text -> T.Text
-genPlotPlate bnd = T.concat [ bnd , T.pack " u ($2>6.08991818?0.4+$2:$2):($2>6.08991818&&$2<6.09991818?1/0:$3) with line lc rgb 'black' title ''"]
+genPlotPlate :: Int -> T.Text -> T.Text
+genPlotPlate colorId bnd = T.concat [ bnd , T.pack $ unwords [" u ($2>6.08991818?0.4+$2:$2):($2>6.08991818&&$2<6.09991818?1/0:$3) with line lc", show colorId, "title ''"]]
 
 runGAPband :: [T.Text] -> String
 runGAPband bndSpin =
