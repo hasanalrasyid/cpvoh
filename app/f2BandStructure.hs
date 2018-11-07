@@ -1,3 +1,6 @@
+#!/usr/bin/env stack
+--stack --resolver lts-11.3 --install-ghc runghc --stack-yaml /home/aku/kanazawa/dev/cpvoh/stack.yaml
+
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE Strict #-}
 {-# LANGUAGE FlexibleContexts #-}
@@ -24,7 +27,22 @@ main = do
 
 plotBand :: [String] -> IO ()
 plotBand (fOut:useOldBw:judulUtama:yr:atomOs:daftarLengkap) = do
-  putStrLn "===start: plotBand===="
+  putStrLn $ unlines [ "===start: plotBand===="
+                     , "run it using:"
+                     , "~/kanazawa/dev/cpvoh/f2 outputfile useOldBw judulUtama yRange atomOs target1 target2 target3"
+                     , "outputfile: any filename, for each filename f, we will have f.jpg and f.eps"
+                     , "useOldBw  : 1 = will use old BandWidth file"
+                     , "            0 = will make a new BandWidth file"
+                     , "judulUtama: unimplemented yet"
+                     , "yRange    : y range min:max, ex. -9.5:2"
+                     , "atomOs    : atomic orbital yang ditampilkan sebagai fat band"
+                     , "            format: orbital@atomNumber-orbital@atomNumber2-..."
+                     , "              atomNumber: 1,2,..."
+                     , "              orbital: s p px py pz dx2My2 dz2 dyz dxy dxz eg t2g"
+                     , "target    : in format of folder:spin:subTitle"
+                     , "            spin: 1 = UP and 2 = DOWN or inversed by invStat"
+                     , "~/kanazawa/dev/cpvoh/f2 outputfile 0 '\"\"' -9.5:2 \"p@7-dx2My2@11-dz2@11\" nico2o4.invB.11G20:1:\"11G20.Majority\""
+                     ]
   tempDir <- (T.unpack . head) <$> inshell2text "mktemp -d -p ./"
   let ender = unlines [ "unset multiplot"
                       , "system \"cd " ++ tempDir ++ " && epstopdf hasil.eps && pdftocairo -r 150 -singlefile -jpeg hasil.pdf tmp && convert tmp.jpg -rotate 90 hasil.jpg && rm -f tmp.jpg\""
@@ -37,13 +55,10 @@ plotBand (fOut:useOldBw:judulUtama:yr:atomOs:daftarLengkap) = do
   putStrLn $ unlines daftarLengkap
   let (foldernya:spinnya:legend:_) = splitOn ":" $ head daftarLengkap
   bandFiles <- inshell2text $ unwords ["ls",concat[foldernya,"/bnd*spin",spinnya]]
-  --batasAtasX <- fmap (head . (drop 1) . last . filter (not . null). map T.words) $ inshell2text $ unwords ["tail -2",T.unpack $ last bandFiles]
   let daftarFolder = ":" ++ intercalate "@" [legend,spinnya,foldernya]
 
---  let subjudul = "title ''"
   let plotplate = T.intercalate ", " $ map genPlotPlate $ map (\x -> T.concat["'",x,"'"]) bandFiles
   valBand@(valBandX:valBandY:_) <- fmap (words . T.unpack . head) $ inshell2text $ unwords ["cat",concat [foldernya,"/bnd*spin*",spinnya],"|sed -e '/^#/d' |awk '{if ($3>0.1) print $2,$3}'|sort -k 2n|head -1"]
-
   (_:condBandY:_) <- fmap (words . T.unpack . head) $ inshell2text $ unwords ["cat", concat[foldernya,"/bnd*spin*",spinnya],"| sed -e '/^#/d' |awk '{if ($3<=0) print $2,$3}'|sort -k 2nr -u|sed -e '/^ *$/d'|head -1"]
   putStrLn $ "===valBand==" ++ show (valBand :: [String])
   gapCoordBandGap <- fmap runGAPband $ inshell2text $ "cat " ++ concat [foldernya,"/bnd*spin*",spinnya]
@@ -66,7 +81,7 @@ plotBand (fOut:useOldBw:judulUtama:yr:atomOs:daftarLengkap) = do
                              ]
                     )
   putStrLn $ show gapArrow
-  putStrLn $ "perintahDOS == " ++ unwords [
+  putStrLn $ "perintahDOS Removed == " ++ unwords [
     "genPDOSvert.hs ", atomOs, fromJust gapnya, spinnya, daftarFolder]
   generatedPBAND <- genPBAND useOldBw spinnya "0" atomOs [daftarFolder]
   putStrLn $ show generatedPBAND
@@ -94,13 +109,13 @@ plotBand _ = putStrLn "Error: complete arguments needed"
 
 genPBAND :: String -> String -> String -> String -> [String] -> IO T.Text
 --genPBAND oldBw spin invStat atomNos foldernya = do
+genPBAND   _      _   _       []      _         = return ""
 genPBAND   oldBw  _   invStat atomNos foldernya = do
     let daftaratomOs =  map (splitOn "@") $ splitOn "-" atomNos
         daftarJudulSpinFolders = filter (/=[""]) $ map (splitOn "@") $ splitOn ":" $ unwords foldernya
---        folder = last $ last daftarJudulSpinFolders
         daftarAOJSF = zip ([1..] :: [Integer]) $ concat $ map (\a -> zip daftaratomOs $ repeat a) daftarJudulSpinFolders
 
-    let err'' = map ( \(_,([o,a],[_,s,folder'])) -> concat [ "cd ", folder', "; echo BandWeight.py PROCAR.",cekSpin s invStat "1" "UP" "DN" , " ",a, " ", o]) daftarAOJSF
+    let err'' = map ( \(_,([o,a],[_,s,folder'])) -> concat [ "cd ", folder', "; BandWeight.py PROCAR.",cekSpin s invStat "1" "UP" "DN" , " ",a, " ", o]) daftarAOJSF
     _ <- if (oldBw /= "1") then mapM inshell2text err'' else return []
 
 {--
