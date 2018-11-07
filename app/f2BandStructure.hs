@@ -54,10 +54,13 @@ plotBand (fOut:useOldBw:judulUtama:yr:atomOs:daftarLengkap) = do
 
   putStrLn $ unlines daftarLengkap
 
-  (xrangeatas,ticksbaru,arrow,plotplate,generatedPBAND) <- plotSingleBand useOldBw atomOs $ head daftarLengkap
-
-  let plotplate2 = T.unpack $ T.unwords [plotplate, ",", generatedPBAND]
+  allPBAND@((xrangeatas,ticksbaru,arrow,_,_):_) <- mapM (plotSingleBand useOldBw atomOs) daftarLengkap
+  let generatedPFBAND = (map takePFBAND allPBAND)
+  let generatedPBAND = T.intercalate "," (map fst generatedPFBAND)
+  let generatedFATBAND = T.intercalate "," (map snd generatedPFBAND)
+  let plotplate2 = T.unpack $ T.unwords [generatedPBAND, ",", generatedFATBAND]
   putStrLn $ show plotplate2
+  putStrLn $ show allPBAND
   putStrLn $ "============bikin TEMPGLT"
   tempGLT <- head <$> inshell2text "mktemp -p ./"
   putStrLn $ show tempGLT
@@ -73,15 +76,19 @@ plotBand (fOut:useOldBw:judulUtama:yr:atomOs:daftarLengkap) = do
   _ <- mapM inshell2text $ (("gnuplot " ++ T.unpack tempGLT) : converter : target )
   putStrLn "===end  : plotBand===="
   putStrLn plotplate2
+    where
+      takePFBAND (_,_,_,p,f) = (p,f)
 
 plotBand _ = putStrLn "Error: complete arguments needed"
 
+plotSingleBand :: String -> String -> String
+               -> IO (String, String, Maybe String, T.Text, T.Text)
 plotSingleBand useOldBw atomOs daftarLengkap = do
   let (foldernya:spinnya:legend:_) = splitOn ":" daftarLengkap
   bandFiles <- inshell2text $ unwords ["ls",concat[foldernya,"/bnd*spin",spinnya]]
   let daftarFolder = ":" ++ intercalate "@" [legend,spinnya,foldernya]
 
-  let plotplate = T.intercalate ", " $ map genPlotPlate $ map (\x -> T.concat["'",x,"'"]) bandFiles
+  let generatedPBAND = T.intercalate ", " $ map genPlotPlate $ map (\x -> T.concat["'",x,"'"]) bandFiles
   valBand@(valBandX:valBandY:_) <- fmap (words . T.unpack . head) $ inshell2text $ unwords ["cat",concat [foldernya,"/bnd*spin*",spinnya],"|sed -e '/^#/d' |awk '{if ($3>0.1) print $2,$3}'|sort -k 2n|head -1"]
   (_:condBandY:_) <- fmap (words . T.unpack . head) $ inshell2text $ unwords ["cat", concat[foldernya,"/bnd*spin*",spinnya],"| sed -e '/^#/d' |awk '{if ($3<=0) print $2,$3}'|sort -k 2nr -u|sed -e '/^ *$/d'|head -1"]
   putStrLn $ "===valBand==" ++ show (valBand :: [String])
@@ -107,12 +114,12 @@ plotSingleBand useOldBw atomOs daftarLengkap = do
 --  putStrLn $ show gapArrow
 --  putStrLn $ "perintahDOS Removed == " ++ unwords [
 --    "genPDOSvert.hs ", atomOs, fromJust gapnya, spinnya, daftarFolder]
-  generatedPBAND <- genPBAND useOldBw spinnya "0" atomOs [daftarFolder]
-  putStrLn $ show generatedPBAND
+  generatedFATBAND <- genPBAND useOldBw spinnya "0" atomOs [daftarFolder]
+  putStrLn $ show generatedFATBAND
   (xrangeatas,ticksbaru) <- genBandTicks foldernya
   putStrLn $ "========" ++ show xrangeatas ++ "=====" ++ show ticksbaru
   putStrLn $ "=== FINISHED PROCESSING : " ++ daftarLengkap
-  return $ (xrangeatas,ticksbaru,arrow,plotplate,generatedPBAND)
+  return $ (xrangeatas,ticksbaru,arrow,generatedPBAND,generatedFATBAND)
 
 
 genPBAND :: String -> String -> String -> String -> [String] -> IO T.Text
