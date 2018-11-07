@@ -64,10 +64,10 @@ plotBand (fOut:useOldBw:judulUtama:yr:atomOs:daftarLengkap) = do
   gapCoordBandGap <- fmap runGAPband $ inshell2text $ "cat " ++ concat [foldernya,"/bnd*spin*",spinnya]
   let bandGap = last $ words gapCoordBandGap
   putStrLn $ "===allBand=== " ++ show (bandGap :: String)
-  let gapArrow@(gapnya,arrow) =
+  let arrow =
         if (bandGap == "0")
-           then (Nothing,Nothing)
-           else (,) (Just $ "0:" ++ bandGap ++ "@" ++ valBandY)
+           then Nothing
+           else --(,) (Just $ "0:" ++ bandGap ++ "@" ++ valBandY)
                     (Just $ unlines [ concat ["set label sprintf ('{/Symbol D}=%.2feV',"
                                       , bandGap
                                       , ") at (" ++ valBandX ++ "-0.55),"
@@ -80,9 +80,9 @@ plotBand (fOut:useOldBw:judulUtama:yr:atomOs:daftarLengkap) = do
                                       ]
                              ]
                     )
-  putStrLn $ show gapArrow
-  putStrLn $ "perintahDOS Removed == " ++ unwords [
-    "genPDOSvert.hs ", atomOs, fromJust gapnya, spinnya, daftarFolder]
+--  putStrLn $ show gapArrow
+--  putStrLn $ "perintahDOS Removed == " ++ unwords [
+--    "genPDOSvert.hs ", atomOs, fromJust gapnya, spinnya, daftarFolder]
   generatedPBAND <- genPBAND useOldBw spinnya "0" atomOs [daftarFolder]
   putStrLn $ show generatedPBAND
   let plotplate2 = T.unpack $ T.unwords [plotplate, ",", generatedPBAND]
@@ -92,7 +92,7 @@ plotBand (fOut:useOldBw:judulUtama:yr:atomOs:daftarLengkap) = do
   putStrLn $ show tempGLT
   (xrangeatas,ticksbaru) <- genBandTicks foldernya
   putStrLn $ "========" ++ show xrangeatas ++ "=====" ++ show ticksbaru
-  writeFile (T.unpack tempGLT) $ genTEMPGLT tempDir judulUtama yr xrangeatas ticksbaru (fromJust arrow) isi plotplate2 ender
+  writeFile (T.unpack tempGLT) $ genTEMPGLT tempDir judulUtama yr xrangeatas ticksbaru (fromMaybe "" arrow) isi plotplate2 ender
   let converter = unwords ["convert", tempDir ++ "/hasil.jpg"
                           , "-fuzz 5% -trim +repage"
                           , tempDir ++ "/hasil.jpg"
