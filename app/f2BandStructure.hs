@@ -63,7 +63,7 @@ plotBand (fOut:useOldBw:judulUtama:yr:atomOs:daftarLengkap) = do
   putStrLn $ "===valBand==" ++ show (valBand :: [String])
   gapCoordBandGap <- fmap runGAPband $ inshell2text $ "cat " ++ concat [foldernya,"/bnd*spin*",spinnya]
   let bandGap = last $ words gapCoordBandGap
-  putStrLn $ "===allBand=== " ++ show (bandGap :: String)
+  putStrLn $ "===allBand=== " ++ bandGap
   let arrow =
         if (bandGap == "0")
            then Nothing
