@@ -1,5 +1,8 @@
+
+  {-
 #!/usr/bin/env stack
 --stack --resolver lts-11.3 --install-ghc runghc --stack-yaml /home/aku/kanazawa/dev/cpvoh/stack.yaml
+-}
 
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE Strict #-}
@@ -17,6 +20,7 @@ import Data.Either -- rights
 import Numeric.LinearAlgebra.Data -- toLists, fromLists
 import Data.Maybe -- fromJust
 import Data.String  -- IsString
+import System.Directory
 
 main :: IO ()
 main = do
@@ -25,32 +29,36 @@ main = do
   plotBand allArgs
   putStrLn "========beres======="
 
+debugLine _ = return ()
+debugLine ss = putStrLn $ "===debug=== " ++ show ss
+
 plotBand :: [String] -> IO ()
+plotBand (_:[]) = do
+  putStrLn $ unlines $
+    "===start: plotBand====":
+    "run it using:":
+    "~/kanazawa/dev/cpvoh/f2 outputfile useOldBw judulUtama yRange atomOs target1 target2 target3":
+    "outputfile: any filename, for each filename f, we will have f.jpg and f.eps":
+    "useOldBw  : 1 = will use old BandWidth file":
+    "            0 = will make a new BandWidth file":
+    "judulUtama: unimplemented yet":
+    "yRange    : y range min:max, ex. -9.5:2":
+    "atomOs    : atomic orbital yang ditampilkan sebagai fat band":
+    "            format: orbital@atomNumber-orbital@atomNumber2-...":
+    "              atomNumber: 1,2,...":
+    "              orbital: s p px py pz dx2My2 dz2 dyz dxy dxz eg t2g":
+    "target    : in format of folder:spin:subTitle":
+    "            spin: 1 = UP and 2 = DOWN or inversed by invStat":
+    "~/kanazawa/dev/cpvoh/f2 outputfile 0 '\"\"' -9.5:2 \"p@7-dx2My2@11-dz2@11\" nico2o4.invB.11G20:1:\"11G20.Majority\"":[]
+
 plotBand (fOut:useOldBw:judulUtama:yr:atomOs:daftarLengkap) = do
-  putStrLn $ unlines [ "===start: plotBand===="
-                     , "run it using:"
-                     , "~/kanazawa/dev/cpvoh/f2 outputfile useOldBw judulUtama yRange atomOs target1 target2 target3"
-                     , "outputfile: any filename, for each filename f, we will have f.jpg and f.eps"
-                     , "useOldBw  : 1 = will use old BandWidth file"
-                     , "            0 = will make a new BandWidth file"
-                     , "judulUtama: unimplemented yet"
-                     , "yRange    : y range min:max, ex. -9.5:2"
-                     , "atomOs    : atomic orbital yang ditampilkan sebagai fat band"
-                     , "            format: orbital@atomNumber-orbital@atomNumber2-..."
-                     , "              atomNumber: 1,2,..."
-                     , "              orbital: s p px py pz dx2My2 dz2 dyz dxy dxz eg t2g"
-                     , "target    : in format of folder:spin:subTitle"
-                     , "            spin: 1 = UP and 2 = DOWN or inversed by invStat"
-                     , "~/kanazawa/dev/cpvoh/f2 outputfile 0 '\"\"' -9.5:2 \"p@7-dx2My2@11-dz2@11\" nico2o4.invB.11G20:1:\"11G20.Majority\""
-                     ]
   tempDir <- (T.unpack . head) <$> inshell2text "mktemp -d -p ./"
-  let ender = unlines [ "unset multiplot"
-                      , "system \"cd " ++ tempDir ++ " && epstopdf hasil.eps && pdftocairo -r 150 -singlefile -jpeg hasil.pdf tmp && convert tmp.jpg -rotate 90 hasil.jpg && rm -f tmp.jpg\""
-                      ]
+  let endMultiplot = unlines [ "unset multiplot" ]
+
   let isi = unlines [ "set datafile missing '-'"
                     , "plot 0 lt -1 lc rgb 'black' title '' , \\"
                     ]
-  putStrLn ender
+  debugLine endMultiplot
 
   putStrLn $ unlines daftarLengkap
 
@@ -59,23 +67,28 @@ plotBand (fOut:useOldBw:judulUtama:yr:atomOs:daftarLengkap) = do
   let generatedPBAND = T.intercalate "," $ filter (not . T.null) $ map fst generatedPFBAND
   let generatedFATBAND = T.intercalate "," $ filter (not . T.null) $ map snd generatedPFBAND
   let plotplate2 = T.unpack $ T.intercalate "," $ filter (not . T.null) [generatedPBAND, generatedFATBAND]
-  putStrLn $ show plotplate2
-  putStrLn $ show allPBAND
-  putStrLn $ "============bikin TEMPGLT"
+  debugLine plotplate2
+  debugLine allPBAND
+  putStrLn $ "============TEMPGLT"
   tempGLT <- head <$> inshell2text "mktemp -p ./"
   putStrLn $ show tempGLT
-  writeFile (T.unpack tempGLT) $ genTEMPGLT tempDir judulUtama yr xrangeatas ticksbaru (fromMaybe "" arrow) isi plotplate2 ender
-  let converter = unwords ["convert", tempDir ++ "/hasil.jpg"
-                          , "-fuzz 5% -trim +repage"
-                          , tempDir ++ "/hasil.jpg"
-                          ]
-  let target = map (\x -> unwords [ "mv"
-                                  , tempDir ++ "/hasil" ++ x
-                                  , fOut ++ x
-                                  ]) [".eps",".jpg"]
-  _ <- mapM inshell2text $ (("gnuplot " ++ T.unpack tempGLT) : converter : target )
+
+  writeFile (T.unpack tempGLT) $ genTEMPGLT tempDir judulUtama yr xrangeatas ticksbaru (fromMaybe "" arrow) isi plotplate2 endMultiplot
+  system_ $ "gnuplot " ++ T.unpack tempGLT
+  let target = map (\x -> unwords [ "mv "
+                                  , "hasil" ++ x
+                                  , "../" ++ fOut ++ x
+                                  ]) [".eps",".png"]
+  withCurrentDirectory tempDir $
+    mapM_ system_ $
+      "ps2eps tmp.ps":
+      "epstool --copy -b --quiet tmp.eps hasil.eps":
+      "epstopdf hasil.eps":
+      "pdftocairo -r 150 -singlefile -jpeg hasil.pdf tmp":
+      "convert tmp.jpg -rotate 0 hasil.png":
+      "rm -f tmp.jpg":
+      target
   putStrLn "===end  : plotBand===="
-  putStrLn plotplate2
     where
       takePFBAND (_,_,_,p,f) = (p,f)
 
@@ -141,7 +154,8 @@ genPBAND   oldBw  _   invStat atomNos foldernya = do
         daftarAOJSF = zip ([1..] :: [Integer]) $ concat $ map (\a -> zip daftaratomOs $ repeat a) daftarJudulSpinFolders
 
     let err'' = map ( \(_,([o,a],[_,s,folder'])) -> concat [ "cd ", folder', "; BandWeight.py PROCAR.",cekSpin s invStat "1" "UP" "DN" , " ",a, " ", o]) daftarAOJSF
-    _ <- if (oldBw /= "1") then mapM inshell2text err'' else return []
+    if (oldBw /= "1") then mapM_ system_ err''
+                      else return ()
 
 {--
   (\$2>6.08991818?0.4+\$2:\$2):(\$2>6.08991818&&\$2<6.09991818?1/0:\$3)
@@ -187,8 +201,8 @@ genTEMPGLT :: String -> String -> String -> String -> String -> String -> String
 genTEMPGLT tempDir judulUtama yr xrangeatas ticksbaru arrow isi plotplate ender =
              unlines [ "#!/home/aku/bin/gnuplot -persist"
                      , "reset"
-                     , "set term post landscape enhanced color 'Times-Roman' 12"
-                     , "set output '" ++ tempDir ++ "/hasil.eps'"
+                     , "set term post portrait enhanced color 'Times-Roman' 12"
+                     , "set output '" ++ tempDir ++ "/tmp.ps'"
                      , "rydberg=13.605"
                      , "if (!exists('MP_LEFT'))   MP_LEFT = .1"
                      , "if (!exists('MP_RIGHT'))  MP_RIGHT = .95"
@@ -205,6 +219,7 @@ genTEMPGLT tempDir judulUtama yr xrangeatas ticksbaru arrow isi plotplate ender 
                      , "set key samplen 1 spacing 1"
                      , "set size ratio 1.5"
                      , "set mytics 10"
+                     , "set xlabel 'Wave Vector'"
                      , "set ylabel 'Energy-E_F (eV)'"
                      , "set title '" ++ judulUtama ++ "'"
                      , "set yrange ["++ yr ++ "]"

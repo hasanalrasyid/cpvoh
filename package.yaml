@@ -37,6 +37,7 @@ dependencies:
 - fortran-src          # --- !needed by zmat2xyz
 - shake
 - template-haskell
+- directory
   #- cryptohash           # ---  temporary needed
   #- base16-bytestring           # --- !temporary needed
   #- bytestring           # --- !temporary needed

@@ -7,6 +7,7 @@ module CPVO.IO (
     showDouble,
     markdownToTex,
     inshell2text,
+    system_,
     rendertable,
     takeAOs,
     flipBy,
@@ -22,23 +23,10 @@ import Data.List
 
 import Text.PrettyPrint.Boxes hiding ((<>),cols,rows)
 import qualified Text.PrettyPrint.Boxes as TB
--- ===============================================
--- start of Accelerate
--- import Data.Array.Accelerate              as A
--- import Data.Array.Accelerate.LLVM.Native  as CPU
--- import Data.Array.Accelerate.LLVM.PTX     as GPU
---
-{-
-dotp :: Acc (Vector Float) -> Acc (Vector Float) -> Acc (Scalar Float)
-dotp xs ys = A.fold (+) 0 (A.zipWith (*) xs ys)
+import System.Process as SP
 
-main1 = do
-    kj@(texFile:jd:xr:ymax':wTot:tumpuk:invS:tailer:foldernya:aos) <- getArgs
-    putStrLn $ show kj
---    let xs = fromList (Z:.10) [0..]   :: Vector Float
---    let ys = fromList (Z:.10) [1,3..] :: Vector Float
---    CPU.run $ dotp (use xs) (use ys)
--}
+system_ :: String -> IO ()
+system_ ss = SP.system ss >> return ()
 
 showDouble :: Integer -> Double -> String
 showDouble _ (0 :: Double) = show (0 :: Integer)
