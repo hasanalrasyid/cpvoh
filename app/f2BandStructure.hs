@@ -1,5 +1,4 @@
-
-  {-
+{-
 #!/usr/bin/env stack
 --stack --resolver lts-11.3 --install-ghc runghc --stack-yaml /home/aku/kanazawa/dev/cpvoh/stack.yaml
 -}
@@ -29,8 +28,9 @@ main = do
   plotBand allArgs
   putStrLn "========beres======="
 
-debugLine _ = return ()
-debugLine ss = putStrLn $ "===debug=== " ++ show ss
+debugLine :: Show a => Bool -> a -> IO ()
+debugLine False _ = return ()
+debugLine _ ss = putStrLn $ "===debug=== " ++ show ss
 
 plotBand :: [String] -> IO ()
 plotBand (_:[]) = do
@@ -58,7 +58,7 @@ plotBand (fOut:useOldBw:judulUtama:yr:atomOs:daftarLengkap) = do
   let isi = unlines [ "set datafile missing '-'"
                     , "plot 0 lt -1 lc rgb 'black' title '' , \\"
                     ]
-  debugLine endMultiplot
+  debugLine False endMultiplot
 
   putStrLn $ unlines daftarLengkap
 
@@ -67,8 +67,8 @@ plotBand (fOut:useOldBw:judulUtama:yr:atomOs:daftarLengkap) = do
   let generatedPBAND = T.intercalate "," $ filter (not . T.null) $ map fst generatedPFBAND
   let generatedFATBAND = T.intercalate "," $ filter (not . T.null) $ map snd generatedPFBAND
   let plotplate2 = T.unpack $ T.intercalate "," $ filter (not . T.null) [generatedPBAND, generatedFATBAND]
-  debugLine plotplate2
-  debugLine allPBAND
+  debugLine False plotplate2
+  debugLine False allPBAND
   putStrLn $ "============TEMPGLT"
   tempGLT <- head <$> inshell2text "mktemp -p ./"
   putStrLn $ show tempGLT
@@ -128,7 +128,9 @@ plotSingleBand (daftarLengkap:sisa) useOldBw atomOs colorId res = do
   plotSingleBand sisa useOldBw atomOs (colorId+1) ((xrangeatas,ticksbaru,arrow,generatedPBAND,generatedFATBAND):res)
 
 genArrow :: [Char] -> [Char] -> [Char] -> [Char] -> Maybe String
-genArrow bandGap valBandX valBandY condBandY =
+genArrow _ _ _ _ = Nothing
+genArrow' :: [Char] -> [Char] -> [Char] -> [Char] -> Maybe String
+genArrow' bandGap valBandX valBandY condBandY =
         if (bandGap == "0")
            then Nothing
            else --(,) (Just $ "0:" ++ bandGap ++ "@" ++ valBandY)
