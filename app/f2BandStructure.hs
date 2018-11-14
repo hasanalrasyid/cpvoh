@@ -11,7 +11,7 @@
 
 import CPVO.IO -- inshell2text
 --import System.Environment (getArgs)
-import Data.List.Split (splitOn,wordsBy)
+import Data.List.Split (splitOn)
 import qualified Data.Text as T
 import qualified Data.Text.Read as T
 import Data.List -- intercalate
@@ -27,7 +27,7 @@ main :: IO ()
 main = do
   (Opts fOut useOldBw judulUtama yr atomOs daftarLengkap) <- execParser withHelp
   plotBand fOut useOldBw judulUtama yr atomOs
-    $ map (wordsBy (== '#')) daftarLengkap
+    $ map (splitOn "#") daftarLengkap
   putStrLn "========DONE======="
 
 debugLine :: Show a => Bool -> a -> IO ()
@@ -191,7 +191,7 @@ genTEMPGLT :: String -> String -> String -> String -> String -> String
            -> [String]
            -> String
 genTEMPGLT tempDir judulUtama yr xrangeatas ticksbaru arrow plotplate =
-    let subTitles = wordsBy (== '#') judulUtama
+    let subTitles = splitOn "#" judulUtama
      in unlines [ "#!/home/aku/bin/gnuplot -persist"
                 , "reset"
                 , "set term post landscape enhanced color 'Times-Roman' 12"
