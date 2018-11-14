@@ -1,7 +1,5 @@
-{-
 #!/usr/bin/env stack
 --stack --resolver lts-11.3 --install-ghc runghc --stack-yaml /home/aku/kanazawa/dev/cpvoh/stack.yaml
--}
 
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE Strict #-}
@@ -10,7 +8,7 @@
 --import CPVO.IO.Plot.Band
 
 import CPVO.IO -- inshell2text
-import System.Environment (getArgs)
+--import System.Environment (getArgs)
 import Data.List.Split (splitOn)
 import qualified Data.Text as T
 import qualified Data.Text.Read as T
@@ -20,38 +18,21 @@ import Numeric.LinearAlgebra.Data -- toLists, fromLists
 import Data.Maybe -- fromJust
 import Data.String  -- IsString
 import System.Directory
+import Options.Applicative as O
+import Data.Semigroup -- <>
 
 main :: IO ()
 main = do
-  allArgs <- getArgs
-
-  plotBand allArgs
+  (Opts fOut useOldBw judulUtama yr atomOs daftarLengkap) <- execParser withHelp
+  plotBand fOut useOldBw judulUtama yr atomOs daftarLengkap
   putStrLn "========beres======="
 
 debugLine :: Show a => Bool -> a -> IO ()
 debugLine False _ = return ()
 debugLine _ ss = putStrLn $ "===debug=== " ++ show ss
 
-plotBand :: [String] -> IO ()
-plotBand (_:[]) = do
-  putStrLn $ unlines $
-    "===start: plotBand====":
-    "run it using:":
-    "~/kanazawa/dev/cpvoh/f2 outputfile useOldBw judulUtama yRange atomOs target1 target2 target3":
-    "outputfile: any filename, for each filename f, we will have f.jpg and f.eps":
-    "useOldBw  : 1 = will use old BandWidth file":
-    "            0 = will make a new BandWidth file":
-    "judulUtama: unimplemented yet":
-    "yRange    : y range min:max, ex. -9.5:2":
-    "atomOs    : atomic orbital yang ditampilkan sebagai fat band":
-    "            format: orbital@atomNumber-orbital@atomNumber2-...":
-    "              atomNumber: 1,2,...":
-    "              orbital: s p px py pz dx2My2 dz2 dyz dxy dxz eg t2g":
-    "target    : in format of folder:spin:subTitle":
-    "            spin: 1 = UP and 2 = DOWN or inversed by invStat":
-    "~/kanazawa/dev/cpvoh/f2 outputfile 0 '\"\"' -9.5:2 \"p@7-dx2My2@11-dz2@11\" nico2o4.invB.11G20:1:\"11G20.Majority\"":[]
-
-plotBand (fOut:useOldBw:judulUtama:yr:atomOs:daftarLengkap) = do
+plotBand :: String -> Bool -> String -> String -> String -> [String] -> IO ()
+plotBand fOut useOldBw judulUtama yr atomOs daftarLengkap = do
   tempDir <- (T.unpack . head) <$> inshell2text "mktemp -d -p ./"
   let endMultiplot = unlines [ "unset multiplot" ]
 
@@ -92,12 +73,12 @@ plotBand (fOut:useOldBw:judulUtama:yr:atomOs:daftarLengkap) = do
     where
       takePFBAND (_,_,_,p,f) = (p,f)
 
-plotBand _ = putStrLn "Error: complete arguments needed"
+--plotBand _ = putStrLn "Error: complete arguments needed"
 
 --plotSingleBand :: String -> String -> String
 --               -> IO (String, String, Maybe String, T.Text, T.Text)
 plotSingleBand :: [String]
-               -> String
+               -> Bool
                -> String
                -> Int
                -> [(String, String, Maybe String, T.Text, T.Text)]
@@ -147,16 +128,16 @@ genArrow' bandGap valBandX valBandY condBandY =
                              ]
                     )
 
-genPBAND :: String -> String -> String -> String -> [String] -> IO T.Text
+genPBAND :: Bool -> String -> String -> String -> [String] -> IO T.Text
 --genPBAND oldBw spin invStat atomNos foldernya = do
 genPBAND   _      _   _       []      _         = return ""
-genPBAND   oldBw  _   invStat atomNos foldernya = do
+genPBAND   useOldBw  _   invStat atomNos foldernya = do
     let daftaratomOs =  map (splitOn "@") $ splitOn "-" atomNos
         daftarJudulSpinFolders = filter (/=[""]) $ map (splitOn "@") $ splitOn ":" $ unwords foldernya
         daftarAOJSF = zip ([1..] :: [Integer]) $ concat $ map (\a -> zip daftaratomOs $ repeat a) daftarJudulSpinFolders
 
     let err'' = map ( \(_,([o,a],[_,s,folder'])) -> concat [ "cd ", folder', "; BandWeight.py PROCAR.",cekSpin s invStat "1" "UP" "DN" , " ",a, " ", o]) daftarAOJSF
-    if (oldBw /= "1") then mapM_ system_ err''
+    if (useOldBw == True) then mapM_ system_ err''
                       else return ()
 
 {--
@@ -258,3 +239,51 @@ genTEMPGLT tempDir judulUtama yr xrangeatas ticksbaru arrow isi plotplate ender 
                      , unwords [arrow, isi ,plotplate]
                      , ender
                      ]
+
+--plotBand (fOut:useOldBw:judulUtama:yr:atomOs:daftarLengkap) = do
+data Opts = Opts {
+    _fOut       :: String,
+    _useOldBw   :: Bool,
+    _judulUtama :: String,
+    _yr         :: String,
+    _atomOs     :: String,
+    _targetDir :: [String]
+                 } deriving Show
+
+optsParser :: Parser Opts
+optsParser = Opts
+             <$> strOption (long "out" <> short 'o' <>
+                          help "target output file" <> value "test")
+             <*> switch (long "oldbw" <> short 'b'
+                            <> help "Using old BandWeight files")
+             <*> strOption (long "title" <> short 't' <>
+                            metavar "TITLE" <>
+                            help "Title of the Figure" <>
+                            value "")
+             <*> strOption  ( long "yrange" <> short 'y' <>
+                            metavar "MIN:MAX" <>
+                            help "Y-range of the figure, ex. -2.5:7.3")
+             <*> strOption (long "orbitals" <> short 'r' <> metavar "ORBITALS"
+                            <> help "List of atomic orbitals" <> value "")
+             <*> (many $ argument str (metavar "TARGETDIR"))
+
+withHelp :: ParserInfo Opts
+withHelp = info
+  (helper <*> optsParser)
+  (fullDesc <> (progDesc $ unlines $
+    "Band Structure Generator for ecalj":
+    "run it using:":
+    "~/kanazawa/dev/cpvoh/f2 outputfile useOldBw judulUtama yRange atomOs target1 target2 target3":
+    "outputfile: any filename, for each filename f, we will have f.jpg and f.eps":
+    "useOldBw  : 1 = will use old BandWidth file":
+    "            0 = will make a new BandWidth file":
+    "judulUtama: unimplemented yet":
+    "yRange    : y range min:max, ex. -9.5:2":
+    "atomOs    : atomic orbital yang ditampilkan sebagai fat band":
+    "            format: orbital@atomNumber-orbital@atomNumber2-...":
+    "              atomNumber: 1,2,...":
+    "              orbital: s p px py pz dx2My2 dz2 dyz dxy dxz eg t2g":
+    "target    : in format of folder:spin:subTitle":
+    "            spin: 1 = UP and 2 = DOWN or inversed by invStat":
+    "~/kanazawa/dev/cpvoh/f2 outputfile 0 '\"\"' -9.5:2 \"p@7-dx2My2@11-dz2@11\" nico2o4.invB.11G20:1:\"11G20.Majority\"":[]
+               ))
