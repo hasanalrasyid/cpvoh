@@ -62,7 +62,7 @@ plotBand fOut useOldBw judulUtama yr atomOs daftarLengkap = do
                                   ]) [".eps",".png"]
   withCurrentDirectory tempDir $
     mapM_ system_ $
-      "ps2eps tmp.ps":
+      "ps2eps --rotate=+ tmp.ps":
       "epstool --copy -b --quiet tmp.eps hasil.eps":
       "epstopdf hasil.eps":
       "pdftocairo -r 150 -singlefile -jpeg hasil.pdf tmp":
