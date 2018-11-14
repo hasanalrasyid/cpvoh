@@ -9,7 +9,7 @@
 
 import CPVO.IO -- inshell2text
 --import System.Environment (getArgs)
-import Data.List.Split (splitOn)
+import Data.List.Split (splitOn,wordsBy)
 import qualified Data.Text as T
 import qualified Data.Text.Read as T
 import Data.List -- intercalate
@@ -24,37 +24,33 @@ import Data.Semigroup -- <>
 main :: IO ()
 main = do
   (Opts fOut useOldBw judulUtama yr atomOs daftarLengkap) <- execParser withHelp
-  plotBand fOut useOldBw judulUtama yr atomOs daftarLengkap
+  plotBand fOut useOldBw judulUtama yr atomOs
+    $ map (wordsBy (== '#')) daftarLengkap
   putStrLn "========beres======="
 
 debugLine :: Show a => Bool -> a -> IO ()
 debugLine False _ = return ()
 debugLine _ ss = putStrLn $ "===debug=== " ++ show ss
 
-plotBand :: String -> Bool -> String -> String -> String -> [String] -> IO ()
+plotInit :: String
+plotInit = unlines $ "set datafile missing '-'":
+                     "plot 0 lt -1 lc rgb 'black' title '' , \\":[]
+
+endMultiplot :: String
+endMultiplot = unlines [ "unset multiplot" ]
+
+plotBand :: String -> Bool -> String -> String -> String -> [[String]] -> IO ()
 plotBand fOut useOldBw judulUtama yr atomOs daftarLengkap = do
   tempDir <- (T.unpack . head) <$> inshell2text "mktemp -d -p ./"
-  let endMultiplot = unlines [ "unset multiplot" ]
 
-  let isi = unlines [ "set datafile missing '-'"
-                    , "plot 0 lt -1 lc rgb 'black' title '' , \\"
-                    ]
-  debugLine False endMultiplot
+  putStrLn $ unlines $ concat daftarLengkap
+  (xrangeatas,ticksbaru,arrow,plotplate) <- genSinglePlot useOldBw atomOs daftarLengkap ("","",Nothing,[])
 
-  putStrLn $ unlines daftarLengkap
-
-  allPBAND@((xrangeatas,ticksbaru,arrow,_,_):_) <- plotSingleBand daftarLengkap useOldBw atomOs 1 []
-  let generatedPFBAND = (map takePFBAND allPBAND)
-  let generatedPBAND = T.intercalate "," $ filter (not . T.null) $ map fst generatedPFBAND
-  let generatedFATBAND = T.intercalate "," $ filter (not . T.null) $ map snd generatedPFBAND
-  let plotplate2 = T.unpack $ T.intercalate "," $ filter (not . T.null) [generatedPBAND, generatedFATBAND]
-  debugLine False plotplate2
-  debugLine False allPBAND
   putStrLn $ "============TEMPGLT"
   tempGLT <- head <$> inshell2text "mktemp -p ./"
   putStrLn $ show tempGLT
 
-  writeFile (T.unpack tempGLT) $ genTEMPGLT tempDir judulUtama yr xrangeatas ticksbaru (fromMaybe "" arrow) isi plotplate2 endMultiplot
+  writeFile (T.unpack tempGLT) $ genTEMPGLT tempDir judulUtama yr xrangeatas ticksbaru (fromMaybe "" arrow) plotplate
   system_ $ "gnuplot " ++ T.unpack tempGLT
   let target = map (\x -> unwords [ "mv "
                                   , "hasil" ++ x
@@ -70,22 +66,29 @@ plotBand fOut useOldBw judulUtama yr atomOs daftarLengkap = do
       "rm -f tmp.jpg":
       target
   putStrLn "===end  : plotBand===="
+
+genSinglePlot :: Bool -> String -> [[String]]
+              ->    (String, String, Maybe String, [String])
+              -> IO (String, String, Maybe String, [String])
+genSinglePlot _        _      []            res              = return res
+genSinglePlot useOldBw atomOs (daftarLengkap:ds) (_,_,_,res) = do
+  allPBAND@((xrangeatas,ticksbaru,arrow,_,_):_) <- plotSinglePic daftarLengkap useOldBw atomOs 1 []
+  let generatedPFBAND = (map takePFBAND allPBAND)
+  let generatedPBAND = T.intercalate "," $ filter (not . T.null) $ map fst generatedPFBAND
+  let generatedFATBAND = T.intercalate "," $ filter (not . T.null) $ map snd generatedPFBAND
+  genSinglePlot useOldBw atomOs ds (xrangeatas, ticksbaru, arrow, (T.unpack $ T.intercalate "," $ filter (not . T.null) [generatedPBAND, generatedFATBAND]):res)
     where
       takePFBAND (_,_,_,p,f) = (p,f)
 
---plotBand _ = putStrLn "Error: complete arguments needed"
-
---plotSingleBand :: String -> String -> String
---               -> IO (String, String, Maybe String, T.Text, T.Text)
-plotSingleBand :: [String]
+plotSinglePic :: [String]
                -> Bool
                -> String
                -> Int
                -> [(String, String, Maybe String, T.Text, T.Text)]
                -> IO [(String, String, Maybe String, T.Text, T.Text)]
 
-plotSingleBand []                   _        _       _      res = return res
-plotSingleBand (daftarLengkap:sisa) useOldBw atomOs colorId res = do
+plotSinglePic []                   _        _       _      res = return res
+plotSinglePic (daftarLengkap:sisa) useOldBw atomOs colorId res = do
   let (foldernya:spinnya:legend:_) = splitOn ":" daftarLengkap
   bandFiles <- inshell2text $ unwords ["ls",concat[foldernya,"/bnd*spin",spinnya]]
   let daftarFolder = ":" ++ intercalate "@" [legend,spinnya,foldernya]
@@ -106,7 +109,7 @@ plotSingleBand (daftarLengkap:sisa) useOldBw atomOs colorId res = do
   (xrangeatas,ticksbaru) <- genBandTicks foldernya
   putStrLn $ "========" ++ show xrangeatas ++ "=====" ++ show ticksbaru
   putStrLn $ "=== FINISHED PROCESSING : " ++ daftarLengkap
-  plotSingleBand sisa useOldBw atomOs (colorId+1) ((xrangeatas,ticksbaru,arrow,generatedPBAND,generatedFATBAND):res)
+  plotSinglePic sisa useOldBw atomOs (colorId+1) ((xrangeatas,ticksbaru,arrow,generatedPBAND,generatedFATBAND):res)
 
 genArrow :: [Char] -> [Char] -> [Char] -> [Char] -> Maybe String
 genArrow _ _ _ _ = Nothing
@@ -180,8 +183,9 @@ genBandTicks foldernya = do
     return $ (,) (last lTicks)
            $ unwords $ intersperse "," $ map (\(a,b) -> unwords ["'"++a++"'",b]) $ zip  namaTicks lTicks
 
-genTEMPGLT :: String -> String -> String -> String -> String -> String -> String -> String -> String -> String
-genTEMPGLT tempDir judulUtama yr xrangeatas ticksbaru arrow isi plotplate ender =
+genTEMPGLT :: String -> String -> String -> String -> String -> String -> [String]
+           -> String
+genTEMPGLT tempDir judulUtama yr xrangeatas ticksbaru arrow plotplate =
              unlines [ "#!/home/aku/bin/gnuplot -persist"
                      , "reset"
                      , "set term post portrait enhanced color 'Times-Roman' 12"
@@ -236,8 +240,8 @@ genTEMPGLT tempDir judulUtama yr xrangeatas ticksbaru arrow isi plotplate ender 
                      , "set style arrow 1 heads size screen 0.01,90 lw 2 lc rgb 'navy'"
                      , "set key bottom left Left"
                      , "set xtics (" ++ ticksbaru ++ ")"
-                     , unwords [arrow, isi ,plotplate]
-                     , ender
+                     , (unlines $ map (\x -> unwords [arrow, plotInit ,x]) plotplate)
+                     , endMultiplot
                      ]
 
 --plotBand (fOut:useOldBw:judulUtama:yr:atomOs:daftarLengkap) = do
