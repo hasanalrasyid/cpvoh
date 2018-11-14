@@ -1,5 +1,7 @@
+{-
 #!/usr/bin/env stack
 --stack --resolver lts-11.3 --install-ghc runghc --stack-yaml /home/aku/kanazawa/dev/cpvoh/stack.yaml
+-}
 
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE Strict #-}
@@ -26,7 +28,7 @@ main = do
   (Opts fOut useOldBw judulUtama yr atomOs daftarLengkap) <- execParser withHelp
   plotBand fOut useOldBw judulUtama yr atomOs
     $ map (wordsBy (== '#')) daftarLengkap
-  putStrLn "========beres======="
+  putStrLn "========DONE======="
 
 debugLine :: Show a => Bool -> a -> IO ()
 debugLine False _ = return ()
@@ -39,18 +41,20 @@ plotInit = unlines $ "set datafile missing '-'":
 endMultiplot :: String
 endMultiplot = unlines [ "unset multiplot" ]
 
-plotBand :: String -> Bool -> String -> String -> String -> [[String]] -> IO ()
+plotBand :: String -> Bool -> String -> String -> String -> [[String]]
+         -> IO ()
 plotBand fOut useOldBw judulUtama yr atomOs daftarLengkap = do
   tempDir <- (T.unpack . head) <$> inshell2text "mktemp -d -p ./"
 
   putStrLn $ unlines $ concat daftarLengkap
-  (xrangeatas,ticksbaru,arrow,plotplate) <- genSinglePlot useOldBw atomOs daftarLengkap ("","",Nothing,[])
+  (xrangeatas,ticksbaru,arrow,plotplate) <- genSinglePic useOldBw atomOs daftarLengkap ("","",Nothing,[])
 
   putStrLn $ "============TEMPGLT"
   tempGLT <- head <$> inshell2text "mktemp -p ./"
   putStrLn $ show tempGLT
 
   writeFile (T.unpack tempGLT) $ genTEMPGLT tempDir judulUtama yr xrangeatas ticksbaru (fromMaybe "" arrow) plotplate
+
   system_ $ "gnuplot " ++ T.unpack tempGLT
   let target = map (\x -> unwords [ "mv "
                                   , "hasil" ++ x
@@ -67,16 +71,16 @@ plotBand fOut useOldBw judulUtama yr atomOs daftarLengkap = do
       target
   putStrLn "===end  : plotBand===="
 
-genSinglePlot :: Bool -> String -> [[String]]
+genSinglePic :: Bool -> String -> [[String]]
               ->    (String, String, Maybe String, [String])
               -> IO (String, String, Maybe String, [String])
-genSinglePlot _        _      []            res              = return res
-genSinglePlot useOldBw atomOs (daftarLengkap:ds) (_,_,_,res) = do
+genSinglePic _        _      []            res              = return res
+genSinglePic useOldBw atomOs (daftarLengkap:ds) (_,_,_,res) = do
   allPBAND@((xrangeatas,ticksbaru,arrow,_,_):_) <- plotSinglePic daftarLengkap useOldBw atomOs 1 []
   let generatedPFBAND = (map takePFBAND allPBAND)
   let generatedPBAND = T.intercalate "," $ filter (not . T.null) $ map fst generatedPFBAND
   let generatedFATBAND = T.intercalate "," $ filter (not . T.null) $ map snd generatedPFBAND
-  genSinglePlot useOldBw atomOs ds (xrangeatas, ticksbaru, arrow, (T.unpack $ T.intercalate "," $ filter (not . T.null) [generatedPBAND, generatedFATBAND]):res)
+  genSinglePic useOldBw atomOs ds (xrangeatas, ticksbaru, arrow, (T.unpack $ T.intercalate "," $ filter (not . T.null) [generatedPBAND, generatedFATBAND]):res)
     where
       takePFBAND (_,_,_,p,f) = (p,f)
 
@@ -183,111 +187,111 @@ genBandTicks foldernya = do
     return $ (,) (last lTicks)
            $ unwords $ intersperse "," $ map (\(a,b) -> unwords ["'"++a++"'",b]) $ zip  namaTicks lTicks
 
-genTEMPGLT :: String -> String -> String -> String -> String -> String -> [String]
+genTEMPGLT :: String -> String -> String -> String -> String -> String
+           -> [String]
            -> String
 genTEMPGLT tempDir judulUtama yr xrangeatas ticksbaru arrow plotplate =
-             unlines [ "#!/home/aku/bin/gnuplot -persist"
-                     , "reset"
-                     , "set term post portrait enhanced color 'Times-Roman' 12"
-                     , "set output '" ++ tempDir ++ "/tmp.ps'"
-                     , "rydberg=13.605"
-                     , "if (!exists('MP_LEFT'))   MP_LEFT = .1"
-                     , "if (!exists('MP_RIGHT'))  MP_RIGHT = .95"
-                     , "if (!exists('MP_BOTTOM')) MP_BOTTOM = .1"
-                     , "if (!exists('MP_TOP'))    MP_TOP = .9"
-                     , "if (!exists('MP_GAP'))    MP_GAP = 0.05"
-                     , unwords [ "set multiplot layout 1,2"
-                               , "margins screen MP_LEFT, MP_RIGHT, MP_BOTTOM, MP_TOP"
-                               , "spacing screen MP_GAP"
-                               ]
-                     , "set xzeroaxis"
-                     , "set grid"
-                     , "set key right top Left"
-                     , "set key samplen 1 spacing 1"
-                     , "set size ratio 1.5"
-                     , "set mytics 10"
-                     , "set xlabel 'Wave Vector'"
-                     , "set ylabel 'Energy-E_F (eV)'"
-                     , "set title '" ++ judulUtama ++ "'"
-                     , "set yrange ["++ yr ++ "]"
-                     , "set xrange [0.0:" ++ xrangeatas ++ "]"
-                     , "set grid noy"
-                     , "set grid xtics lt 0 lc rgb 'black'"
-                     , "set style line 1 lt 2 lw 1 lc rgb '#e41a1c'"
-                     , "set style line 2 lt 6 lw 1 lc rgb '#377eb8'"
-                     , "set style line 3 lt 6 lw 1 lc rgb '#4daf4a'"
-                     , "set style line 4 lt 6 lw 1 lc rgb '#984ea3'"
-                     , "set style line 5 lt 6 lw 1 lc rgb '#ff7f00'"
-                     , "set style line 8 lt 1 lw 2 lc rgb '#ffcc99'"
-                     , "set style line 9 lt 1 lw 2 lc rgb '#808080'"
-                     , "set style line 10 lt 1 lw 2 lc rgb '#94ffb5'"
-                     , "set style line 11 lt 1 lw 2 lc rgb '#8f7c0'"
-                     , "set style line 12 lt 1 lw 2 lc rgb '#9dcc0'"
-                     , "set style line 13 lt 1 lw 2 lc rgb '#c2088'"
-                     , "set style line 14 lt 1 lw 2 lc rgb '#03380'"
-                     , "set style line 15 lt 1 lw 2 lc rgb '#ffa45'"
-                     , "set style line 16 lt 1 lw 2 lc rgb '#ffa8bb'"
-                     , "set style line 17 lt 1 lw 2 lc rgb '#42660'"
-                     , "set style line 18 lt 1 lw 2 lc rgb '#ff010'"
-                     , "set style line 19 lt 1 lw 2 lc rgb '#5ef1f2'"
-                     , "set style line 20 lt 1 lw 2 lc rgb '#0998f'"
-                     , "set style line 21 lt 1 lw 2 lc rgb '#e0ff66'"
-                     , "set style line 22 lt 1 lw 2 lc rgb '#74aff'"
-                     , "set style line 23 lt 1 lw 2 lc rgb '#9900'"
-                     , "set style line 24 lt 1 lw 2 lc rgb '#ffff80'"
-                     , "set style line 25 lt 1 lw 2 lc rgb '#ffff0'"
-                     , "set style line 26 lt 1 lw 2 lc rgb '#ff505'"
-                     , "set style arrow 1 heads size screen 0.01,90 lw 2 lc rgb 'navy'"
-                     , "set key bottom left Left"
-                     , "set xtics (" ++ ticksbaru ++ ")"
-                     , (unlines $ map (\x -> unwords [arrow, plotInit ,x]) plotplate)
-                     , endMultiplot
-                     ]
+    let subTitles = wordsBy (== '#') judulUtama
+     in unlines [ "#!/home/aku/bin/gnuplot -persist"
+                , "reset"
+                , "set term post landscape enhanced color 'Times-Roman' 12"
+                , "set output '" ++ tempDir ++ "/tmp.ps'"
+                , "rydberg=13.605"
+                , "if (!exists('MP_LEFT'))   MP_LEFT = .1"
+                , "if (!exists('MP_RIGHT'))  MP_RIGHT = .95"
+                , "if (!exists('MP_BOTTOM')) MP_BOTTOM = .1"
+                , "if (!exists('MP_TOP'))    MP_TOP = .9"
+                , "if (!exists('MP_GAP'))    MP_GAP = 0.05"
+                , unwords [ "set multiplot layout 1," ++ (show $ length subTitles )
+                          , "margins screen MP_LEFT, MP_RIGHT, MP_BOTTOM, MP_TOP"
+                          , "spacing screen MP_GAP"
+                          ]
+                , "set xzeroaxis"
+                , "set grid"
+                , "set key right top Left"
+                , "set key samplen 1 spacing 1"
+                , "set size ratio 1.5"
+                , "set mytics 10"
+                , "set xlabel 'Wave Vector'"
+                , "set ylabel 'Energy-E_F (eV)'"
+--                , "set title '" ++ judulUtama ++ "'"
+                , "set yrange ["++ yr ++ "]"
+                , "set xrange [0.0:" ++ xrangeatas ++ "]"
+                , "set grid noy"
+                , "set grid xtics lt 0 lc rgb 'black'"
+                , "set style line 1 lt 2 lw 1 lc rgb '#e41a1c'"
+                , "set style line 2 lt 6 lw 1 lc rgb '#377eb8'"
+                , "set style line 3 lt 6 lw 1 lc rgb '#4daf4a'"
+                , "set style line 4 lt 6 lw 1 lc rgb '#984ea3'"
+                , "set style line 5 lt 6 lw 1 lc rgb '#ff7f00'"
+                , "set style line 8 lt 1 lw 2 lc rgb '#ffcc99'"
+                , "set style line 9 lt 1 lw 2 lc rgb '#808080'"
+                , "set style line 10 lt 1 lw 2 lc rgb '#94ffb5'"
+                , "set style line 11 lt 1 lw 2 lc rgb '#8f7c0'"
+                , "set style line 12 lt 1 lw 2 lc rgb '#9dcc0'"
+                , "set style line 13 lt 1 lw 2 lc rgb '#c2088'"
+                , "set style line 14 lt 1 lw 2 lc rgb '#03380'"
+                , "set style line 15 lt 1 lw 2 lc rgb '#ffa45'"
+                , "set style line 16 lt 1 lw 2 lc rgb '#ffa8bb'"
+                , "set style line 17 lt 1 lw 2 lc rgb '#42660'"
+                , "set style line 18 lt 1 lw 2 lc rgb '#ff010'"
+                , "set style line 19 lt 1 lw 2 lc rgb '#5ef1f2'"
+                , "set style line 20 lt 1 lw 2 lc rgb '#0998f'"
+                , "set style line 21 lt 1 lw 2 lc rgb '#e0ff66'"
+                , "set style line 22 lt 1 lw 2 lc rgb '#74aff'"
+                , "set style line 23 lt 1 lw 2 lc rgb '#9900'"
+                , "set style line 24 lt 1 lw 2 lc rgb '#ffff80'"
+                , "set style line 25 lt 1 lw 2 lc rgb '#ffff0'"
+                , "set style line 26 lt 1 lw 2 lc rgb '#ff505'"
+                , "set style arrow 1 heads size screen 0.01,90 lw 2 lc rgb 'navy'"
+                , "set key bottom left Left"
+                , "set xtics (" ++ ticksbaru ++ ")"
+                , (unlines
+                     $ intersperse noMidLabel
+                     $ zipWith (\s p -> unlines $ ("set title '" ++ s ++ "'"):
+                                        unwords [arrow, plotInit ,p]:
+                                        [])
+                       subTitles plotplate
+                  )
+                , endMultiplot
+                ]
 
---plotBand (fOut:useOldBw:judulUtama:yr:atomOs:daftarLengkap) = do
+noMidLabel :: String
+noMidLabel = unlines $ "unset ylabel":
+                       []
+
 data Opts = Opts {
     _fOut       :: String,
     _useOldBw   :: Bool,
     _judulUtama :: String,
     _yr         :: String,
     _atomOs     :: String,
-    _targetDir :: [String]
+    _targetDir  :: [String]
                  } deriving Show
 
 optsParser :: Parser Opts
 optsParser = Opts
-             <$> strOption (long "out" <> short 'o' <>
+             <$> strOption (long "out" <> short 'o' <> metavar "OUTPUT" <>
                           help "target output file" <> value "test")
              <*> switch (long "oldbw" <> short 'b'
                             <> help "Using old BandWeight files")
-             <*> strOption (long "title" <> short 't' <>
-                            metavar "TITLE" <>
-                            help "Title of the Figure" <>
+             <*> strOption (long "titles" <> short 't' <>
+                            metavar "SUBTITLES" <>
+                            help "Titles of each Figures" <>
                             value "")
              <*> strOption  ( long "yrange" <> short 'y' <>
                             metavar "MIN:MAX" <>
-                            help "Y-range of the figure, ex. -2.5:7.3")
+                            help "Y-range of the figure, ex. \"-2.5:7.3\"")
              <*> strOption (long "orbitals" <> short 'r' <> metavar "ORBITALS"
                             <> help "List of atomic orbitals" <> value "")
-             <*> (many $ argument str (metavar "TARGETDIR"))
+             <*> (many $ argument str (metavar "TARGETDIRS"))
 
+{-
+         "~/kanazawa/dev/cpvoh/app/f2 -o outputfile -b -y \"-9.5:2\" ext.nico2o4.normal/nico2o4.6G10:1:\"11G20.Majority\"#ext.nico2o4.normal/nico2o4.6G10:2:\"11G20.Minority\" ext.nico2o4.normal/nico2o4.1G0:1:\"G0.Majority\"#ext.nico2o4.normal/nico2o4.1G0:2:\"G0.Minority\"":
+-}
 withHelp :: ParserInfo Opts
 withHelp = info
   (helper <*> optsParser)
-  (fullDesc <> (progDesc $ unlines $
-    "Band Structure Generator for ecalj":
-    "run it using:":
-    "~/kanazawa/dev/cpvoh/f2 outputfile useOldBw judulUtama yRange atomOs target1 target2 target3":
-    "outputfile: any filename, for each filename f, we will have f.jpg and f.eps":
-    "useOldBw  : 1 = will use old BandWidth file":
-    "            0 = will make a new BandWidth file":
-    "judulUtama: unimplemented yet":
-    "yRange    : y range min:max, ex. -9.5:2":
-    "atomOs    : atomic orbital yang ditampilkan sebagai fat band":
-    "            format: orbital@atomNumber-orbital@atomNumber2-...":
-    "              atomNumber: 1,2,...":
-    "              orbital: s p px py pz dx2My2 dz2 dyz dxy dxz eg t2g":
-    "target    : in format of folder:spin:subTitle":
-    "            spin: 1 = UP and 2 = DOWN or inversed by invStat":
-    "~/kanazawa/dev/cpvoh/f2 outputfile 0 '\"\"' -9.5:2 \"p@7-dx2My2@11-dz2@11\" nico2o4.invB.11G20:1:\"11G20.Majority\"":[]
-               ))
+  (fullDesc <> (progDesc
+    "Band Structure Generator for ecalj, please make sure that TARGETDIRS are the last arguments."
+  ))
