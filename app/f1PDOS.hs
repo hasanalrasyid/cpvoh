@@ -16,7 +16,8 @@ import Data.Semigroup -- <>
 
 main :: IO ()
 main = do
-  (Opts fOut useOldBw judulUtama yr atomOs daftarLengkap) <- execParser withHelp
+  (Opts fOut useOldBw judulUtama yr atomOs daftarLengkap) <-
+    execParser withHelp
   plotWork plotSinglePic fOut useOldBw judulUtama yr atomOs
     $ map (splitOn "#") daftarLengkap
   putStrLn "========DONE======="
@@ -26,6 +27,7 @@ data Opts = Opts {
     _useOldBw   :: Bool,
     _judulUtama :: String,
     _yr         :: String,
+    _xr         :: String,
     _atomOs     :: String,
     _targetDir  :: [String]
                  } deriving Show
@@ -43,8 +45,11 @@ optsParser = Opts
              <*> strOption  ( long "yrange" <> short 'y' <>
                             metavar "MIN:MAX" <>
                             help "Y-range of the figure, ex. \"-2.5:7.3\"")
+             <*> strOption  ( long "xrange" <> short 'x' <>
+                            metavar "MIN:MAX" <>
+                            help "X-range of the figure, ex. \"-8:3\"")
              <*> strOption (long "orbitals" <> short 'r' <> metavar "ORBITALS"
-                            <> help "List of atomic orbitals" <> value "")
+                            <> help "List of atomic orbitals ex. p@7-dx2My2@11-dz2@11" <> value "")
              <*> (many $ argument str (metavar "TARGETDIRS"))
 
 {-
