@@ -4,6 +4,7 @@
 {-# LANGUAGE ScopedTypeVariables #-}
 
 module CPVO.IO (
+    debugLine,
     showDouble,
     markdownToTex,
     inshell2text,
@@ -31,6 +32,10 @@ system_ ss = SP.system ss >> return ()
 showDouble :: Integer -> Double -> String
 showDouble _ (0 :: Double) = show (0 :: Integer)
 showDouble i a = (flip TP.printf) a $ concat ["%0.",show i,"f"]
+
+debugLine :: Show a => Bool -> a -> IO ()
+debugLine False _ = return ()
+debugLine _ ss = putStrLn $ "===debug=== " ++ show ss
 
 
 -- Prosesor untuk pandoc

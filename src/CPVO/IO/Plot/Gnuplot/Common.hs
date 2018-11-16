@@ -7,15 +7,19 @@ module CPVO.IO.Plot.Gnuplot.Common
 -- import Turtle                       --
 -- import qualified Control.Foldl as Fold
 -- import System.Environment (getArgs)
+import CPVO.IO
 import qualified Data.Text as T
 -- import qualified Data.Text.IO as T
--- import qualified Data.Text.Read as T
+import qualified Data.Text.Read as T
 -- import qualified Data.Text.Format as T
 import Text.Printf
--- import Data.List.Split
--- import Data.List
--- import Data.Maybe
--- import Data.Either
+import Data.List.Split (splitOn)
+import Data.List
+import Data.Maybe
+import System.Directory
+import Data.Either
+import Numeric.LinearAlgebra.Data
+import Data.String -- IsString
 
 warna :: [T.Text]
 warna = [
@@ -152,156 +156,189 @@ totalHeader = unlines [ "###########Total Header#############"
                       , "set label 'spin-up' at 2.5,7.5 font ',8'"
                       , "set label 'spin-down' at 2.5,-7.5 font ',8'"
                       ]
-{-
-#!/bin/bash
 
-#gnuplot -e "namefilenya='dos.all.m${1}t${1}.svg';batas=$1;judul='$2'" /home/aku/kanazawa/work/calcMic/templates/bin/pdos.all.glt
+plotInit :: String
+plotInit = unlines $ "set datafile missing '-'":
+                     "plot 0 lt -1 lc rgb 'black' title '' , \\":[]
 
-#inkscape -z -e dos.all.m${1}t${1}.jpg -w 420 -h 610 dos.all.m${1}t${1}.svg
+endMultiplot :: String
+endMultiplot = unlines [ "unset multiplot" ]
 
-echo "dosplotVertikal.sh xr         yr    over/parallel invStat   poskey       orbitalList      folder "
-echo "dosplotVertikal.sh int:int   int    o/p            1/-1     top:left  Atom:Judul:3:4:5 folder{0.1.4}* "
-echo "dosplotVertikal.sh $1         $2    $3              $4        $5                $6          $7"
+--plotWork :: String -> Bool -> String -> String -> String -> [[String]]
+--         -> IO ()
+plotWork :: Num t1 =>
+          ([String]
+            -> t2
+            -> t3
+            -> t1
+            -> [a]
+            -> IO [(String, String, Maybe String, T.Text, T.Text)])
+          -> [Char] -> t2 -> String -> String -> t3 -> [[String]] -> IO ()
 
-# for k in {0..6};
-# do for j in {d,p} ;
-# do for i in {1..14};
-# do echo $i $j $k;
-#   namaf=$(ls|grep nico2o4invB.ferri.$k);
-#   dosplotVertical.sh $namaf $i $j -10:2 2.5 1 "";
-#   convert plots/hasil.jpg label:"$namaf.${j}.$(printf %02f $i)" -font Monofur +swap -gravity SouthWest -append tempor/${namaf}.${j}.$(printf %02f $i).jpg;
-# done;
-#done;
-#done
+plotWork plotSinglePic fOut useOldBw judulUtama yr atomOs daftarLengkap = do
+  tempDir <- (T.unpack . head) <$> inshell2text "mktemp -d -p ./"
 
+  putStrLn $ unlines $ concat daftarLengkap
+  (xrangeatas,ticksbaru,arrow,plotplate) <- genSinglePic plotSinglePic useOldBw atomOs daftarLengkap ("","",Nothing,[])
 
-#dirs=("$4"*)
-dirs=("$@")
-dirs=("${dirs[@]:7}")
+  putStrLn $ "============TEMPGLT"
+  tempGLT <- head <$> inshell2text "mktemp -p ./"
+  putStrLn $ show tempGLT
 
-for i in "${dirs[@]}"; do
-  echo $i;
-  echo ==============================================
-done
-rm -f temp.glt
+  writeFile (T.unpack tempGLT) $ genTEMPGLT tempDir judulUtama yr xrangeatas ticksbaru (fromMaybe "" arrow) plotplate
 
-poskey=$(echo $5 | sed -e 's/:/ /g')
-total=$6
+  system_ $ "gnuplot " ++ T.unpack tempGLT
+  let target = map (\x -> unwords [ "mv "
+                                  , "hasil" ++ x
+                                  , "../" ++ fOut ++ x
+                                  ]) [".eps",".png"]
+  withCurrentDirectory tempDir $
+    mapM_ system_ $
+      "ps2eps --rotate=+ tmp.ps":
+      "epstool --copy -b --quiet tmp.eps hasil.eps":
+      "epstopdf hasil.eps":
+      "pdftocairo -r 150 -singlefile -jpeg hasil.pdf tmp":
+      "convert tmp.jpg -rotate 0 hasil.png":
+      "rm -f tmp.jpg":
+      target
+  putStrLn "===end  : plotWork===="
 
-daftarOrbital=$7
-mkdir -p plots
-xr=$1 # xrange , dimasukkan sebagai "bawah:atas" mis "-10:6"
-xticsnya="-100,2,100"
-yr=$2 # yrange, dimasukkan sebagai "yr" untuk mewakili "[-yr:yr]"
-yticsnya=$(echo $yr | awk '{print "-"$1"+5,5,"$1"-5"}')
-invStat=1
-if [[ "$4" == "-1" ]]; then invStat="$4" ;fi
-
-tailer="$(ls "${dirs[0]}" |grep dos.tot | awk -F '.' '{print $NF}' )"
-over=$3
-mainTitle=""
-cat >> temp.glt << EOF
-#!/home/aku/bin/gnuplot -persist
-reset
-set term post  portrait enhanced color font "Times-Roman"
-set output "plots/hasil.eps"
-
-if (!exists("MP_LEFT"))   MP_LEFT = .1
-if (!exists("MP_RIGHT"))  MP_RIGHT = .91
-if (!exists("MP_BOTTOM")) MP_BOTTOM = .1
-if (!exists("MP_TOP"))    MP_TOP = .9
-if (!exists("MP_GAP"))    MP_GAP = 0.0
-
-set tmargin 0
-set bmargin 0
-set lmargin 8
-set rmargin 6
-
-set multiplot layout 5,2 columnsfirst title "{/:Bold=15 $mainTitle}" \
- margins screen MP_LEFT, MP_RIGHT, MP_BOTTOM, MP_TOP spacing screen MP_GAP
-
-set border lw 0.2
-
-set key $poskey font "Times New Roman Bold,8"
-set key spacing 1
-set key samplen 0
-set xrange [$xr]
-set yrange [-$yr:$yr]
-set mxtics 2
-set mytics 2
-rydberg=13.605
-
-unset grid
-
-#set arrow from 0,-$yr to 0,$yr nohead lc rgb 'navy'
-
-$(genLineType.hs)
-
-f(x) = 0
-
-set xzeroaxis lw 1 lt 1 lc rgb 'black'
-set yzeroaxis lw 1 lt 1 lc rgb 'black'
-
-set style data boxes
-unset ylabel
-unset xtics
-set ytics $yticsnya font ",10" nomirror offset .7
-set xtics $xticsnya font ",10" nomirror offset 0,.6
-set format x ""
-#############################################################################################
-EOF
-
-ender=$'
-
-unset multiplot
-
-#dikalikan 2 karena satuannya /cell eV
-
-system "cd plots && epstopdf hasil.eps && pdftocairo -r 150 -singlefile -jpeg hasil.pdf tmp && convert tmp.jpg -rotate 0 hasil.png && rm -f tmp.jpg"
-'
-
-pre="plot "
-
-akhiran="$ender"'
-system "cd plots && rm -f tmp*jpg"
-'
-
-totalHeader="
-###########Total Header#############
-set label 'Total' at 2.5,15 font 'Bold,8'
-set label 'spin-up' at 2.5,7.5 font ',8'
-set label 'spin-down' at 2.5,-7.5 font ',8'
-
-"
-
-urutan=0
-    plotplate="$plotplate ; set format x '% h'; set xtics format '' nomirror ; unset xlabel; unset ylabel "
-    for foldernya in "${dirs[@]}"; do
-      urutan=$((1+$urutan))
-
-      topTitle=$(echo $foldernya|awk -F '.' '{print $NF}')
-      if [ "$topTitle" != "0GGA" ]; then topTitle="$(echo $topTitle|sed -e 's/^.*G/QSGW_{/g' -e 's/$/}/g' )"; else topTitle="GGA(PBE)";fi
-      #generator="f1.genPDOSAtomicOrbital.hs $topTitle $xr $yr $invStat $tailer $foldernya  Ni:Ni_{eg}:8:10 Ni:Ni_{t2g}:6:7:9 CoTd:CoTd_{eg}:8:10 CoTd:CoTd_{t2g}:6:7:9"
-      generator="f1.genPDOSAtomicOrbitalTot.hs $topTitle $xr $yr $total $over $invStat $tailer $foldernya $daftarOrbital"
-      echo $generator
-      echo ====through------------------
-#      plotplate="$plotplate
-#      plot '$foldernya/dos.tot.$tailer' u (\$1*rydberg):(\$2*($invStat)/rydberg) w l lc rgb 'black' notitle "
-#      plotplate="$plotplate ,\\
-#      '$foldernya/dos.tot.$tailer' u (\$1*rydberg):(\$3*(-1)*($invStat)/rydberg) w l lc rgb 'black' title ''; plot $($generator)"
-      plotplate="$plotplate
-      $($generator)"
-      echo =============================
-      echo $plotplate
-      echo =============================
-    done
-    echo "$plotplate $akhiran" >> temp.glt
-    echo ====done loop====
-    gnuplot temp.glt
-    #---#dimensi=$(convert plots/hasil.jpg -fuzz 5% -transparent white sparse-color:-|sed -e 's/ /\n/g'|awk -F ',' 'BEGIN{a=0; b=0;aa=10000;bb=10000}{if (a<$1) a=$1; if ($1<aa) aa=$1;  if (b<$2) b=$2; if (bb>$2) bb=$2 }END{print a-(10-a%10)"x"b-bb+(10-b%10)"+"aa-(30+aa%10)"+"bb-(10-aa%10)}')
-    #---#convert plots/hasil.jpg -crop $dimensi plots/hasil.jpg
-    #---##convert plots/hasil.jpg -pointsize 24 -font "monofur" label:'Energy (eV)' -gravity Center -append plots/hasil.jpg
-    #---##convert plots/hasil.jpg -gravity West -font monofur -pointsize 24 -draw 'rotate -90 text 0,20 "DOS (states/eV)"' plots/hasil.jpg
-    exit
-
+  {-
+genSinglePic :: Bool -> String -> [[String]]
+              ->    (String, String, Maybe String, [String])
+              -> IO (String, String, Maybe String, [String])
 -}
+genSinglePic :: (Num t1, Monad m) =>
+             (t2 -> t3 -> t4 -> t1 -> [a1] -> m [(a2, b, c, T.Text, T.Text)])
+             -> t3
+             -> t4
+             -> [t2]
+             -> (a2, b, c, [String])
+             -> m (a2, b, c, [String])
+
+genSinglePic _ _        _      []            res              = return res
+genSinglePic plotSinglePic useOldBw atomOs (daftarLengkap:ds) (_,_,_,res) = do
+  allPics@((xrangeatas,ticksbaru,arrow,_,_):_) <- plotSinglePic daftarLengkap useOldBw atomOs 1 []
+  let generatedPFBAND = (map takePFBAND allPics)
+  let generatedPBAND = T.intercalate "," $ filter (not . T.null) $ map fst generatedPFBAND
+  let generatedFATBAND = T.intercalate "," $ filter (not . T.null) $ map snd generatedPFBAND
+  genSinglePic plotSinglePic useOldBw atomOs ds (xrangeatas, ticksbaru, arrow, (T.unpack $ T.intercalate "," $ filter (not . T.null) [generatedPBAND, generatedFATBAND]):res)
+    where
+      takePFBAND (_,_,_,p,f) = (p,f)
+
+genArrow :: [Char] -> [Char] -> [Char] -> [Char] -> Maybe String
+genArrow _ _ _ _ = Nothing
+genArrow' :: [Char] -> [Char] -> [Char] -> [Char] -> Maybe String
+genArrow' bandGap valBandX valBandY condBandY =
+        if (bandGap == "0")
+           then Nothing
+           else --(,) (Just $ "0:" ++ bandGap ++ "@" ++ valBandY)
+                    (Just $ unlines [ concat ["set label sprintf ('{/Symbol D}=%.2feV',"
+                                      , bandGap
+                                      , ") at (" ++ valBandX ++ "-0.55),"
+                                      ,"(" ++ valBandY ++ "-0.4) font ',12'"
+                                      ]
+                             , concat [ "set arrow from "
+                                      , valBandX ++ "," ++ condBandY
+                                      , " to " ++ valBandX ++ "," ++ valBandY
+                                      , " heads noborder lw 2 lc rgb 'blue'"
+                                      ]
+                             ]
+                    )
+
+genPlotPlate :: Int -> T.Text -> T.Text
+genPlotPlate colorId bnd = T.concat [ bnd , T.pack $ unwords [" u ($2>6.08991818?0.4+$2:$2):($2>6.08991818&&$2<6.09991818?1/0:$3) with line lc", show colorId, "title ''"]]
+
+runGAPband :: [T.Text] -> String
+runGAPband bndSpin =
+  let (valencePoint, conductionPoint) =
+        (\(a,b) -> (last a,head b)) $
+        break (\[_,a] -> a > 0) $
+        Data.List.sortBy (\[_,a] [_,b] -> if a < b then LT else GT ) $
+        toLists $
+        (¿ [1,2]) . fromLists $
+        filter (/=[]) $  -- kolom $2 x (k-point) -- $3 y Energy
+        map ( (map fst) . rights . (map T.double) . T.words ) $
+        filter (not . T.isPrefixOf "#") $
+        bndSpin
+
+  in if (last conductionPoint - last valencePoint < 0.01)  then "0 0 0"
+                                                           else unwords $ map show  [head valencePoint, head conductionPoint, last conductionPoint - last valencePoint]
+
+
+cekSpin :: (Eq a, IsString a) => a -> a -> a-> p -> p -> p
+cekSpin s "0" ok sOk sNo = if s == ok then sOk else sNo
+cekSpin s _ ok sOk sNo = if s == ok then sNo else sOk
+
+genTEMPGLT :: String -> String -> String -> String -> String -> String
+           -> [String]
+           -> String
+genTEMPGLT tempDir judulUtama yr xrangeatas ticksbaru arrow plotplate =
+    let subTitles = splitOn "#" judulUtama
+     in unlines [ "#!/home/aku/bin/gnuplot -persist"
+                , "reset"
+                , "set term post landscape enhanced color 'Times-Roman' 12"
+                , "set output '" ++ tempDir ++ "/tmp.ps'"
+                , "rydberg=13.605"
+                , "if (!exists('MP_LEFT'))   MP_LEFT = .1"
+                , "if (!exists('MP_RIGHT'))  MP_RIGHT = .95"
+                , "if (!exists('MP_BOTTOM')) MP_BOTTOM = .1"
+                , "if (!exists('MP_TOP'))    MP_TOP = .9"
+                , "if (!exists('MP_GAP'))    MP_GAP = 0.05"
+                , unwords [ "set multiplot layout 1," ++ (show $ length subTitles )
+                          , "margins screen MP_LEFT, MP_RIGHT, MP_BOTTOM, MP_TOP"
+                          , "spacing screen MP_GAP"
+                          ]
+                , "set xzeroaxis"
+                , "set grid"
+                , "set key right top Left"
+                , "set key samplen 1 spacing 1"
+                , "set size ratio 1.5"
+                , "set mytics 10"
+                , "set xlabel 'Wave Vector'"
+                , "set ylabel 'Energy-E_F (eV)'"
+--                , "set title '" ++ judulUtama ++ "'"
+                , "set yrange ["++ yr ++ "]"
+                , "set xrange [0.0:" ++ xrangeatas ++ "]"
+                , "set grid noy"
+                , "set grid xtics lt 0 lc rgb 'black'"
+                , "set style line 1 lt 2 lw 1 lc rgb '#e41a1c'"
+                , "set style line 2 lt 6 lw 1 lc rgb '#377eb8'"
+                , "set style line 3 lt 6 lw 1 lc rgb '#4daf4a'"
+                , "set style line 4 lt 6 lw 1 lc rgb '#984ea3'"
+                , "set style line 5 lt 6 lw 1 lc rgb '#ff7f00'"
+                , "set style line 8 lt 1 lw 2 lc rgb '#ffcc99'"
+                , "set style line 9 lt 1 lw 2 lc rgb '#808080'"
+                , "set style line 10 lt 1 lw 2 lc rgb '#94ffb5'"
+                , "set style line 11 lt 1 lw 2 lc rgb '#8f7c0'"
+                , "set style line 12 lt 1 lw 2 lc rgb '#9dcc0'"
+                , "set style line 13 lt 1 lw 2 lc rgb '#c2088'"
+                , "set style line 14 lt 1 lw 2 lc rgb '#03380'"
+                , "set style line 15 lt 1 lw 2 lc rgb '#ffa45'"
+                , "set style line 16 lt 1 lw 2 lc rgb '#ffa8bb'"
+                , "set style line 17 lt 1 lw 2 lc rgb '#42660'"
+                , "set style line 18 lt 1 lw 2 lc rgb '#ff010'"
+                , "set style line 19 lt 1 lw 2 lc rgb '#5ef1f2'"
+                , "set style line 20 lt 1 lw 2 lc rgb '#0998f'"
+                , "set style line 21 lt 1 lw 2 lc rgb '#e0ff66'"
+                , "set style line 22 lt 1 lw 2 lc rgb '#74aff'"
+                , "set style line 23 lt 1 lw 2 lc rgb '#9900'"
+                , "set style line 24 lt 1 lw 2 lc rgb '#ffff80'"
+                , "set style line 25 lt 1 lw 2 lc rgb '#ffff0'"
+                , "set style line 26 lt 1 lw 2 lc rgb '#ff505'"
+                , "set style arrow 1 heads size screen 0.01,90 lw 2 lc rgb 'navy'"
+                , "set key bottom left Left"
+                , "set xtics (" ++ ticksbaru ++ ")"
+                , (unlines
+                     $ intersperse noMidLabel
+                     $ zipWith (\s p -> unlines $ ("set title '" ++ s ++ "'"):
+                                        unwords [arrow, plotInit ,p]:
+                                        [])
+                       subTitles plotplate
+                  )
+                , endMultiplot
+                ]
+
+noMidLabel :: String
+noMidLabel = unlines $ "unset ylabel":
+                       []
