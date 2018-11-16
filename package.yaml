@@ -72,7 +72,7 @@ executables:
     - text
 
   f1:
-    main        : f1PdosTotAtomicMajorOrbitalVert.hs
+    main        : f1PDOS.hs
     source-dirs : app
     ghc-options :
     - -threaded
