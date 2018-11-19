@@ -9,6 +9,7 @@
 
 import CPVO.IO.Plot.Band
 import CPVO.IO.Plot.Gnuplot.Common
+import CPVO.IO.Plot.Gnuplot.Type
 
 import Data.List.Split (splitOn)
 import Options.Applicative as O
@@ -17,7 +18,8 @@ import Data.Semigroup -- <>
 main :: IO ()
 main = do
   (Opts fOut useOldBw judulUtama yr atomOs daftarLengkap) <- execParser withHelp
-  plotWork plotter1Pic fOut useOldBw judulUtama yr atomOs
+  let initSetting = PlotSetting judulUtama yr "" "" ""
+  plotWork initSetting fOut (plotter1Pic useOldBw atomOs)
     $ map (splitOn "#") daftarLengkap
   putStrLn "========DONE======="
 

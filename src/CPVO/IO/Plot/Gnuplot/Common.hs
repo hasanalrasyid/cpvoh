@@ -7,6 +7,7 @@ module CPVO.IO.Plot.Gnuplot.Common
 -- import Turtle                       --
 -- import qualified Control.Foldl as Fold
 -- import System.Environment (getArgs)
+import CPVO.IO.Plot.Gnuplot.Type
 import CPVO.IO
 import qualified Data.Text as T
 -- import qualified Data.Text.IO as T
@@ -163,26 +164,16 @@ plotInit = unlines $ "set datafile missing '-'":
 endMultiplot :: String
 endMultiplot = unlines [ "unset multiplot" ]
 
-plotWork :: Num t1 =>
-          ([String]
-            -> t2
-            -> t3
-            -> t1
-            -> [a]
-            -> IO [([String], T.Text, T.Text)])
-          -> [Char] -> t2 -> String -> String -> t3 -> [[String]] -> IO ()
-
-plotWork plotter1Pic fOut useOldBw judulUtama yr atomOs daftarLengkap = do
+plotWork iniSetting fOut plotter daftarLengkap = do
   tempDir <- (T.unpack . head) <$> inshell2text "mktemp -d -p ./"
 
   putStrLn $ unlines $ concat daftarLengkap
-  ((xrangeatas:ticksbaru:arrow:_),plotplate) <- genAllPics plotter1Pic useOldBw atomOs daftarLengkap ([],[])
+  (plotSet,plotplate) <- genAllPics plotter daftarLengkap (iniSetting,[])
 
   putStrLn $ "============TEMPGLT"
   tempGLT <- head <$> inshell2text "mktemp -p ./"
   putStrLn $ show tempGLT
-
-  writeFile (T.unpack tempGLT) $ genTEMPGLT tempDir judulUtama yr xrangeatas ticksbaru arrow plotplate
+  writeFile (T.unpack tempGLT) $ genTEMPGLT tempDir plotSet plotplate
 
   system_ $ "gnuplot " ++ T.unpack tempGLT
   let target = map (\x -> unwords [ "mv "
@@ -200,28 +191,12 @@ plotWork plotter1Pic fOut useOldBw judulUtama yr atomOs daftarLengkap = do
       target
   putStrLn "===end  : plotWork===="
 
-  {-
-genAllPics :: (Num t1, Monad m) =>
-             (t2 -> t3 -> t4 -> t1 -> [a1] -> m [(a2, b, c, T.Text, T.Text)])
-             -> t3
-             -> t4
-             -> [t2]
-             -> (a2, b, c, [String])
-             -> m (a2, b, c, [String])
--}
-genAllPics :: (Num t1) =>
-           (t2 -> t3 -> t4 -> t1 -> [a1] -> IO [([String], T.Text, T.Text)])
-           -> t3 -> t4 -> [t2] -> ([String], [String])
-           -> IO ([String], [String])
-genAllPics _           _        _      []                 res     = return res
-genAllPics plotter1Pic useOldBw atomOs (daftarLengkap:ds) (_,res) = do
-  allPics@(((xrangeatas:ticksbaru:arrow:_),_,_):_) <- plotter1Pic daftarLengkap useOldBw atomOs 1 []
-  let generatedPFBAND = (map takePFBAND allPics)
+genAllPics _       []                 res     = return res
+genAllPics plotter (daftarLengkap:ds) (iniSetting,res) = do
+  (plotSetting,generatedPFBAND) <- plotter daftarLengkap 1 (iniSetting,[])
   let generatedPBAND = T.intercalate "," $ filter (not . T.null) $ map fst generatedPFBAND
   let generatedFATBAND = T.intercalate "," $ filter (not . T.null) $ map snd generatedPFBAND
-  genAllPics plotter1Pic useOldBw atomOs ds ((xrangeatas:ticksbaru: arrow:[]), (T.unpack $ T.intercalate "," $ filter (not . T.null) [generatedPBAND, generatedFATBAND]):res)
-    where
-      takePFBAND (_,p,f) = (p,f)
+  genAllPics plotter ds (plotSetting, (T.unpack $ T.intercalate "," $ filter (not . T.null) [generatedPBAND, generatedFATBAND]):res)
 
 genArrow :: [Char] -> [Char] -> [Char] -> [Char] -> String
 genArrow _ _ _ _ = ""
@@ -267,10 +242,9 @@ cekSpin :: (Eq a, IsString a) => a -> a -> a-> p -> p -> p
 cekSpin s "0" ok sOk sNo = if s == ok then sOk else sNo
 cekSpin s _ ok sOk sNo = if s == ok then sNo else sOk
 
-genTEMPGLT :: String -> String -> String -> String -> String -> String
-           -> [String]
-           -> String
-genTEMPGLT tempDir judulUtama yr xrangeatas ticksbaru arrow plotplate =
+genTEMPGLT :: String -> PlotSetting -> [String] -> String
+genTEMPGLT _       NullSetting _ = ""
+genTEMPGLT tempDir (PlotSetting judulUtama yr xr newticks ar) plotplate =
     let subTitles = splitOn "#" judulUtama
      in unlines [ "#!/home/aku/bin/gnuplot -persist"
                 , "reset"
@@ -296,7 +270,7 @@ genTEMPGLT tempDir judulUtama yr xrangeatas ticksbaru arrow plotplate =
                 , "set ylabel 'Energy-E_F (eV)'"
 --                , "set title '" ++ judulUtama ++ "'"
                 , "set yrange ["++ yr ++ "]"
-                , "set xrange [0.0:" ++ xrangeatas ++ "]"
+                , "set xrange [" ++ xr ++ "]"
                 , "set grid noy"
                 , "set grid xtics lt 0 lc rgb 'black'"
                 , "set style line 1 lt 2 lw 1 lc rgb '#e41a1c'"
@@ -325,11 +299,11 @@ genTEMPGLT tempDir judulUtama yr xrangeatas ticksbaru arrow plotplate =
                 , "set style line 26 lt 1 lw 2 lc rgb '#ff505'"
                 , "set style arrow 1 heads size screen 0.01,90 lw 2 lc rgb 'navy'"
                 , "set key bottom left Left"
-                , "set xtics (" ++ ticksbaru ++ ")"
+                , "set xtics (" ++ newticks ++ ")"
                 , (unlines
                      $ intersperse noMidLabel
                      $ zipWith (\s p -> unlines $ ("set title '" ++ s ++ "'"):
-                                        unwords [arrow, plotInit ,p]:
+                                        unwords [ar, plotInit ,p]:
                                         [])
                        subTitles plotplate
                   )

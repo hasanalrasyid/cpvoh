@@ -6,19 +6,20 @@ module CPVO.IO.Plot.Band
   where
 
 import CPVO.IO.Plot.Gnuplot.Common
+import CPVO.IO.Plot.Gnuplot.Type
 
 import CPVO.IO -- inshell2text
 import Data.List.Split (splitOn)
 import qualified Data.Text as T
 import Data.List -- intercalate
-plotter1Pic :: [String]
-               -> Bool
+plotter1Pic :: Bool
                -> String
+               -> [String]
                -> Int
-               -> [([String], T.Text, T.Text)]
-               -> IO [([String], T.Text, T.Text)]
-plotter1Pic []                   _        _       _      res = return res
-plotter1Pic (daftarLengkap:sisa) useOldBw atomOs colorId res = do
+               -> (PlotSetting , [(T.Text, T.Text)])
+               -> IO (PlotSetting ,[(T.Text, T.Text)])
+plotter1Pic  _        _      []                   _       res = return res
+plotter1Pic  useOldBw atomOs (daftarLengkap:sisa) colorId (iniSetting,res) = do
   let (foldernya:spinnya:legend:_) = splitOn ":" daftarLengkap
   bandFiles <- inshell2text $ unwords ["ls",concat[foldernya,"/bnd*spin",spinnya]]
   let daftarFolder = ":" ++ intercalate "@" [legend,spinnya,foldernya]
@@ -30,16 +31,16 @@ plotter1Pic (daftarLengkap:sisa) useOldBw atomOs colorId res = do
   gapCoordBandGap <- fmap runGAPband $ inshell2text $ "cat " ++ concat [foldernya,"/bnd*spin*",spinnya]
   let bandGap = last $ words gapCoordBandGap
   putStrLn $ "===allBand=== " ++ bandGap
-  let arrow = genArrow bandGap valBandX valBandY condBandY
+  let ar = genArrow bandGap valBandX valBandY condBandY
 --  putStrLn $ show gapArrow
 --  putStrLn $ "perintahDOS Removed == " ++ unwords [
 --    "genPDOSvert.hs ", atomOs, fromJust gapnya, spinnya, daftarFolder]
   generatedFATBAND <- genPBAND useOldBw spinnya "0" atomOs [daftarFolder]
   putStrLn $ show generatedFATBAND
-  (xrangeatas,ticksbaru) <- genBandTicks foldernya
-  putStrLn $ "========" ++ show xrangeatas ++ "=====" ++ show ticksbaru
+  (xrangeatas,tck) <- genBandTicks foldernya
+  putStrLn $ "========" ++ show xrangeatas ++ "=====" ++ show tck
   putStrLn $ "=== FINISHED PROCESSING : " ++ daftarLengkap
-  plotter1Pic sisa useOldBw atomOs (colorId+1) (([xrangeatas,ticksbaru,arrow],generatedPBAND,generatedFATBAND):res)
+  plotter1Pic useOldBw atomOs sisa (colorId+1) ((iniSetting { xrange = ("0.0:" ++ xrangeatas), ticks = tck, arrow = ar}),(generatedPBAND,generatedFATBAND):res)
 
 genPBAND :: Bool -> String -> String -> String -> [String] -> IO T.Text
 genPBAND   _      _   _       []      _         = return ""
