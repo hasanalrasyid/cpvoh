@@ -11,15 +11,14 @@ import CPVO.IO -- inshell2text
 import Data.List.Split (splitOn)
 import qualified Data.Text as T
 import Data.List -- intercalate
-
-plotSinglePic :: [String]
+plotter1Pic :: [String]
                -> Bool
                -> String
                -> Int
-               -> [(String, String, Maybe String, T.Text, T.Text)]
-               -> IO [(String, String, Maybe String, T.Text, T.Text)]
-plotSinglePic []                   _        _       _      res = return res
-plotSinglePic (daftarLengkap:sisa) useOldBw atomOs colorId res = do
+               -> [([String], T.Text, T.Text)]
+               -> IO [([String], T.Text, T.Text)]
+plotter1Pic []                   _        _       _      res = return res
+plotter1Pic (daftarLengkap:sisa) useOldBw atomOs colorId res = do
   let (foldernya:spinnya:legend:_) = splitOn ":" daftarLengkap
   bandFiles <- inshell2text $ unwords ["ls",concat[foldernya,"/bnd*spin",spinnya]]
   let daftarFolder = ":" ++ intercalate "@" [legend,spinnya,foldernya]
@@ -40,7 +39,7 @@ plotSinglePic (daftarLengkap:sisa) useOldBw atomOs colorId res = do
   (xrangeatas,ticksbaru) <- genBandTicks foldernya
   putStrLn $ "========" ++ show xrangeatas ++ "=====" ++ show ticksbaru
   putStrLn $ "=== FINISHED PROCESSING : " ++ daftarLengkap
-  plotSinglePic sisa useOldBw atomOs (colorId+1) ((xrangeatas,ticksbaru,arrow,generatedPBAND,generatedFATBAND):res)
+  plotter1Pic sisa useOldBw atomOs (colorId+1) (([xrangeatas,ticksbaru,arrow],generatedPBAND,generatedFATBAND):res)
 
 genPBAND :: Bool -> String -> String -> String -> [String] -> IO T.Text
 genPBAND   _      _   _       []      _         = return ""

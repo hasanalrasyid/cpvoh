@@ -16,11 +16,11 @@ import Data.Semigroup -- <>
 
 main :: IO ()
 main = do
-  (Opts fOut useOldBw judulUtama yr atomOs daftarLengkap) <-
+  (Opts fOut useOldBw judulUtama yr xr atomOs daftarLengkap) <-
     execParser withHelp
   plotWork plotSinglePic fOut useOldBw judulUtama yr atomOs
     $ map (splitOn "#") daftarLengkap
-  putStrLn "========DONE======="
+  putStrLn $ "========DONE=======" ++ show xr
 
 data Opts = Opts {
     _fOut       :: String,

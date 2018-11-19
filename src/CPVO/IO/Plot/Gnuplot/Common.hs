@@ -15,7 +15,6 @@ import qualified Data.Text.Read as T
 import Text.Printf
 import Data.List.Split (splitOn)
 import Data.List
-import Data.Maybe
 import System.Directory
 import Data.Either
 import Numeric.LinearAlgebra.Data
@@ -164,28 +163,26 @@ plotInit = unlines $ "set datafile missing '-'":
 endMultiplot :: String
 endMultiplot = unlines [ "unset multiplot" ]
 
---plotWork :: String -> Bool -> String -> String -> String -> [[String]]
---         -> IO ()
 plotWork :: Num t1 =>
           ([String]
             -> t2
             -> t3
             -> t1
             -> [a]
-            -> IO [(String, String, Maybe String, T.Text, T.Text)])
+            -> IO [([String], T.Text, T.Text)])
           -> [Char] -> t2 -> String -> String -> t3 -> [[String]] -> IO ()
 
-plotWork plotSinglePic fOut useOldBw judulUtama yr atomOs daftarLengkap = do
+plotWork plotter1Pic fOut useOldBw judulUtama yr atomOs daftarLengkap = do
   tempDir <- (T.unpack . head) <$> inshell2text "mktemp -d -p ./"
 
   putStrLn $ unlines $ concat daftarLengkap
-  (xrangeatas,ticksbaru,arrow,plotplate) <- genSinglePic plotSinglePic useOldBw atomOs daftarLengkap ("","",Nothing,[])
+  ((xrangeatas:ticksbaru:arrow:_),plotplate) <- genAllPics plotter1Pic useOldBw atomOs daftarLengkap ([],[])
 
   putStrLn $ "============TEMPGLT"
   tempGLT <- head <$> inshell2text "mktemp -p ./"
   putStrLn $ show tempGLT
 
-  writeFile (T.unpack tempGLT) $ genTEMPGLT tempDir judulUtama yr xrangeatas ticksbaru (fromMaybe "" arrow) plotplate
+  writeFile (T.unpack tempGLT) $ genTEMPGLT tempDir judulUtama yr xrangeatas ticksbaru arrow plotplate
 
   system_ $ "gnuplot " ++ T.unpack tempGLT
   let target = map (\x -> unwords [ "mv "
@@ -204,36 +201,36 @@ plotWork plotSinglePic fOut useOldBw judulUtama yr atomOs daftarLengkap = do
   putStrLn "===end  : plotWork===="
 
   {-
-genSinglePic :: Bool -> String -> [[String]]
-              ->    (String, String, Maybe String, [String])
-              -> IO (String, String, Maybe String, [String])
--}
-genSinglePic :: (Num t1, Monad m) =>
+genAllPics :: (Num t1, Monad m) =>
              (t2 -> t3 -> t4 -> t1 -> [a1] -> m [(a2, b, c, T.Text, T.Text)])
              -> t3
              -> t4
              -> [t2]
              -> (a2, b, c, [String])
              -> m (a2, b, c, [String])
-
-genSinglePic _ _        _      []            res              = return res
-genSinglePic plotSinglePic useOldBw atomOs (daftarLengkap:ds) (_,_,_,res) = do
-  allPics@((xrangeatas,ticksbaru,arrow,_,_):_) <- plotSinglePic daftarLengkap useOldBw atomOs 1 []
+-}
+genAllPics :: (Num t1) =>
+           (t2 -> t3 -> t4 -> t1 -> [a1] -> IO [([String], T.Text, T.Text)])
+           -> t3 -> t4 -> [t2] -> ([String], [String])
+           -> IO ([String], [String])
+genAllPics _           _        _      []                 res     = return res
+genAllPics plotter1Pic useOldBw atomOs (daftarLengkap:ds) (_,res) = do
+  allPics@(((xrangeatas:ticksbaru:arrow:_),_,_):_) <- plotter1Pic daftarLengkap useOldBw atomOs 1 []
   let generatedPFBAND = (map takePFBAND allPics)
   let generatedPBAND = T.intercalate "," $ filter (not . T.null) $ map fst generatedPFBAND
   let generatedFATBAND = T.intercalate "," $ filter (not . T.null) $ map snd generatedPFBAND
-  genSinglePic plotSinglePic useOldBw atomOs ds (xrangeatas, ticksbaru, arrow, (T.unpack $ T.intercalate "," $ filter (not . T.null) [generatedPBAND, generatedFATBAND]):res)
+  genAllPics plotter1Pic useOldBw atomOs ds ((xrangeatas:ticksbaru: arrow:[]), (T.unpack $ T.intercalate "," $ filter (not . T.null) [generatedPBAND, generatedFATBAND]):res)
     where
-      takePFBAND (_,_,_,p,f) = (p,f)
+      takePFBAND (_,p,f) = (p,f)
 
-genArrow :: [Char] -> [Char] -> [Char] -> [Char] -> Maybe String
-genArrow _ _ _ _ = Nothing
-genArrow' :: [Char] -> [Char] -> [Char] -> [Char] -> Maybe String
+genArrow :: [Char] -> [Char] -> [Char] -> [Char] -> String
+genArrow _ _ _ _ = ""
+genArrow' :: [Char] -> [Char] -> [Char] -> [Char] -> String
 genArrow' bandGap valBandX valBandY condBandY =
         if (bandGap == "0")
-           then Nothing
+           then ""
            else --(,) (Just $ "0:" ++ bandGap ++ "@" ++ valBandY)
-                    (Just $ unlines [ concat ["set label sprintf ('{/Symbol D}=%.2feV',"
+                    (unlines [ concat ["set label sprintf ('{/Symbol D}=%.2feV',"
                                       , bandGap
                                       , ") at (" ++ valBandX ++ "-0.55),"
                                       ,"(" ++ valBandY ++ "-0.4) font ',12'"

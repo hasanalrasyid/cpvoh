@@ -17,7 +17,7 @@ import Data.Semigroup -- <>
 main :: IO ()
 main = do
   (Opts fOut useOldBw judulUtama yr atomOs daftarLengkap) <- execParser withHelp
-  plotWork plotSinglePic fOut useOldBw judulUtama yr atomOs
+  plotWork plotter1Pic fOut useOldBw judulUtama yr atomOs
     $ map (splitOn "#") daftarLengkap
   putStrLn "========DONE======="
 
