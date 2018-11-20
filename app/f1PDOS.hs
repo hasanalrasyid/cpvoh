@@ -7,8 +7,9 @@
 {-# LANGUAGE Strict #-}
 {-# LANGUAGE FlexibleContexts #-}
 
-import CPVO.IO.Plot.Band
+import CPVO.IO.Plot.DOS
 import CPVO.IO.Plot.Gnuplot.Common
+import CPVO.IO.Plot.Gnuplot.Type
 
 import Data.List.Split (splitOn)
 import Options.Applicative as O
@@ -16,11 +17,26 @@ import Data.Semigroup -- <>
 
 main :: IO ()
 main = do
-  (Opts fOut useOldBw judulUtama yr xr atomOs daftarLengkap) <-
-    execParser withHelp
-  plotWork plotSinglePic fOut useOldBw judulUtama yr atomOs
+  (Opts fOut useOldBw judulUtama yr xr atomOs daftarLengkap) <- execParser withHelp
+  let initSetting = defSetting { titles = judulUtama, yrange = yr, xrange = xr }
+  plotWork initSetting fOut (plotTDOSnPDOS useOldBw atomOs)
     $ map (splitOn "#") daftarLengkap
-  putStrLn $ "========DONE=======" ++ show xr
+  putStrLn "========DONE======="
+    where
+      plotTDOSnPDOS a b c d e = do
+        h@((s,_):_) <- mapM (\f -> f a b c d e) [plotTDOS,plotTDOS]
+        let res = concat $ map snd h
+        return (s,res)
+
+  {-
+mainBand :: IO ()
+mainBand = do
+  (Opts fOut useOldBw judulUtama yr atomOs daftarLengkap) <- execParser withHelp
+  let initSetting = PlotSetting judulUtama yr "" "" ""
+  plotWork initSetting fOut (plotter1Pic useOldBw atomOs)
+    $ map (splitOn "#") daftarLengkap
+  putStrLn "========DONE======="
+-}
 
 data Opts = Opts {
     _fOut       :: String,

@@ -244,7 +244,7 @@ cekSpin s _ ok sOk sNo = if s == ok then sNo else sOk
 
 genTEMPGLT :: String -> PlotSetting -> [String] -> String
 genTEMPGLT _       NullSetting _ = ""
-genTEMPGLT tempDir (PlotSetting judulUtama yr xr newticks ar) plotplate =
+genTEMPGLT tempDir (PlotSetting tailer judulUtama yr xr newticks ar) plotplate =
     let subTitles = splitOn "#" judulUtama
      in unlines [ "#!/home/aku/bin/gnuplot -persist"
                 , "reset"
