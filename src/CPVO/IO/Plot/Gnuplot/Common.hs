@@ -246,8 +246,10 @@ cekSpin s _ ok sOk sNo = if s == ok then sNo else sOk
 
 genTEMPGLT :: String -> PlotSetting -> [String] -> String
 genTEMPGLT _       NullSetting _ = ""
-genTEMPGLT tempDir (PlotSetting _ judulUtama yr xr newticks ar) plotplate =
+genTEMPGLT tempDir (PlotSetting _ judulUtama yr xr xticks ar lbs) plotplate =
     let subTitles = splitOn "#" judulUtama
+        newxticks = if (null xticks) then ""
+                                     else "set xtics (" ++ xticks ++ ")"
      in unlines [ "#!/home/aku/bin/gnuplot -persist"
                 , "reset"
                 , "set term post landscape enhanced color 'Times-Roman' 12"
@@ -268,9 +270,7 @@ genTEMPGLT tempDir (PlotSetting _ judulUtama yr xr newticks ar) plotplate =
                 , "set key samplen 1 spacing 1"
                 , "set size ratio 1.5"
                 , "set mytics 10"
-                , "set xlabel 'Wave Vector'"
-                , "set ylabel 'Energy-E_F (eV)'"
---                , "set title '" ++ judulUtama ++ "'"
+                , lbs
                 , "set yrange ["++ yr ++ "]"
                 , "set xrange [" ++ xr ++ "]"
                 , "set grid noy"
@@ -301,7 +301,7 @@ genTEMPGLT tempDir (PlotSetting _ judulUtama yr xr newticks ar) plotplate =
                 , "set style line 26 lt 1 lw 2 lc rgb '#ff505'"
                 , "set style arrow 1 heads size screen 0.01,90 lw 2 lc rgb 'navy'"
                 , "set key bottom left Left"
-                , "set xtics (" ++ newticks ++ ")"
+                , newxticks
                 , (unlines
                      $ intersperse noMidLabel
                      $ zipWith (\s p -> unlines $ ("set title '" ++ s ++ "'"):

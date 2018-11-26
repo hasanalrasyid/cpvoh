@@ -10,5 +10,6 @@ data PlotSetting = NullSetting | PlotSetting { _tailer :: String
                                  , _xrange :: String
                                  , _ticks :: String
                                  , _arrow :: String
+                                 , _xylabel :: String
                                  }
-defSetting = PlotSetting "" "" "" "" "" ""
+defSetting = PlotSetting "" "" "" "" "" "" ""

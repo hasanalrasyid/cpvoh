@@ -28,7 +28,8 @@ import System.FilePath.Posix -- takeExtension
 main :: IO ()
 main = do
   (Opts fOut useOldBw judulUtama yr xr atomOs daftarLengkap) <- execParser withHelp
-  let initSetting = defSetting { _titles = judulUtama, _yrange = yr, _xrange = xr }
+  let initSetting = defSetting { _titles = judulUtama, _yrange = yr, _xrange = xr, _xylabel = unlines $ "set xlabel 'Energy-E_F (eV)'":
+                         "set ylabel 'Density of States (states/eV.cell)'":[] }
   plotWork initSetting fOut (plotTDOSnPDOS useOldBw atomOs)
     $ map (splitOn "#") daftarLengkap
   putStrLn "========DONE======="
@@ -298,7 +299,7 @@ plotPDOS  useOldBw atomOs (daftarLengkap:sisa) colorId (iniSetting,res) = do
                   -- $ insertLabel "Total" (concat ["at ",labelXr,",",labelYr," font 'Times New Roman Bold,10'"])
                   $ (++) "plot " hasilTot''
                   -}
-  plotTDOS useOldBw atomOs sisa (colorId+1) (iniSetting,(resSpin1,resSpin2):res)
+  plotPDOS useOldBw atomOs sisa (colorId+1) (iniSetting,(resSpin1,resSpin2):res)
 
 
   {-
