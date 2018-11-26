@@ -182,11 +182,11 @@ plotWork iniSetting fOut plotter daftarLengkap = do
                                   ]) [".eps",".png"]
   withCurrentDirectory tempDir $
     mapM_ system_ $
-      "ps2eps tmp.ps":
+      "ps2eps --rotate=+ tmp.ps":
       "epstool --copy -b --quiet tmp.eps tmp0.eps":
       "epstopdf tmp0.eps hasil.pdf":
       "pdftops hasil.pdf hasil.ps":
-      "ps2eps --rotate=+ hasil.ps":
+      "ps2eps hasil.ps":
       "pdftocairo -r 150 -singlefile -jpeg hasil.pdf tmp":
       "convert tmp.jpg -rotate 0 hasil.png":
       "rm -f tmp.jpg":
@@ -246,7 +246,7 @@ cekSpin s _ ok sOk sNo = if s == ok then sNo else sOk
 
 genTEMPGLT :: String -> PlotSetting -> [String] -> String
 genTEMPGLT _       NullSetting _ = ""
-genTEMPGLT tempDir (PlotSetting tailer judulUtama yr xr newticks ar) plotplate =
+genTEMPGLT tempDir (PlotSetting _ judulUtama yr xr newticks ar) plotplate =
     let subTitles = splitOn "#" judulUtama
      in unlines [ "#!/home/aku/bin/gnuplot -persist"
                 , "reset"
