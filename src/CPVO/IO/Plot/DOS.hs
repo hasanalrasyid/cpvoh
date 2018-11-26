@@ -33,7 +33,7 @@ plotPDOS' (fOut:xr:yr:over:invStat:poskey':total:foldernya:daftarOrbital) = do
   putStrLn "====start: CPVO.IO.Plot.DOS===="
 -------------draft---------------------------------------
   let poskey = unwords $ splitOn ":" poskey'
-  tailer <- fmap (T.unpack . last . T.splitOn "." . head ) $ inshell2text $ unwords [ "ls", foldernya ++ "/dos.tot.*" ]
+  tailer' <- fmap (T.unpack . last . T.splitOn "." . head ) $ inshell2text $ unwords [ "ls", foldernya ++ "/dos.tot.*" ]
   putStrLn $ show poskey
   -- tailer="$(ls "${dirs[0]}" |grep dos.tot | awk -F '.' '{print $NF}' )"
   -- over=$3
@@ -52,7 +52,7 @@ plotPDOS' (fOut:xr:yr:over:invStat:poskey':total:foldernya:daftarOrbital) = do
                                   ]
       --generator="f1.genPDOSAtomicOrbitalTot.hs $topTitle $xr $yr $total $over $invStat $tailer $foldernya $daftarOrbital"
 
-  plotplate1 <- plotStatementDOS (topTitle:xr:yr:total:over:invStat:tailer:foldernya:daftarOrbital)
+  plotplate1 <- plotStatementDOS (topTitle:xr:yr:total:over:invStat:tailer':foldernya:daftarOrbital)
   putStrLn "==========================================="
   T.writeFile "temp.glt" $ T.pack $ unlines [ genTOP [xr,yr,poskey]
                      , plotplate
@@ -67,7 +67,7 @@ plotPDOS' (fOut:xr:yr:over:invStat:poskey':total:foldernya:daftarOrbital) = do
 
   ------------------------------
   putStrLn "====finish: CPVO.IO.Plot.PDOS===="
-plotPDOS _ =
+plotPDOS' _ =
   putStrLn "====Error: CPVO.IO.Plot.PDOS : incomplete Arguments===="
 
   {-
@@ -108,7 +108,7 @@ plotter1Pic  useOldBw atomOs (daftarLengkap:sisa) colorId (iniSetting,res) = do
   (xrangeatas,tck) <- genBandTicks foldernya
   putStrLn $ "========" ++ show xrangeatas ++ "=====" ++ show tck
   putStrLn $ "=== FINISHED PROCESSING : " ++ daftarLengkap
-  plotter1Pic useOldBw atomOs sisa (colorId+1) ((iniSetting { xrange = ("0.0:" ++ xrangeatas), ticks = tck, arrow = ar}),(generatedPBAND,generatedFATBAND):res)
+  plotter1Pic useOldBw atomOs sisa (colorId+1) ((iniSetting { _xrange = ("0.0:" ++ xrangeatas), _ticks = tck, _arrow = ar}),(generatedPBAND,generatedFATBAND):res)
 
 genPBAND :: Bool -> String -> String -> String -> [String] -> IO T.Text
 genPBAND   _      _   _       []      _         = return ""
@@ -174,19 +174,33 @@ plotTDOS :: Bool
 plotTDOS  _        _      []                   _       res = return res
 --plotStatementDOS (jd:xr:ymax':wTot:_:invS:tailer:foldernya:aos) = do
 plotTDOS  useOldBw atomOs (daftarLengkap:sisa) colorId (iniSetting,res) = do
+  putStrLn "====plotTDOS======="
   let (foldernya:spinnya:legend:_) = splitOn ":" daftarLengkap
   fileCtrl <- inshell2text $ foldernya ++ "/ctrl.*"
+  putStrLn $ "====" ++ show fileCtrl ++ "======" ++ show foldernya
   fCtrl <- T.readFile $ T.unpack $ head fileCtrl
 --  let invStat = if (invS == "flipSpin") then (-1) else 1
   let invStat = 1
-  let ymax' = last $ splitOn ":" $ yrange iniSetting
-  let xr = xrange iniSetting
+  putStrLn $ show spinnya
+  putStrLn $ show legend
   -- aos :: Ni:Ni#3d:6:7:9:8:10-Co:Co#3d:6:7:8:9:10-O:O#2p:3:4:5
   --let daftaratomOs =  map (splitOn "@") $ splitOn "-" atomNos
+  let theTailer = takeExtension $ T.unpack fCtrl
+    {-
   let aos = splitOn "-" atomOs
-  let tailer = takeExtension $ T.unpack fCtrl
-  let ymax = read ymax' :: Double
+  let xr = xrange iniSetting
       [xmin,xmax] = map (read :: String -> Double) $ splitOn ":" xr
+  let ymax' = last $ splitOn ":" $ yrange iniSetting
+  let ymax = read ymax' :: Double
+
+      labelEX = show $ ((xmax + xmin)*0.5) - 2.5
+      labelEY = show $ foldr (*) 1 [ (-1), ymax, (*) 2.5 $ fromIntegral $ length aos]
+      labelDOSX = show $ xmin - 2.25
+      labelDOSY = show $ foldr (*) 1 [ (-1), ymax, (+) 1 $ fromIntegral $ length aos]
+-}
+
+  let [resSpin1,resSpin2] = map T.pack $ map (susunTot foldernya theTailer invStat ) ([1,2] :: [Integer])
+    {-
   let ctrlAtoms =
           catMaybes $
           map ( T.stripPrefix "ATOM=" .  head) $
@@ -207,14 +221,6 @@ plotTDOS  useOldBw atomOs (daftarLengkap:sisa) colorId (iniSetting,res) = do
                       $ map (\(a,label,b) -> (head $ filter (\(_,_,aa) -> aa == (T.pack a)) uniqAtoms , label, b) )
                       $ map ( (\(a:label:as) -> (a,label,as)) . splitOn ":") aos
       daftarCetak = [ (i,j) | i <- daftarCetak' , j <- [1,2] ]
-
-      labelEX = show $ ((xmax + xmin)*0.5) - 2.5
-      labelEY = show $ foldr (*) 1 [ (-1), ymax, (*) 2.5 $ fromIntegral $ length aos]
-      labelDOSX = show $ xmin - 2.25
-      labelDOSY = show $ foldr (*) 1 [ (-1), ymax, (+) 1 $ fromIntegral $ length aos]
-
-  let [resSpin1,resSpin2] = map T.pack $ map (susunTot foldernya tailer invStat ) ([1,2] :: [Integer])
-    {-
       hasilTot'' = if hasilTot' /= "" then hasilTot' else ""
       hasilTot  = insertLabel "Energy (eV)" (concat ["at ",labelEX,",",labelEY])
                   $ insertLabel "DOS (states/eV/unit-cell)" (concat ["rotate left at ",labelDOSX,",",labelDOSY])
@@ -223,7 +229,7 @@ plotTDOS  useOldBw atomOs (daftarLengkap:sisa) colorId (iniSetting,res) = do
                   -- $ insertLabel "Total" (concat ["at ",labelXr,",",labelYr," font 'Times New Roman Bold,10'"])
                   $ (++) "plot " hasilTot''
                   -}
-  plotTDOS useOldBw atomOs sisa (colorId+1) ((iniSetting { xrange = xr }),(resSpin1,resSpin2):res)
+  plotTDOS useOldBw atomOs sisa (colorId+1) (iniSetting,(resSpin1,resSpin2):res)
 
 
   {-
@@ -252,8 +258,8 @@ plotTDOS  useOldBw atomOs (daftarLengkap:sisa) colorId (iniSetting,res) = do
 
 plotStatementDOS :: [String] -> IO String
 --plotStatementDOS (jd:xr:ymax':wTot:tumpuk:invS:tailer:foldernya:aos) = do
-plotStatementDOS (jd:xr:ymax':wTot:_:invS:tailer:foldernya:aos) = do
-    fCtrl <- T.readFile $ foldernya ++ "/ctrl." ++ tailer
+plotStatementDOS (jd:xr:ymax':wTot:_:invS:tailer':foldernya:aos) = do
+    fCtrl <- T.readFile $ foldernya ++ "/ctrl." ++ tailer'
     let invStat = if (invS == "flipSpin") then (-1) else 1
     let ymax = read ymax' :: Double
         [xmin,xmax] = map (read :: String -> Double) $ splitOn ":" xr
@@ -283,7 +289,7 @@ plotStatementDOS (jd:xr:ymax':wTot:_:invS:tailer:foldernya:aos) = do
         labelDOSX = show $ xmin - 2.25
         labelDOSY = show $ foldr (*) 1 [ (-1), ymax, (+) 1 $ fromIntegral $ length aos]
 
-    let hasilTot' = if (wTot == "T") then intercalate "," $ map (susunTot foldernya tailer invStat ) ([1,2] :: [Integer]) else ""
+    let hasilTot' = if (wTot == "T") then intercalate "," $ map (susunTot foldernya tailer' invStat ) ([1,2] :: [Integer]) else ""
         hasilTot'' = if hasilTot' /= "" then hasilTot' else ""
         hasilTot  = insertLabel "Energy (eV)" (concat ["at ",labelEX,",",labelEY])
                   $ insertLabel "DOS (states/eV/unit-cell)" (concat ["rotate left at ",labelDOSX,",",labelDOSY])
@@ -298,7 +304,7 @@ plotStatementDOS (jd:xr:ymax':wTot:_:invS:tailer:foldernya:aos) = do
               $ map ((++) "plot ")
               $ map (intercalate ", ")
               $ chunksOf 2
-              $ map (susunOrbs "dos" foldernya tailer invStat) daftarCetak
+              $ map (susunOrbs "dos" foldernya tailer' invStat) daftarCetak
               )
     return $ concat
         $ (\a -> concat  [ (init a)
@@ -332,13 +338,13 @@ susunOrbs :: T.Text
                 -> ((Int,((Int, Int, T.Text),String,[String])),Int) -- DaftarCetak
                 -> String
 --susunOrbs job foldernya tailer invStat ((urutan,((jumlah,nomor,nama),judul,listOrbital)),spin) = unwords [
-susunOrbs job foldernya tailer invStat ((urutan,((jumlah,nomor,_),_,listOrbital)),spin) = unwords [
+susunOrbs job foldernya tailer' invStat ((urutan,((jumlah,nomor,_),_,listOrbital)),spin) = unwords [
                                         Text.Printf.printf "'%s/%s.isp%d.site%03d.%s' u ($1*rydberg):((%s)*%d*(%d)*(%d)/rydberg ) w l ls %d notitle"
                                           (T.pack foldernya)
                                           job
                                           spin
                                           nomor
-                                          (T.pack tailer)
+                                          (T.pack tailer')
                                           ("$" ++ (intercalate "+$" $ delta (listOrbital /= []) listOrbital $ map show ([2..26] :: [Integer])))
                                           jumlah
                                           invStat
@@ -348,10 +354,10 @@ susunOrbs job foldernya tailer invStat ((urutan,((jumlah,nomor,_),_,listOrbital)
 
 
 susunTot :: String -> String -> Int -> Integer -> String
-susunTot foldernya tailer invStat spin = unwords [
+susunTot foldernya tailer' invStat spin = unwords [
                                         Text.Printf.printf "'%s/dos.tot.%s' u ($1*rydberg):($%d *( %d ) *( %d ) / rydberg ) w l lc rgb 'black' notitle"
                                           (T.pack foldernya)
-                                          (T.pack tailer)
+                                          (T.pack tailer')
                                           (delta (spin < 2) 2 (3) :: Int)
                                           invStat
                                           (delta (spin < 2) 1 (-1) :: Int)

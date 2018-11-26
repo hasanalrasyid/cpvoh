@@ -40,7 +40,7 @@ plotter1Pic  useOldBw atomOs (daftarLengkap:sisa) colorId (iniSetting,res) = do
   (xrangeatas,tck) <- genBandTicks foldernya
   putStrLn $ "========" ++ show xrangeatas ++ "=====" ++ show tck
   putStrLn $ "=== FINISHED PROCESSING : " ++ daftarLengkap
-  plotter1Pic useOldBw atomOs sisa (colorId+1) ((iniSetting { xrange = ("0.0:" ++ xrangeatas), ticks = tck, arrow = ar}),(generatedPBAND,generatedFATBAND):res)
+  plotter1Pic useOldBw atomOs sisa (colorId+1) ((iniSetting { _xrange = ("0.0:" ++ xrangeatas), _ticks = tck, _arrow = ar}),(generatedPBAND,generatedFATBAND):res)
 
 genPBAND :: Bool -> String -> String -> String -> [String] -> IO T.Text
 genPBAND   _      _   _       []      _         = return ""

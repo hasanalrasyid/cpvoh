@@ -176,15 +176,17 @@ plotWork iniSetting fOut plotter daftarLengkap = do
   writeFile (T.unpack tempGLT) $ genTEMPGLT tempDir plotSet plotplate
 
   system_ $ "gnuplot " ++ T.unpack tempGLT
-  let target = map (\x -> unwords [ "mv "
+  let target = map (\x -> unwords [ "cp -f "
                                   , "hasil" ++ x
                                   , "../" ++ fOut ++ x
                                   ]) [".eps",".png"]
   withCurrentDirectory tempDir $
     mapM_ system_ $
-      "ps2eps --rotate=+ tmp.ps":
-      "epstool --copy -b --quiet tmp.eps hasil.eps":
-      "epstopdf hasil.eps":
+      "ps2eps tmp.ps":
+      "epstool --copy -b --quiet tmp.eps tmp0.eps":
+      "epstopdf tmp0.eps hasil.pdf":
+      "pdftops hasil.pdf hasil.ps":
+      "ps2eps --rotate=+ hasil.ps":
       "pdftocairo -r 150 -singlefile -jpeg hasil.pdf tmp":
       "convert tmp.jpg -rotate 0 hasil.png":
       "rm -f tmp.jpg":

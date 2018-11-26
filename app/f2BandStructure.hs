@@ -1,7 +1,5 @@
-{-
 #!/usr/bin/env stack
 --stack --resolver lts-11.3 --install-ghc runghc --stack-yaml /home/aku/kanazawa/dev/cpvoh/stack.yaml
--}
 
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE Strict #-}
@@ -18,7 +16,7 @@ import Data.Semigroup -- <>
 main :: IO ()
 main = do
   (Opts fOut useOldBw judulUtama yr atomOs daftarLengkap) <- execParser withHelp
-  let initSetting = PlotSetting judulUtama yr "" "" ""
+  let initSetting = PlotSetting "" judulUtama yr "" "" ""
   plotWork initSetting fOut (plotter1Pic useOldBw atomOs)
     $ map (splitOn "#") daftarLengkap
   putStrLn "========DONE======="

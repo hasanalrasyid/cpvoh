@@ -4,11 +4,11 @@
 module CPVO.IO.Plot.Gnuplot.Type
   where
 
-data PlotSetting = NullSetting | PlotSetting { tailer :: String
-                                 , titles :: String
-                                 , yrange :: String
-                                 , xrange :: String
-                                 , ticks :: String
-                                 , arrow :: String
+data PlotSetting = NullSetting | PlotSetting { _tailer :: String
+                                 , _titles :: String
+                                 , _yrange :: String
+                                 , _xrange :: String
+                                 , _ticks :: String
+                                 , _arrow :: String
                                  }
 defSetting = PlotSetting "" "" "" "" "" ""
