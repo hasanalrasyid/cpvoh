@@ -195,9 +195,12 @@ plotWork iniSetting fOut plotter daftarLengkap = do
 
 genAllPics _       []                 res     = return res
 genAllPics plotter (daftarLengkap:ds) (iniSetting,res) = do
+  putStrLn "====genAllPics: INIT"
   (plotSetting,generatedPFBAND) <- plotter daftarLengkap 1 (iniSetting,[])
+  putStrLn "====genAllPics: plotting DONE"
   let generatedPBAND = T.intercalate "," $ filter (not . T.null) $ map fst generatedPFBAND
   let generatedFATBAND = T.intercalate "," $ filter (not . T.null) $ map snd generatedPFBAND
+  putStrLn $ "===== genAllPics DONE" ++ show daftarLengkap
   genAllPics plotter ds (plotSetting, (T.unpack $ T.intercalate "," $ filter (not . T.null) [generatedPBAND, generatedFATBAND]):res)
 
 genArrow :: [Char] -> [Char] -> [Char] -> [Char] -> String

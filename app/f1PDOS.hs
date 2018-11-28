@@ -8,6 +8,8 @@
 --import CPVO.IO.Plot.DOS
 import CPVO.IO.Plot.Gnuplot.Common
 import CPVO.IO.Plot.Gnuplot.Type
+import CPVO.IO.Reader.Ecalj.Band
+import CPVO.IO.Reader.Ecalj.Common
 
 import Data.List.Split (splitOn)
 import Options.Applicative as O
@@ -253,24 +255,41 @@ plotPDOS  useOldBw atomOs (daftarLengkap:sisa) colorId (iniSetting,res) = do
   putStrLn $ show spinnya
   putStrLn $ show legend
   -- aos :: Ni:Ni#3d:6:7:9:8:10-Co:Co#3d:6:7:8:9:10-O:O#2p:3:4:5
-  --let daftaratomOs =  map (splitOn "@") $ splitOn "-" atomNos
+  -- aos :: Ni:Ni#3d:d-Co:Co#3d:d-O:O#2p:p
+  -- aos :: Ni:Ni#3d:d-Co:Co#3d:d-O:O#2p:p
+  -- aos :: d@11+12+13+14:Ni 3d-d
+  -- mirip:
+  -- kudu p@7-dx2My2@11-dz2@11
+  let daftaratomOs =  map (splitOn "@") $ splitOn "-" atomOs
   let theTailer = takeExtension $ T.unpack fileCtrl
+  uniqAtoms <-  readUniqAtoms <$> readCtrlAtoms theTailer foldernya
     {-
-  let aos = splitOn "-" atomOs
-  let xr = xrange iniSetting
-      [xmin,xmax] = map (read :: String -> Double) $ splitOn ":" xr
-  let ymax' = last $ splitOn ":" $ yrange iniSetting
-  let ymax = read ymax' :: Double
-
-      labelEX = show $ ((xmax + xmin)*0.5) - 2.5
-      labelEY = show $ foldr (*) 1 [ (-1), ymax, (*) 2.5 $ fromIntegral $ length aos]
-      labelDOSX = show $ xmin - 2.25
-      labelDOSY = show $ foldr (*) 1 [ (-1), ymax, (+) 1 $ fromIntegral $ length aos]
--}
-  putStrLn $ "=1===" ++ foldernya
-  let [resSpin1,resSpin2] = map T.pack $ map (susunTot foldernya theTailer invStat ) ([1,2] :: [Integer])
-  putStrLn $ "=2====" ++ T.unpack fileCtrl
-    {-
+  let daftarCetak'  = zip [1..]
+                      $ map (\(a,label,b) -> (head $ filter (\(_,_,aa) -> aa == (T.pack a)) uniqAtoms , label, b) )
+                      $ map ( (\(a:label:as) -> (a,label,as)) . splitOn ":") daftaratomOs
+      daftarCetak = [ (i,j) | i <- daftarCetak' , j <- [1,2] ]
+      -}
+  daftarCetak <- genDaftarCetak uniqAtoms "" "" daftaratomOs
+  let hasilSemua =
+              map (\((_,(_,a,_)) ,p) -> insertLabel (T.unpack $ T.replace "#" " " $ T.pack a) "at graph 0.85,0.92 font 'Times New Roman Bold,10'" p)
+              $ zip daftarCetak'
+              $ map ((++) "plot ")
+              $ map (intercalate ", ")
+              $ chunksOf 2
+              $ map (susunOrbs "dos" foldernya tailer invStat) daftarCetak
+                {-
+    return $ concat
+        $ (\a -> concat  [ (init a)
+                         , [ "set format x '% h';"
+                           , "set xtics font 'Times New Roman,10' nomirror offset -.15,.6 out;"
+                           , (last a)
+                           ]
+                         ]
+          )
+        $ map (insertText "unset label")
+        $ map (insertLabel "spin-up" "at graph 0.15,0.9 font ',10'")
+        $ map (insertLabel "spin-down" "at graph 0.15,0.1 font ',10'") hasilSemua
+        -} {-
   let ctrlAtoms =
           catMaybes $
           map ( T.stripPrefix "ATOM=" .  head) $
@@ -299,9 +318,6 @@ plotPDOS  useOldBw atomOs (daftarLengkap:sisa) colorId (iniSetting,res) = do
                   -- $ insertLabel "Total" (concat ["at ",labelXr,",",labelYr," font 'Times New Roman Bold,10'"])
                   $ (++) "plot " hasilTot''
                   -}
-  plotPDOS useOldBw atomOs sisa (colorId+1) (iniSetting,(resSpin1,resSpin2):res)
-
-
   {-
     let hasilSemua = hasilTot : (
               map (\((_,(_,a,_)) ,p) -> insertLabel (T.unpack $ T.replace "#" " " $ T.pack a) "at graph 0.85,0.92 font 'Times New Roman Bold,10'" p)
@@ -323,6 +339,10 @@ plotPDOS  useOldBw atomOs (daftarLengkap:sisa) colorId (iniSetting,res) = do
         $ map (insertLabel "spin-up" "at graph 0.15,0.9 font ',10'")
         $ map (insertLabel "spin-down" "at graph 0.15,0.1 font ',10'") hasilSemua
         -}
+  plotPDOS useOldBw atomOs sisa (colorId+1) (iniSetting,(resSpin1,resSpin2):res)
+
+
+
 --plotStatementDOS _ = return "====Error: plotStatementDOS @CPVO/IO/Plot/Gnuplot/DOS.hs:30"
 
 plotTDOS :: Bool

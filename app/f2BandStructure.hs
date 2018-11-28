@@ -1,7 +1,5 @@
-{-
 #!/usr/bin/env stack
 --stack --resolver lts-11.3 --install-ghc runghc --stack-yaml /home/aku/kanazawa/dev/cpvoh/stack.yaml
--}
 
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE Strict #-}
@@ -21,6 +19,11 @@ main = do
   let initSetting = PlotSetting "" judulUtama yr "" "" "" $
                       unlines $ "set xlabel 'Wave Vector'":
                                 "set ylabel 'Energy-E_F (eV)'":[]
+  putStrLn $ show initSetting
+  putStrLn $ fOut
+  putStrLn $ show useOldBw
+  putStrLn $ atomOs
+
   plotWork initSetting fOut (plotter1Pic useOldBw atomOs)
     $ map (splitOn "#") daftarLengkap
   putStrLn "========DONE======="

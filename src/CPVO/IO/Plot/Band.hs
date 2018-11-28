@@ -20,10 +20,12 @@ plotter1Pic :: Bool
                -> IO (PlotSetting ,[(T.Text, T.Text)])
 plotter1Pic  _        _      []                   _       res = return res
 plotter1Pic  useOldBw atomOs (daftarLengkap:sisa) colorId (iniSetting,res) = do
+  putStrLn $ "===plotter1Pic" ++ show daftarLengkap
   let (foldernya:spinnya:legend:_) = splitOn ":" daftarLengkap
   bandFiles <- inshell2text $ unwords ["ls",concat[foldernya,"/bnd*spin",spinnya]]
   let daftarFolder = ":" ++ intercalate "@" [legend,spinnya,foldernya]
-
+  putStrLn $ (++) "===" $ unwords ["ls",concat[foldernya,"/bnd*spin",spinnya]]
+  putStrLn $ "===" ++ show daftarFolder ++ show bandFiles ++ spinnya
   let generatedPBAND = T.intercalate ", " $ map (genPlotPlate colorId) $ map (\x -> T.concat["'",x,"'"]) bandFiles
   valBand@(valBandX:valBandY:_) <- fmap (words . T.unpack . head) $ inshell2text $ unwords ["cat",concat [foldernya,"/bnd*spin*",spinnya],"|sed -e '/^#/d' |awk '{if ($3>0.1) print $2,$3}'|sort -k 2n|head -1"]
   (_:condBandY:_) <- fmap (words . T.unpack . head) $ inshell2text $ unwords ["cat", concat[foldernya,"/bnd*spin*",spinnya],"| sed -e '/^#/d' |awk '{if ($3<=0) print $2,$3}'|sort -k 2nr -u|sed -e '/^ *$/d'|head -1"]
