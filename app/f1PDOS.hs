@@ -4,6 +4,7 @@
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE Strict #-}
 {-# LANGUAGE FlexibleContexts #-}
+{-# LANGUAGE ScopedTypeVariables #-}
 
 --import CPVO.IO.Plot.DOS
 import CPVO.IO.Plot.Gnuplot.Common
@@ -247,28 +248,14 @@ plotPDOS  useOldBw atomOs (daftarLengkap:sisa) colorId (iniSetting,res) = do
   let (foldernya:spinnya:legend:_) = splitOn ":" daftarLengkap
   fileCtrl <- fmap head $ inshell2text $ "ls " ++ foldernya ++ "/ctrl.*"
   putStrLn $ "====" ++ show fileCtrl ++ "======" ++ show foldernya
---  fCtrl <- T.readFile $ T.unpack fileCtrl
---  let invStat = if (invS == "flipSpin") then (-1) else 1
   let invStat = 1
   putStrLn $ show spinnya
   putStrLn $ show legend
-  -- aos :: Ni:Ni#3d:6:7:9:8:10-Co:Co#3d:6:7:8:9:10-O:O#2p:3:4:5
   --let daftaratomOs =  map (splitOn "@") $ splitOn "-" atomNos
-  let theTailer = takeExtension $ T.unpack fileCtrl
-    {-
   let aos = splitOn "-" atomOs
-  let xr = xrange iniSetting
-      [xmin,xmax] = map (read :: String -> Double) $ splitOn ":" xr
-  let ymax' = last $ splitOn ":" $ yrange iniSetting
-  let ymax = read ymax' :: Double
-
-      labelEX = show $ ((xmax + xmin)*0.5) - 2.5
-      labelEY = show $ foldr (*) 1 [ (-1), ymax, (*) 2.5 $ fromIntegral $ length aos]
-      labelDOSX = show $ xmin - 2.25
-      labelDOSY = show $ foldr (*) 1 [ (-1), ymax, (+) 1 $ fromIntegral $ length aos]
--}
+  let theTailer = takeExtension $ T.unpack fileCtrl
   putStrLn $ "=1===" ++ foldernya
-  let [resSpin1,resSpin2] = map T.pack $ map (susunTot foldernya theTailer invStat ) ([1,2] :: [Integer])
+--  let [resSpin1,resSpin2] = map T.pack $ map (susunTot foldernya theTailer invStat ) ([1,2] :: [Integer])
   putStrLn $ "=2====" ++ T.unpack fileCtrl
     {-
   let ctrlAtoms =
@@ -299,7 +286,30 @@ plotPDOS  useOldBw atomOs (daftarLengkap:sisa) colorId (iniSetting,res) = do
                   -- $ insertLabel "Total" (concat ["at ",labelXr,",",labelYr," font 'Times New Roman Bold,10'"])
                   $ (++) "plot " hasilTot''
                   -}
-  plotPDOS useOldBw atomOs sisa (colorId+1) (iniSetting,(resSpin1,resSpin2):res)
+  fCtrl <- T.readFile $ T.unpack fileCtrl
+  let ctrlAtoms =
+          catMaybes $
+          map ( T.stripPrefix "ATOM=" .  head) $
+          filter (/=[]) $
+          map ( T.words . T.takeWhile (/='#') ) $
+          head $
+          splitWhen (T.isPrefixOf "SPEC") $
+          last $ splitWhen (T.isPrefixOf "SITE")
+          $ T.lines fCtrl
+      nAtom = length ctrlAtoms
+  let uniqAtoms =
+          map (\a -> (length a, snd $ head a, fst $ head a)) $
+          groupBy (\a b -> fst a == fst b) $
+          zip  ctrlAtoms [1..nAtom]
+  -- aos :: Ni:Ni#3d:6:7:9:8:10-Co:Co#3d:6:7:8:9:10-O:O#2p:3:4:5 -- seharusnya ini
+  let daftarCetak'  = zip [1..]
+                      $ map (\(a,label,b) -> (head $ filter (\(_,_,aa) -> aa == (T.pack a)) uniqAtoms , label, b) )
+                      $ map ( (\(a:label:as) -> (a,label,as)) . splitOn ":") aos
+  let daftarCetak = [ (i,j) | i <- daftarCetak' , j <- [1,2] ]
+  let newRes = map (\[a,b] -> (T.pack a,T.pack b)) $ chunksOf 2 $ map ( susunOrbs "dos" foldernya theTailer invStat ) daftarCetak
+  putStrLn $ "===plotPDOS res " ++ (show res)
+--  let hasilSemua = map (susunOrbs "dos" foldernya theTailer invStat) (daftarCetak ::  [((Int, ((Int, Int, T.Text), String, [String])) , Int)])
+  plotPDOS useOldBw atomOs sisa (colorId+1) (iniSetting,newRes ++ res)
 
 
   {-
@@ -500,7 +510,7 @@ susunOrbs :: T.Text
                 -> String
 --susunOrbs job foldernya tailer invStat ((urutan,((jumlah,nomor,nama),judul,listOrbital)),spin) = unwords [
 susunOrbs job foldernya tailer' invStat ((urutan,((jumlah,nomor,_),_,listOrbital)),spin) = unwords [
-                                        Text.Printf.printf "'%s/%s.isp%d.site%03d.%s' u ($1*rydberg):((%s)*%d*(%d)*(%d)/rydberg ) w l ls %d notitle"
+                                        Text.Printf.printf "'%s/%s.isp%d.site%03d%s' u ($1*rydberg):((%s)*%d*(%d)*(%d)/rydberg ) w l ls %d notitle"
                                           (T.pack foldernya)
                                           job
                                           spin
