@@ -14,7 +14,7 @@ import qualified Data.Text as T
 import qualified Data.Text.Read as T
 -- import qualified Data.Text.Format as T
 import Text.Printf
-import Data.List.Split (splitOn)
+import Data.List.Split (splitOn,chunksOf)
 import Data.List
 import System.Directory
 import Data.Either
@@ -169,11 +169,12 @@ plotWork iniSetting fOut plotter daftarLengkap = do
 
   putStrLn $ unlines $ concat daftarLengkap
   (plotSet,plotplate) <- genAllPics plotter daftarLengkap (iniSetting,[])
-
+  putStrLn $ "===========TEMPGLT plotplate : " ++ (unlines $ map ("----" ++) plotplate)
   putStrLn $ "============TEMPGLT"
   tempGLT <- head <$> inshell2text "mktemp -p ./"
   putStrLn $ show tempGLT
-  writeFile (T.unpack tempGLT) $ genTEMPGLT tempDir plotSet plotplate
+  putStrLn $ "=====" ++ (show $ head plotplate)
+  writeFile (T.unpack tempGLT) $ genTEMPGLT tempDir plotSet $ chunksOf 3 plotplate
 
   system_ $ "gnuplot " ++ T.unpack tempGLT
   let target = map (\x -> unwords [ "cp -f "
@@ -198,7 +199,12 @@ genAllPics plotter (daftarLengkap:ds) (iniSetting,res) = do
   (plotSetting,generatedPFBAND) <- plotter daftarLengkap 1 (iniSetting,[])
   let generatedPBAND = T.intercalate "," $ filter (not . T.null) $ map fst generatedPFBAND
   let generatedFATBAND = T.intercalate "," $ filter (not . T.null) $ map snd generatedPFBAND
-  genAllPics plotter ds (plotSetting, (T.unpack $ T.intercalate "," $ filter (not . T.null) [generatedPBAND, generatedFATBAND]):res)
+  putStrLn $ "====genAllPics: " ++ (show $ head generatedPFBAND)
+  let singles = map genSingles generatedPFBAND
+  genAllPics plotter ds (plotSetting, singles ++ res)
+  --genAllPics plotter ds (plotSetting, (T.unpack $ T.intercalate "," $ filter (not . T.null) [generatedPBAND, generatedFATBAND]):res)
+    where
+      genSingles (p,f) = T.unpack $ T.intercalate "," $ filter (not . T.null) [p,f]
 
 genArrow :: [Char] -> [Char] -> [Char] -> [Char] -> String
 genArrow _ _ _ _ = ""
@@ -244,12 +250,14 @@ cekSpin :: (Eq a, IsString a) => a -> a -> a-> p -> p -> p
 cekSpin s "0" ok sOk sNo = if s == ok then sOk else sNo
 cekSpin s _ ok sOk sNo = if s == ok then sNo else sOk
 
-genTEMPGLT :: String -> PlotSetting -> [String] -> String
+genTEMPGLT :: String -> PlotSetting -> [[String]] -> String
 genTEMPGLT _       NullSetting _ = ""
-genTEMPGLT tempDir (PlotSetting _ judulUtama yr xr xticks ar lbs) plotplate =
+genTEMPGLT tempDir (PlotSetting _ judulUtama yr xr xticks ar lbs sr) plotplate =
     let subTitles = splitOn "#" judulUtama
         newxticks = if (null xticks) then ""
                                      else "set xtics (" ++ xticks ++ ")"
+        nPics = length plotplate
+        sizeRatio = show sr
      in unlines [ "#!/home/aku/bin/gnuplot -persist"
                 , "reset"
                 , "set term post landscape enhanced color 'Times-Roman' 12"
@@ -260,7 +268,8 @@ genTEMPGLT tempDir (PlotSetting _ judulUtama yr xr xticks ar lbs) plotplate =
                 , "if (!exists('MP_BOTTOM')) MP_BOTTOM = .1"
                 , "if (!exists('MP_TOP'))    MP_TOP = .9"
                 , "if (!exists('MP_GAP'))    MP_GAP = 0.05"
-                , unwords [ "set multiplot layout 1," ++ (show $ length subTitles )
+                --, unwords [ "set multiplot layout " ++ (show $ div nPics $ length subTitles) ++ "," ++ (show $ length subTitles )
+                , unwords [ "set multiplot layout 2," ++ (show $ length subTitles )
                           , "margins screen MP_LEFT, MP_RIGHT, MP_BOTTOM, MP_TOP"
                           , "spacing screen MP_GAP"
                           ]
@@ -268,7 +277,7 @@ genTEMPGLT tempDir (PlotSetting _ judulUtama yr xr xticks ar lbs) plotplate =
                 , "set grid"
                 , "set key right top Left"
                 , "set key samplen 1 spacing 1"
-                , "set size ratio 1.5"
+                , "set size ratio " ++ sizeRatio
                 , "set mytics 10"
                 , lbs
                 , "set yrange ["++ yr ++ "]"
@@ -304,10 +313,11 @@ genTEMPGLT tempDir (PlotSetting _ judulUtama yr xr xticks ar lbs) plotplate =
                 , newxticks
                 , (unlines
                      $ intersperse noMidLabel
-                     $ zipWith (\s p -> unlines $ ("set title '" ++ s ++ "'"):
-                                        unwords [ar, plotInit ,p]:
+                     $ zipWith (\s p -> unlines $ ("set title '" ++ (show s) ++ "'"):
+                                        (unlines $ map (\pp -> unwords [plotInit ,pp]) p):
                                         [])
-                       subTitles plotplate
+                       [1..] $ take 6 plotplate
+                       --subTitles plotplate
                   )
                 , endMultiplot
                 ]

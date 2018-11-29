@@ -306,10 +306,9 @@ plotPDOS  useOldBw atomOs (daftarLengkap:sisa) colorId (iniSetting,res) = do
                       $ map (\(a,label,b) -> (head $ filter (\(_,_,aa) -> aa == (T.pack a)) uniqAtoms , label, b) )
                       $ map ( (\(a:label:as) -> (a,label,as)) . splitOn ":") aos
   let daftarCetak = [ (i,j) | i <- daftarCetak' , j <- [1,2] ]
+  --let newRes = map (\[a,b] -> (T.pack a,T.pack b)) $ map (map ("plot " ++ )) $ chunksOf 2 $ map ( susunOrbs "dos" foldernya theTailer invStat ) daftarCetak
   let newRes = map (\[a,b] -> (T.pack a,T.pack b)) $ chunksOf 2 $ map ( susunOrbs "dos" foldernya theTailer invStat ) daftarCetak
-  putStrLn $ "===plotPDOS res " ++ (show res)
---  let hasilSemua = map (susunOrbs "dos" foldernya theTailer invStat) (daftarCetak ::  [((Int, ((Int, Int, T.Text), String, [String])) , Int)])
-  plotPDOS useOldBw atomOs sisa (colorId+1) (iniSetting,newRes ++ res)
+  plotPDOS useOldBw atomOs sisa (colorId+1) (iniSetting, newRes ++ res)
 
 
   {-
