@@ -29,9 +29,10 @@ tampilkan (a:as) = do
 plotStatementDOS :: [String] -> IO String
 --plotStatementDOS (jd:xr:ymax':wTot:tumpuk:invS:tailer:foldernya:aos) = do
 plotStatementDOS (jd:xr:ymax':wTot:_:invS:tailer:foldernya:aos) = do
+    putStrLn $ "======plotStatementDOS INIT"
     fCtrl <- T.readFile $ foldernya ++ "/ctrl." ++ tailer
     let invStat = if (invS == "flipSpin") then (-1) else 1
-    let ymax = read ymax' :: Double
+    let (ymin:ymax:_) = map read $ splitOn ":" ymax' :: [Double]
         [xmin,xmax] = map (read :: String -> Double) $ splitOn ":" xr
     let ctrlAtoms =
           catMaybes $
@@ -52,16 +53,16 @@ plotStatementDOS (jd:xr:ymax':wTot:_:invS:tailer:foldernya:aos) = do
     let daftarCetak'  = zip [1..]
                       $ map (\(a,label,b) -> (head $ filter (\(_,_,aa) -> aa == (T.pack a)) uniqAtoms , label, b) )
                       $ map ( (\(a:label:as) -> (a,label,as)) . splitOn ":") aos
-        daftarCetak = [ (i,j) | i <- daftarCetak' , j <- [1,2] ]
-
-        labelEX = show $ ((xmax + xmin)*0.5) - 2.5
-        labelEY = show $ foldr (*) 1 [ (-1), ymax, (*) 2.5 $ fromIntegral $ length aos]
-        labelDOSX = show $ xmin - 2.25
-        labelDOSY = show $ foldr (*) 1 [ (-1), ymax, (+) 1 $ fromIntegral $ length aos]
-
-    let hasilTot' = if (wTot == "T") then intercalate "," $ map (susunTot foldernya tailer invStat ) ([1,2] :: [Integer]) else ""
+    putStrLn $ "===" ++ show (uniqAtoms,ctrlAtoms,aos)
+    let daftarCetak = [ (i,j) | i <- daftarCetak' , j <- [1,1] ]
+    let labelEX = show $ ((xmax + xmin)*0.5) - 2.5
+    let labelEY = show $ foldr (*) 1 [ (-1), ymax, (*) 1.25 $ fromIntegral $ length aos]
+    let labelDOSX = show $ xmin - 2.25
+    let labelDOSY = show $ foldr (*) 1 [ (-1), ymax, (+) 0 $ fromIntegral $ length aos]
+    putStrLn $ "===" ++ show daftarCetak
+    let hasilTot' = if (wTot == "T") then intercalate "," $ map (susunTot foldernya tailer invStat ) ([1,1] :: [Integer]) else ""
         hasilTot'' = if hasilTot' /= "" then hasilTot' else ""
-        hasilTot  = insertLabel "Energy (eV)" (concat ["at ",labelEX,",",labelEY])
+        hasilTot  = insertLabel "Energy - E_F (eV)" (concat ["at ",labelEX,",",labelEY])
                   $ insertLabel "DOS (states/eV/unit-cell)" (concat ["rotate left at ",labelDOSX,",",labelDOSY])
                   $ insertLabel jd "at graph 0.2,1.08"
                   $ insertLabel "Total" "at graph 0.85,0.92 font 'Times New Roman Bold,10'"
@@ -85,9 +86,15 @@ plotStatementDOS (jd:xr:ymax':wTot:_:invS:tailer:foldernya:aos) = do
                          ]
           )
         $ map (insertText "unset label")
-        $ map (insertLabel "spin-up" "at graph 0.15,0.9 font ',10'")
-        $ map (insertLabel "spin-down" "at graph 0.15,0.1 font ',10'") hasilSemua
+        $ map (insertSpinLabel ymin) hasilSemua
 plotStatementDOS _ = return "====Error: plotStatementDOS @CPVO/IO/Plot/Gnuplot/DOS.hs:30"
+
+insertSpinLabel :: (Num a, Ord a) => a -> String -> String
+insertSpinLabel ymin =
+  if ymin < 0 then
+              (.) (insertLabel "spin-up" "at graph 0.15,0.9 font ',10'")
+                  (insertLabel "spin-down" "at graph 0.15,0.1 font ',10'")
+              else id
 
 pSubPlot :: ((a0, (a1, String, c0)), String) -> String
 pSubPlot ( (_,(_,a,_)) ,p) = unlines [

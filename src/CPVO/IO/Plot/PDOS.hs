@@ -60,5 +60,9 @@ plotPDOS (fOut:xr:yr:over:invStat:poskey':total:foldernya:daftarOrbital) = do
 
   ------------------------------
   putStrLn "====finish: CPVO.IO.Plot.PDOS===="
-plotPDOS _ =
+plotPDOS _ = do
   putStrLn "====Error: CPVO.IO.Plot.PDOS : incomplete Arguments===="
+  putStrLn $ unwords $ "./f1 invA.gga -9:9 -1:25 1 keepSpin top:right T":
+                       "ext.nico2o4.normal/tio2.g0.post":
+                       "Ti:Ti#3d:6:7:9:8:10":
+                       "O:O#2p:3:4:5":[]
