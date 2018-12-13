@@ -28,7 +28,8 @@ tampilkan (a:as) = do
 
 plotStatementDOS :: [String] -> IO String
 --plotStatementDOS (jd:xr:ymax':wTot:tumpuk:invS:tailer:foldernya:aos) = do
-plotStatementDOS (jd:xr:ymax':wTot:_:invS:tailer:foldernya:aos) = do
+--plotStatementDOS (jd:xr:ymax':wTot:     _:invS:tailer:foldernya:aos) = do
+plotStatementDOS   ( _:xr:ymax':   _:     _:invS:tailer:foldernya:aos) = do
     putStrLn $ "======plotStatementDOS INIT"
     fCtrl <- T.readFile $ foldernya ++ "/ctrl." ++ tailer
     let invStat = if (invS == "flipSpin") then (-1) else 1
@@ -56,6 +57,7 @@ plotStatementDOS (jd:xr:ymax':wTot:_:invS:tailer:foldernya:aos) = do
                       $ map ( (\(a:label:as) -> (a,label,as)) . splitOn ":") aos
     putStrLn $ "===" ++ show (uniqAtoms,ctrlAtoms,aos)
     let daftarCetak = [ (i,j) | i <- daftarCetak' , j <- [1,1] ]
+      {-
 --    let labelEX = show $ ((xmax + xmin)*0.5) - 2.5
 --    let labelEY = show $ foldr (*) 1 [ (-1), ymax, (*) 1.25 $ fromIntegral $ length aos]
     let labelDOSX = show $ xmin - 2.25
@@ -69,26 +71,31 @@ plotStatementDOS (jd:xr:ymax':wTot:_:invS:tailer:foldernya:aos) = do
                   $ insertLabel "Total" "at graph 0.85,0.92 font 'Times New Roman Bold,10'"
                   -- $ insertLabel "Total" (concat ["at ",labelXr,",",labelYr," font 'Times New Roman Bold,10'"])
                   $ (++) "plot " hasilTot''
-
+-}
     let tot = map (susunTot foldernya tailer invStat ) ([1,1] :: [Integer])
+        spinHead = if ymin >= 0 then ""
+                            else unlines $
+                              "set label 'spin-up' at graph 0.15,0.8 font ',10'":
+                              "set label 'spin-down' at graph 0.15,0.2 font ',10'":
+                              []
         thead = unlines $
-                "set label 'Energy - E_F (eV)' at 0,-12 center":
                 "set label 'Total' at graph 0.85,0.92 font 'Times New Roman Bold,10'":
                 "set label 'DOS (states/eV/unit-cell)' rotate left at -11.25,-100.0":
+--                spinHead:
                 []
         tPP = PlotPlate thead "unset label" tot
     let pdos  = chunksOf 2
               $ map (susunOrbs "dos" foldernya tailer invStat) daftarCetak
-        phead = unlines $
-                "set label 'spin-up' at graph 0.15,0.9 font ',10'":
-                "set label 'spin-down' at graph 0.15,0.1 font ',10'":
-                []
-        pdosPP = zipWith (\(_,(_,a,_)) p ->
+        phead = "" -- spinHead
+        pdosPP = addHeaderToLast ("set label 'Energy - E_F (eV)' at graph 0.5,-0.25 center")
+               $ addHeaderToLast ("set format x '% h';set xtics font 'Times New Roman,10' nomirror offset -.15,.6 out;")
+               $ zipWith (\(_,(_,a,_)) p ->
                     addHeader ("set label '" ++ (replace "#" " " a) ++ "' at graph 0.85,0.92 font 'Times New Roman Bold,10'") p ) daftarCetak'
-               $ map (PlotPlate phead "unset label") pdos
 
-    putStrLn $ "====" ++ show (tPP:pdosPP)
+               $ map (PlotPlate phead "unset label") pdos
+        allPP = (tPP:pdosPP)
     putStrLn $ "====" ++ show daftarCetak'
+                {-
     let hasilSemua = hasilTot : (
               map (\((_,(_,a,_)) ,p) -> insertLabel (T.unpack $ T.replace "#" " " $ T.pack a) "at graph 0.85,0.92 font 'Times New Roman Bold,10'" p)
               $ zip daftarCetak'
@@ -107,7 +114,12 @@ plotStatementDOS (jd:xr:ymax':wTot:_:invS:tailer:foldernya:aos) = do
           )
         $ map (insertText "unset label")
         $ map (insertSpinLabel ymin) hasilSemua
+        -}
+    return $ unlines $ map plot allPP
 plotStatementDOS _ = return "====Error: plotStatementDOS @CPVO/IO/Plot/Gnuplot/DOS.hs:30"
+
+showXtics p = addHeader ("set format x '% h';set xtics font 'Times New Roman,10' nomirror offset -.15,.6 out;") p
+addHeaderToLast s ps = concat [init ps, [ addHeader s $ last ps]]
 
 insertSpinLabel :: (Num a, Ord a) => a -> String -> String
 insertSpinLabel ymin =
@@ -172,3 +184,11 @@ data PlotPlate = PlotPlate { _head :: String
                            , _tail :: String
                            , _plot :: [String]
                            } deriving Show
+
+prependToAllWith :: (t -> a) -> [t] -> [a]
+prependToAllWith _ [] = []
+prependToAllWith f (x:xs) = (f x) : prependToAllWith f xs
+
+intercalateWith :: (a -> a) -> [a] -> [a]
+intercalateWith _ [] = []
+intercalateWith f (x:xs) = x : prependToAllWith f xs

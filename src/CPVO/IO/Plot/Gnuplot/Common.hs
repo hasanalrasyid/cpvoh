@@ -102,7 +102,7 @@ genTOP (xr:yr:poskey:_) = unlines [ "#!/home/aku/bin/gnuplot -persist"
                  , "set lmargin 8"
                  , "set rmargin 6"
 
-                 , "set multiplot layout 10,2 columnsfirst title '{/:Bold=15   }' \\"
+                 , "set multiplot layout 5,1 columnsfirst title '{/:Bold=15   }' \\"
                  , " margins screen MP_LEFT, MP_RIGHT, MP_BOTTOM, MP_TOP spacing screen MP_GAP"
 
                  , "set border lw 0.2"
