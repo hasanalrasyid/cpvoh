@@ -10,7 +10,7 @@ import Text.Printf
 import Data.List.Split
 import Data.List
 import Data.Maybe
-
+import Data.List.Utils (replace)
 
 delta :: Bool -> b -> b -> b
 delta x y z = if x then y else z
@@ -33,7 +33,8 @@ plotStatementDOS (jd:xr:ymax':wTot:_:invS:tailer:foldernya:aos) = do
     fCtrl <- T.readFile $ foldernya ++ "/ctrl." ++ tailer
     let invStat = if (invS == "flipSpin") then (-1) else 1
     let (ymin:ymax:_) = map read $ splitOn ":" ymax' :: [Double]
-        [xmin,xmax] = map (read :: String -> Double) $ splitOn ":" xr
+--        [xmin,xmax] = map (read :: String -> Double) $ splitOn ":" xr
+        [xmin,_] = map (read :: String -> Double) $ splitOn ":" xr
     let ctrlAtoms =
           catMaybes $
           map ( T.stripPrefix "ATOM=" .  head) $
@@ -55,20 +56,39 @@ plotStatementDOS (jd:xr:ymax':wTot:_:invS:tailer:foldernya:aos) = do
                       $ map ( (\(a:label:as) -> (a,label,as)) . splitOn ":") aos
     putStrLn $ "===" ++ show (uniqAtoms,ctrlAtoms,aos)
     let daftarCetak = [ (i,j) | i <- daftarCetak' , j <- [1,1] ]
-    let labelEX = show $ ((xmax + xmin)*0.5) - 2.5
-    let labelEY = show $ foldr (*) 1 [ (-1), ymax, (*) 1.25 $ fromIntegral $ length aos]
+--    let labelEX = show $ ((xmax + xmin)*0.5) - 2.5
+--    let labelEY = show $ foldr (*) 1 [ (-1), ymax, (*) 1.25 $ fromIntegral $ length aos]
     let labelDOSX = show $ xmin - 2.25
     let labelDOSY = show $ foldr (*) 1 [ (-1), ymax, (+) 0 $ fromIntegral $ length aos]
     putStrLn $ "===" ++ show daftarCetak
     let hasilTot' = if (wTot == "T") then intercalate "," $ map (susunTot foldernya tailer invStat ) ([1,1] :: [Integer]) else ""
-        hasilTot'' = if hasilTot' /= "" then hasilTot' else ""
-        hasilTot  = insertLabel "Energy - E_F (eV)" (concat ["at ",labelEX,",",labelEY])
+        hasilTot'' = if (null hasilTot') then "" else hasilTot'
+        hasilTot  = insertLabel "Energy - E_F (eV)" "at 0,-12 center"
                   $ insertLabel "DOS (states/eV/unit-cell)" (concat ["rotate left at ",labelDOSX,",",labelDOSY])
                   $ insertLabel jd "at graph 0.2,1.08"
                   $ insertLabel "Total" "at graph 0.85,0.92 font 'Times New Roman Bold,10'"
                   -- $ insertLabel "Total" (concat ["at ",labelXr,",",labelYr," font 'Times New Roman Bold,10'"])
                   $ (++) "plot " hasilTot''
 
+    let tot = map (susunTot foldernya tailer invStat ) ([1,1] :: [Integer])
+        thead = unlines $
+                "set label 'Energy - E_F (eV)' at 0,-12 center":
+                "set label 'Total' at graph 0.85,0.92 font 'Times New Roman Bold,10'":
+                "set label 'DOS (states/eV/unit-cell)' rotate left at -11.25,-100.0":
+                []
+        tPP = PlotPlate thead "unset label" tot
+    let pdos  = chunksOf 2
+              $ map (susunOrbs "dos" foldernya tailer invStat) daftarCetak
+        phead = unlines $
+                "set label 'spin-up' at graph 0.15,0.9 font ',10'":
+                "set label 'spin-down' at graph 0.15,0.1 font ',10'":
+                []
+        pdosPP = zipWith (\(_,(_,a,_)) p ->
+                    addHeader ("set label '" ++ (replace "#" " " a) ++ "' at graph 0.85,0.92 font 'Times New Roman Bold,10'") p ) daftarCetak'
+               $ map (PlotPlate phead "unset label") pdos
+
+    putStrLn $ "====" ++ show (tPP:pdosPP)
+    putStrLn $ "====" ++ show daftarCetak'
     let hasilSemua = hasilTot : (
               map (\((_,(_,a,_)) ,p) -> insertLabel (T.unpack $ T.replace "#" " " $ T.pack a) "at graph 0.85,0.92 font 'Times New Roman Bold,10'" p)
               $ zip daftarCetak'
@@ -140,5 +160,15 @@ susunTot foldernya tailer invStat spin = unwords [
                                           (delta (spin < 2) 1 (-1) :: Int)
                                           ]
 
+addHeader :: String -> PlotPlate -> PlotPlate
+addHeader s p@(PlotPlate h _ _) = p { _head = unlines [s,h]}
 
+plot :: PlotPlate -> String
+plot (PlotPlate h t p) =
+  let ps = "plot " ++ (intercalate "," p)
+  in  unlines $ [h, ps, t]
 
+data PlotPlate = PlotPlate { _head :: String
+                           , _tail :: String
+                           , _plot :: [String]
+                           } deriving Show

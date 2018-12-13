@@ -1,5 +1,6 @@
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE Strict #-}
+{-# LANGUAGE ScopedTypeVariables #-}
 
 module CPVO.IO.Plot.Gnuplot.Common
   where
@@ -137,7 +138,7 @@ genTOP (xr:yr:poskey:_) = unlines [ "#!/home/aku/bin/gnuplot -persist"
                    where
                      xticsnya = "-100,2,100"
                      (yInit:yLast:_) = map read $ splitOn ":" yr :: [Int]
-                     yDelta = floor $ (fromIntegral $ yLast - yInit) * 1.2 / 3
+                     yDelta = floor $ (fromIntegral $ yLast - yInit) * (1.2 / 3.0 :: Double)
                      yticsnya' = [yInit + (a * yDelta) | a <- [0..]]
                      yticsnya = intercalate "," $ map show $ take 3 yticsnya'
 genTOP _ = "Error: genTOP @CPVO/IO/Plot/Gnuplot/Common.hs:142"

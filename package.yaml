@@ -38,6 +38,7 @@ dependencies:
 - shake
 - template-haskell
 - directory
+- MissingH
   #- cryptohash           # ---  temporary needed
   #- base16-bytestring           # --- !temporary needed
   #- bytestring           # --- !temporary needed
