@@ -39,6 +39,10 @@ dependencies:
 - template-haskell
 - directory
 - filepath
+
+- machines
+- attoparsec
+
   #- cryptohash           # ---  temporary needed
   #- base16-bytestring           # --- !temporary needed
   #- bytestring           # --- !temporary needed
