@@ -1,18 +1,18 @@
 #!/usr/bin/env stack
---stack --resolver lts-2.22 --install-ghc runghc --stack-yaml /home/aku/kanazawa/dev/cpvoh/stack.yaml
+--stack --resolver lts-11.3 --install-ghc runghc --stack-yaml /home/aku/kanazawa/dev/cpvoh/stack.yaml
 
 
 {-# LANGUAGE OverloadedStrings #-}
 -- {-# LANGUAGE Strict #-} -- not yet available in GHC 7
 {-# LANGUAGE FlexibleContexts #-}
 {-# LANGUAGE FlexibleInstances #-}
-{-# LANGUAGE OverlappingInstances #-}
+--{-# LANGUAGE OverlappingInstances #-}
 {-# LANGUAGE InstanceSigs #-}
 
 module Main where
 
 import Options.Applicative as O
--- import Data.Semigroup
+import Data.Semigroup ((<>))
 --
 -- import Data.List.Split (splitOn)
 -- import Language.Fortran.Parser.Utils (readReal)
@@ -202,7 +202,7 @@ instance Show Coord where
   show ErrCoord = "UNKNOWN COORD: ErrCoord"
   show (Coord a c) = show c ++ T.unpack a
 
-instance Show [Coord] where
+instance {-# OVERLAPS #-} Show [Coord] where
   show a = unlines $ map show a
 
 data Opts = Opts {
