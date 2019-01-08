@@ -2,6 +2,7 @@
 --stack --resolver lts-11.3 --install-ghc runghc --stack-yaml /home/aku/kanazawa/dev/cpvoh/stack.yaml
 
 {-# LANGUAGE RankNTypes #-}
+{-# LANGUAGE OverloadedStrings #-}
 
 module Main where
 
@@ -19,7 +20,7 @@ import qualified Data.ByteString as BS
 import qualified Data.ByteString.Char8 as B8
 import Data.ByteString (ByteString)
 import System.IO (isEOF)
-import Control.Monad (unless)
+import Control.Monad (unless,replicateM_)
 
 import Data.Machine.Mealy
 
@@ -30,20 +31,34 @@ main = do
 --  putStrLn $ format "  " (printf "%.6f") $ fromRows res
   res <- runT $ teeT zipping (source [1..]) lineSource
               ~> skipHeader 2
+              ~> genLat ([],"")
               ~> echo
   putStrLn $ show res
   --where pipeline = lineSource ~> skipHeader ~> genVec ~> genLat ~> echo
 
 
 
---genLat :: Monad m => ProcessT m (Vector Double) ([Vector Double],Vector Double)
-genLat :: Monad m => ProcessT m a a
-genLat = dropping 3
+genLat :: Monad m => ([Vector Double],ByteString)
+       -> ProcessT m (Int,ByteString) ([Vector Double],ByteString)
+--genLat :: Monad m => ProcessT m a a
+genLat seed = construct $ go seed
+  where
+    go cur@(l,v)
+      | (length l) < 3 = do
+                            yield cur
+                            next <- await
+                            go $! func cur next
+      | otherwise = yield (l,v)
+    func (a1,_) (i,b) = ((getVec b):a1,b)
+
 
 genVec :: Monad m => ProcessT m BS.ByteString (Vector Double)
 genVec = repeatedly $ do
   line <- await
   yield $ fromList $ map read $ words $ B8.unpack line
+
+getVec line = fromList $ map read $ words $ B8.unpack line
+
 
 skipHeader :: Monad m => Int -> ProcessT m a a
 skipHeader n = dropping n
