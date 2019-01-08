@@ -28,11 +28,12 @@ main = do
 --  res <- runT pipeline
   -- Remember that runT collects outputs in a list
 --  putStrLn $ format "  " (printf "%.6f") $ fromRows res
-  res <- runT $ lineSource ~> auto lineNum ~> skipHeader 2 ~> echo
+  res <- runT $ teeT zipping (source [1..]) lineSource
+              ~> skipHeader 2
+              ~> echo
   putStrLn $ show res
   --where pipeline = lineSource ~> skipHeader ~> genVec ~> genLat ~> echo
 
-lineNum = unfoldMealy (\i x -> ((i, x), i + 1)) 0
 
 
 --genLat :: Monad m => ProcessT m (Vector Double) ([Vector Double],Vector Double)
