@@ -23,9 +23,32 @@ main = do
 
 runHelp :: IO ()
 runHelp = putStr $ unlines $
-  [ "test lah with help"
-  , "dua baris"
-  ]
+  "Primitive Lattice Generator" :
+  "run with:":
+  "reduce < input.vasp":
+  "input: VASP file format":
+  "Title":
+  "1.0":
+  "row based lattice vectors that will be used in global basis":
+  "Atom List":
+  "Number of Atom List":
+  "Cartesian":
+  "complete list of Cartesian coordinates using global basis":
+  "EXAMPLE INPUT":
+  "1.0":
+  "-1.892500   1.892500   4.759800":
+  " 1.892500  -1.892500   4.759800":
+  " 1.892500   1.892500  -4.759800":
+  "Ti O":
+  "2 4":
+  "Cartesian":
+  "0.000000  0.000000   0.000000":
+  "0.000000  1.892500   2.379900":
+  "1.892500  1.892500  -2.759065":
+  "0.000000  1.892500   4.380634":
+  "0.000000  1.892500   0.379166":
+  "1.892500  1.892500   2.759066":
+  []
 
 runJob :: IO ()
 runJob = do
