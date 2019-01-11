@@ -32,14 +32,19 @@ main = do
   -- Remember that runT collects outputs in a list
 --  putStrLn $ format "  " (printf "%.6f") $ fromRows res
   --res <- runT $ teeT zipping (source [1..]) lineSource
-  (origin':_) <- getArgs
-  let origin = read origin' :: Int
+  --(origin':_) <- getArgs
+  let origin = 0
   res <- runT $ lineSource
               ~> skipHeader 2
               ~> echo
   let (lat',(atList:atNums':_:res')) = splitAt 3 res
   let atNums = map read $ words $ B8.unpack atNums' :: [Int]
   let (lat:coords:_) = map (fromColumns . map getVec) [lat',res']
+  let vOrigin = if (origin <= 0)  then 3 |> [0,0,0]
+                                 else head $ toColumns $ coords ¿ [origin - 1]
+  let atoms = concat $ zipWith (replicate) atNums $ words $ B8.unpack atList
+  let atomsNcoords = zip atoms $ toColumns coords
+          {-
   let convLat' = ["3.7850000858  0.0000000000  0.0000000000"
                  ,"0.0000000000  3.7850000858  0.0000000000"
                  ,"0.0000000000  0.0000000000  9.5195999146"
@@ -53,21 +58,16 @@ main = do
   --
   -- putStr $ (++) "P_o =" $ dispf 6 $ convLat <> latFrac
   let latFrac = (inv convLat) <> lat
-  let vOrigin = if (origin <= 0)  then 3 |> [0,0,0]
-                                 else head $ toColumns $ coords ¿ [origin - 1]
   let newCoords = fromRows $ map (\a -> a - vOrigin) $ toColumns coords
   let filteredCoords =  (flip (<>)) lat $
                         fromRows $
                         filter cekFirstQuadrant $
                         --filter cek1Quadrant $ filter (\x -> norm_2 x <= sqrt 3) $
         toRows $ newCoords <> (inv lat)
-  let atoms = concat $ zipWith (replicate) atNums $ words $ B8.unpack atList
-  let atomsNcoords = zip atoms $ toColumns coords
   let newAtomsDef =  concatMap (\x -> filter (sameVec ("",x)) atomsNcoords) $
         toRows filteredCoords
   let newAtoms = (\x -> zip (map head x) $ map length x) $
         group $ map fst newAtomsDef
-          {-
   putStrLn "Reduced Cell"
   putStrLn "1.0"
   putStr $ unlines $ tail $ lines $ dispf 6 $ tr' lat
