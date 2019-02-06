@@ -76,8 +76,8 @@ executables:
     - split
     - text
 
-  f1:
-    main        : f1PDOS.hs
+  reduce :
+    main        : reduce.hs
     source-dirs : app
     ghc-options :
     - -threaded
@@ -85,9 +85,20 @@ executables:
     - -with-rtsopts=-N
     dependencies:
     - cpvoh
-    - text-format
-    - split
-    - text
+    - bytestring
+
+      #  f1:
+      #    main        : f1PDOS.hs
+      #    source-dirs : app
+      #    ghc-options :
+      #    - -threaded
+      #    - -rtsopts
+      #    - -with-rtsopts=-N
+      #    dependencies:
+      #    - cpvoh
+      #    - text-format
+      #    - split
+      #    - text
 
   f2:
     main        : f2BandStructure.hs
@@ -142,15 +153,15 @@ executables:
     - split
     - text
 
-  x:
-    main        : Main.hs
-    source-dirs : app
-    ghc-options :
-    - -threaded
-    - -rtsopts
-    - -with-rtsopts=-N
-    dependencies:
-    - cpvoh
+      #  x:
+      #    main        : Main.hs
+      #    source-dirs : app
+      #    ghc-options :
+      #    - -threaded
+      #    - -rtsopts
+      #    - -with-rtsopts=-N
+      #    dependencies:
+      #    - cpvoh
 
 tests:
   tf1:
