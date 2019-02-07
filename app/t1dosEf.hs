@@ -51,12 +51,11 @@ main = do
     Right all@(invStat,_,_,_,_,_, ctrlAtomicAOs,jdTable, jdHeads, foldernya, tailer,_, texFile,targetPrint) <- readHeaderData allArgs
     putStrLn $ "===========allArgs =========" ++ show all
     totalDOS <- readTotalDOSText tailer foldernya
-    let resTotY0 = map (\i -> getY0 $ totalDOS ¿ [0,i]) $ flipBy invStat [1,2]
+    let resTotY0 = map (\i -> getY0 $ totalDOS ¿ [0,i]) $ flipByI invStat [1,2]
     putStrLn "===========NF total DOS========="
     putStrLn $ show resTotY0
-    let newInvStat = getInvStat invStat
-    pdosAtAll <- readPDOS newInvStat tailer foldernya
-                  [ Cetak s a | s <- [1,2], a <- ctrlAtomicAOs ]
+    pdosAtAll <- readPDOS invStat tailer foldernya
+                  [ Cetak s a | s <- flipByI invStat [1,2], a <- ctrlAtomicAOs ]
     --putStrLn $ "===pdosAtAll " ++ show pdosAtAll
     putStrLn "=========!readPDOS"
     let rs' = rendertable
@@ -263,7 +262,7 @@ getLastLLMF foldernya = inshell2text $ concat ["ls -laht ", foldernya,"/llmf{,_g
 
 --readHeaderData (texFile:jd:jdHead:colAlign:xr:ymax':wTot::invS:tailer:foldernya:aos) = do
 readHeaderData :: [String]
-               -> IO ( Either String ( Double, Double, Double, Double, [T.Text]
+               -> IO ( Either String ( InvStat, Double, Double, Double, [T.Text]
                       , [UniqueAtom]
                       , [AtOrb]
                       , String, [String], String, String, String, String, [Cetak]))
@@ -271,7 +270,7 @@ readHeaderData all@(texFile:jd:jdHead:colAlign:xr:ymax':_:_:invS:tailer:folderny
   -------------------------------reading data------------------------
     putStrLn "=========readHeaderData@CPVO.IO.Reader.Ecalj.Common"
     putStrLn $ (++) "===allArgs==" $ unlines $ map show all
-    let invStat = if (invS == "flipSpin") then (-1) else 1
+    let invStat = if (invS == "flipSpin") then Flip else Keep
     let ymax = read ymax' :: Double
     let [xmin,xmax] = map (read :: String -> Double) $ splitOn ":" xr
     ctrlAtoms <- readCtrlAtoms tailer foldernya
