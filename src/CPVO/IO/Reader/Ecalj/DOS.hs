@@ -44,6 +44,7 @@ readOnePDOS :: String
             -> String -> Int -> (Int, (String, (String, [Int])))
             -> IO (Matrix Double, (Int, (String, (Int, String))))
 readOnePDOS theFolder tailing spin (noAt,(symAt,(labelAt,intAOs))) = do
+  putStrLn "=========readOnePDOS@src/CPVO/IO/Reader/Ecalj/DOS.hs"
   let namaFao = theFolder ++ "/dos.isp" ++ show spin ++ ".site" ++ (TP.printf "%03d" noAt) ++ "." ++ tailing
   (tmpfile,h) <- openTempFile "temp" "aEDOS.suffix"
   hClose h
@@ -51,6 +52,7 @@ readOnePDOS theFolder tailing spin (noAt,(symAt,(labelAt,intAOs))) = do
   aoE <- fmap (\x -> (¿) x [0]) $ loadMatrix $ tmpfile -- 0th column, Energy column
   let zeroE = asColumn $ konst 0 (rows aoE)                                      -- zero valued column instead of real column
   aPDOS <- fmap (dropColumns 1) $ getPDOS' zeroE tmpfile intAOs [namaFao]                                -- create sum of per atomic AOs (PDOS/atom)
+  putStrLn "=========readOnePDOS@src/CPVO/IO/Reader/Ecalj/DOS.hs"
   return $ (fromBlocks [[aoE, aPDOS]] , (spin, (hashSpaceText labelAt, (noAt, symAt))))
 ------------------------------------------------------------------
 

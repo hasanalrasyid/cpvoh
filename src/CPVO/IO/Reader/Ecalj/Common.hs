@@ -75,18 +75,19 @@ readHeaderData :: [String]
                       , String, [String], String, String, String, String))
 readHeaderData (texFile:jd:jdHead:colAlign:xr:ymax':_:_:invS:tailer:foldernya:aos) = do
   -------------------------------reading data------------------------
+    putStrLn "=========readHeaderData@CPVO.IO.Reader.Ecalj.Common"
     let invStat = if (invS == "flipSpin") then (-1) else 1
     let ymax = read ymax' :: Double
     let [xmin,xmax] = map (read :: String -> Double) $ splitOn ":" xr
     ctrlAtoms <- readCtrlAtoms tailer foldernya
     let jdHeads = splitOn "|" jdHead
     let uniqAtoms = readUniqAtoms ctrlAtoms
-    putStrLn $ show ctrlAtoms
-    putStrLn $ show uniqAtoms
+    putStrLn $ "===ctrlAtoms " ++ show ctrlAtoms
+    putStrLn $ "===uniqAtoms " ++ show uniqAtoms
     -- daftarCetak : [(nourut,,jumlah,nourut,symbol)]
     daftarCetak <- genDaftarCetak uniqAtoms tailer foldernya aos
-    putStrLn $ show aos
-    putStrLn $ show $ last daftarCetak
+    putStrLn $ "===aos " ++ show aos
+    putStrLn $ "===daftarCetak " ++ show daftarCetak
       -------------------------------generating DOS data------------------------
     totalDOS <- readTotalDOSText tailer foldernya
       -------------------------------integrating DOS data------------------------
@@ -106,11 +107,11 @@ readHeaderData (texFile:jd:jdHead:colAlign:xr:ymax':_:_:invS:tailer:foldernya:ao
       -}
     let ctrlAtomicAOs = genCtrlAtomicAOs aoSet ctrlAtoms
     let jdTable = "Table: " ++ jd
-    putStrLn $ show $ head ctrlAtomicAOs
+    putStrLn $ "===ctrlAtomicAOs " ++ show ctrlAtomicAOs
 --    pdosAtomicPilihan <- readPDOS invStat tailer foldernya $ take 2 ctrlAtomicAOs
 --    let integratedAtomicPDOS = integrateAtomicPDOS pdosAtomicPilihan
 --    putStrLn $ show $ integratedAtomicPDOS
-    putStrLn "===done:readHeaderData@CPVO/IO/Reader/Common ====================="
+    putStrLn "========!readHeaderData@CPVO.IO.Reader.Ecalj.Common"
     return $ Right
       (invStat, ymax, xmin, xmax, ctrlAtoms, uniqAtoms, ctrlAtomicAOs,jdTable, jdHeads, foldernya, tailer, colAlign, texFile)
 
