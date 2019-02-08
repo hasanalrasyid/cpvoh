@@ -15,6 +15,7 @@ import CPVO.IO.Reader.Ecalj.DOS
 import qualified Data.Text as T
 import qualified Data.Text.Read as T
 import Data.Either (rights)
+import Data.List
 -------------------------
 import Numeric.LinearAlgebra
 
@@ -95,7 +96,13 @@ getMMOM allArgs = do
          $ zipWith (\sdMom (intMom,(_,(j,_))) -> j:(map (showDouble (3::Integer)) [sdMom,intMom,sdMom-intMom])) mmomSD
          $ map (\(iu,idn,b) -> ((iu-idn),b) )
         -}
+--         $ map go5
+         $ groupBy sameLabelOfAtoms
+         $ map go4
+         $ groupBy (\(_,a) (_,b) -> atom a == atom b)
+         $ sortBy (\x y -> compare (atom $ snd x) (atom $ snd y))
          $ integratedAtomicPDOS
+    debugIt "rIntgAll'=====" rIntgAll'
     {-
     let rIntgAll = unlines  [
                             rIntgAll'
@@ -113,3 +120,11 @@ getMMOM allArgs = do
     T.writeFile texFile $ T.pack rIntgAll
     -}
     putStrLn "===done CPVO.IO.Reader.Ecalj.MMOM: getMMOM ==="
+      where
+        go5 a = let aos = map fst a
+                    vs = map snd a
+                    vals = toList $ sumCol $ fromLists vs
+                 in vals
+                 -- in zip aos $ zipWith (\c b -> c ++ [b]) vs vals
+        go4 a@((_,b):_) = (atom b,map fst a)
+        go4 _ = (ErrAtOrb,[])

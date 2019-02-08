@@ -77,10 +77,6 @@ main = do
         go5 (a,u,d) = (labelAO a):(map (showDouble 3) $ sumUpDown u d)
         sumIt (_,r1,r2) ((a,b,c):as) = sumIt (a,r1+b,r2+c) as
         sumIt res [] = res
-        compareLabelOfAtoms a b = compare (labelAO a) (labelAO b)
-        sameLabelOfAtoms a b = labelAO a == labelAO b
-        sameAtomofCetaks (_,(Cetak _ a)) (_,(Cetak _ b)) = a == b
-        sameAtomofCetaks _ _ = False
         go4 ((u,Cetak _ a):(d,_):_) = (a,u,d)
         go4 _ = (ErrAtOrb,9999,9999)
         go3 ((l,(_,u)):(_,(_,d)):_) = (l:(map (showDouble 3) $ processCols [u,d]))

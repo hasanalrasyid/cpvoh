@@ -5,6 +5,7 @@
 module CPVO.Numeric (
   integrateAll,
   sumRow,
+  sumCol,
   getY0,
   delta,
   integrateToZero,
@@ -32,6 +33,8 @@ integrateAll _ _ = 99
 
 sumRow :: Matrix Double -> Vector Double
 sumRow a = a #> konst 1 (cols a)
+
+sumCol a = sumRow $ tr a
 
 getY0 :: Matrix Double -> Vector Double
 getY0 dos = getY0' lowPos higNeg
