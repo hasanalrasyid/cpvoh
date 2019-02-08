@@ -39,6 +39,7 @@ readOnePDOS theFolder tailing (Cetak spin atTarget@(AO noAt _ labelAt iAOs)) = d
   aPDOS <- fmap (dropColumns 1) $ getPDOS' zeroE tmpfile iAOs [namaFao]                                -- create sum of per atomic AOs (PDOS/atom)
   putStrLn "=========readOnePDOS@src/CPVO/IO/Reader/Ecalj/DOS.hs"
   return $ (fromBlocks [[aoE, aPDOS]] , (Cetak spin (atTarget { labelAO = hashSpaceText labelAt} )))
+readOnePDOS _ _ _ = return (matrix 1 [1..], NoCetak)
 
 getPDOS' :: Matrix Double -> String -> [Int] -> [String] -> IO (Matrix Double)
 getPDOS' res _ _ []  = return res

@@ -17,9 +17,9 @@ type SpinID = Integer
 
 type Directory = String
 
-data Cetak = Cetak { spinID :: SpinID
-                   , atom :: AtOrb
-                   } deriving (Show,Ord,Eq)
+data Cetak = NoCetak | Cetak { spinID :: SpinID
+                             , atom :: AtOrb
+                             } deriving (Show,Ord,Eq)
 
 -- uniqAtoms : [(count,noFirstAtom,atomicSymbol)]
 data UniqueAtom = UA { count :: Int
@@ -29,7 +29,7 @@ data UniqueAtom = UA { count :: Int
 
 type AtNum = Int
 type AtSym = String
-data AtOrb = AO { atnum :: AtNum
+data AtOrb = ErrAtOrb | AO { atnum :: AtNum
                 , atsym :: AtSym
                 , labelAO :: String
                 , intAOs :: [Int]

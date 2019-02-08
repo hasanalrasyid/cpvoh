@@ -1,3 +1,4 @@
 stack build cpvoh:lib
 ./app/t1dosEf.hs kadalijo "Total and partial DOS at *E*~F~ in states/eV/unit-cell." '|*N*$_\uparrow$(*E*~F~)|*N*$_\downarrow$(*E*~F~)|*N*(*E*~F~) ' "@{}lSSS@{}" -9:6 25 T o no-flipSpin nico2o4ib "ext.nico2o4.invB/nico2o4.invB.GGA0" "Ni:Ni#3d:6:7:9:8:10" "Ni:Ni#3p:3:4:5"  "Co:Co#3d:6:7:8:9:10" "Co:Co#3p:3:4:5"  "CoTd:Co_Td#3p:3:4:5" "CoTd:Co_Td#3d:6:7:8:9:10" "O:O#2p:3:4:5" >& log
+#./app/t1dosEf.hs kadalijo "Total and partial DOS at *E*~F~ in states/eV/unit-cell." '|*N*$_\uparrow$(*E*~F~)|*N*$_\downarrow$(*E*~F~)|*N*(*E*~F~) ' "@{}lSSS@{}" -9:6 25 T o no-flipSpin nico2o4 "ext.nico2o4.normal/nico2o4.GGA0" "Ni:Ni#3d:6:7:9:8:10" "Ni:Ni#3p:3:4:5"  "Co:Co#3d:6:7:8:9:10" "Co:Co#3p:3:4:5" "O:O#2p:3:4:5" >& log
 

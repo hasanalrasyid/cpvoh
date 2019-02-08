@@ -59,31 +59,37 @@ main = do
                   [ Cetak s a | s <- flipBy invStat [1,2], a <- ctrlAtomicAOs ]
     --putStrLn $ "===pdosAtAll " ++ show pdosAtAll
     putStrLn "=========!readPDOS"
-    let rs' = show {- rendertable
+    let rs' = rendertable
               $ (:) jdHeads
               $ (:)  ("Total" : (map (showDouble 3) $ processCols $ map ((* fromRydberg) . last . toList) $ resTotY0))
-              $ map go3
-              $ groupBy (\a b -> fst a == fst b)
-              $ sortBy (\a b -> compare (fst a) (fst b) )
-              $ rights
-              $ map go $ concat
-              $ map go2
-              $ groupBy (\(_,s) (_,s') ->  (spinID s) == (spinID s'))
-            -}
+              $ map go5
+              $ map (sumIt (ErrAtOrb,0,0))
+              $ groupBy (\(a,_,_) (b,_,_) -> sameLabelOfAtoms a b)
+              $ sortBy (\(a,_,_) (b,_,_) -> compareLabelOfAtoms a b)
+              $ map go4
+              $ groupBy sameAtomofCetaks
               $ sortBy (\x y -> compare (atom $ snd x) (atom $ snd y))
               $ map (\(mp,b) -> ((* fromRydberg) $ last $ toList $ getY0 mp, b)) pdosAtAll
-    putStrLn $ "====rs " ++ rs'
-      {-
-    let rs = unlines [ rs' , jdTable ]
+    putStrLn $ unlines $ "====rs ":rs':[]
+    let rs = unlines $ rs':jdTable:[]
     T.writeFile texFile $ T.pack rs
-    -}
       where
+        go5 (a,u,d) = (labelAO a):(map (showDouble 3) $ sumUpDown u d)
+        sumIt (_,r1,r2) ((a,b,c):as) = sumIt (a,r1+b,r2+c) as
+        sumIt res [] = res
+        compareLabelOfAtoms a b = compare (labelAO a) (labelAO b)
+        sameLabelOfAtoms a b = labelAO a == labelAO b
+        sameAtomofCetaks (_,(Cetak _ a)) (_,(Cetak _ b)) = a == b
+        sameAtomofCetaks _ _ = False
+        go4 ((u,Cetak _ a):(d,_):_) = (a,u,d)
+        go4 _ = (ErrAtOrb,9999,9999)
         go3 ((l,(_,u)):(_,(_,d)):_) = (l:(map (showDouble 3) $ processCols [u,d]))
         go3 _ = "wrongFormGO3":[]
         go2 = groupBy (\(_,s) (_,s') ->  (labelAO $ atom s) == (labelAO $ atom s'))
         go :: [(Double,Cetak)] -> Either String (String,(SpinID,Double))
         go a@((_, (Cetak s (AO _ _ labelAt _))):_) = Right (labelAt,(s, sum $ map fst a))
         go _ = Left "wrongFormGO"
+        sumUpDown u d = [u,d,u+d]
         processCols [u,d] = [u,d,u+d]
         processCols _ = []
 
