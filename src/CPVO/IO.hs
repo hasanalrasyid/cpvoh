@@ -26,6 +26,8 @@ import Text.PrettyPrint.Boxes hiding ((<>),cols,rows)
 import qualified Text.PrettyPrint.Boxes as TB
 import System.Process as SP
 
+import CPVO.IO.Type
+
 system_ :: String -> IO ()
 system_ ss = SP.system ss >> return ()
 
@@ -85,7 +87,5 @@ takeAOs _ [] = []
 takeAOs k@(xx,i) ((n,ll,m):as) = if (i == n) then [(xx,(n,(ll,m)))]
                                            else takeAOs k as
 
-flipBy :: Double -> [Int] -> [Int]
-flipBy invStat xx = if (invStat < 0) then reverse xx
-                                     else xx
-
+flipBy Keep a = a
+flipBy Flip a = reverse a

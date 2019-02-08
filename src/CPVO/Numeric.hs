@@ -11,6 +11,8 @@ module CPVO.Numeric (
   integrateAtomicPDOS
   ) where
 
+import CPVO.IO.Type
+
 import Numeric.LinearAlgebra
 import Data.List (findIndex,groupBy)
 import Data.Maybe (fromJust)
@@ -49,10 +51,8 @@ getY0' a b = a + (scale m v)
 delta :: Bool -> b -> b -> b
 delta x y z = if x then y else z
 
-integrateAtomicPDOS :: [(Matrix Double, (Int, (String, (Int, String))))]
-                    -> [(Double, Double, (Int, (String, (Int, String))))]
+integrateAtomicPDOS :: [(Matrix Double, Cetak)]
+                    -> [(Double, Cetak)]
 integrateAtomicPDOS pdosAtomicPilihan =
-          (\[us,ds] -> zipWith (\(iu,b) (idown,_) -> (iu,idown,b)) us ds )
-          $ groupBy (\(_,(s,_)) (_,(s',_)) -> s == s') -- [[(spin,label,iup)]]
-          $ map (\(mp,b) -> (integrateToZero mp,b)) $ pdosAtomicPilihan
+          map (\(mp,b) -> (integrateToZero mp,b)) $ pdosAtomicPilihan
 

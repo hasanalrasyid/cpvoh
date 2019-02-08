@@ -5,7 +5,9 @@
 module CPVO.IO.Reader.Ecalj.MMOM where
 import CPVO.Numeric
 import CPVO.IO
-import CPVO.IO.Reader.Ecalj.Common
+import CPVO.IO.Type
+import CPVO.IO.Reader.Util
+import CPVO.IO.Reader.Ecalj.Util
 import CPVO.IO.Reader.Ecalj.DOS
 
 import qualified Data.Text as T
@@ -36,7 +38,7 @@ getMMOM allArgs = do
 --getMMOM allArgs = do
     putStrLn "===start ==== CPVO.IO.Reader.Ecalj.MMOM: getMMOM ==="
     --(invStat, ymax, xmin, xmax, ctrlAtoms, uniqAtoms, ctrlAtomicAOs,jdTable, cleanedJdHead, foldernya, tailer,colAlign,texFile) <- readHeaderData allArgs
-    Right (invStat,_,_,_,ctrlAtoms,_, ctrlAtomicAOs,jdTable, cleanedJdHead,foldernya,tailer,_,texFile) <- readHeaderData allArgs
+    Right (invStat,_,_,_,ctrlAtoms,_, ctrlAtomicAOs,jdTable, cleanedJdHead,foldernya,tailer,_,texFile,_) <- readHeaderData allArgs
 
     -------------------------------generating data------------------------
     -------------------------------generating DOS data------------------------
@@ -54,11 +56,12 @@ getMMOM allArgs = do
 
   -------------------------------integrating PDOS data------------------------
     putStrLn $ "========invStat=" ++ (show invStat)
-    (tMMomSD:mmomSD) <- fmap (map (* invStat)) $ readMMOM nAtom foldernya
+    (tMMomSD:mmomSD) <- fmap (map (* (invStat2Double invStat))) $ readMMOM nAtom foldernya
     putStrLn $ show $ map (showDouble (3::Integer)) mmomSD
     putStrLn $ show tMMomSD
     putStrLn "==========show tMMomSD==========="
-    pdosAtomicAll <- readPDOS invStat tailer foldernya ctrlAtomicAOs
+    pdosAtomicAll <- readPDOS invStat tailer foldernya
+      [ Cetak s a | s <- flipBy invStat [1,2], a <- ctrlAtomicAOs ]
     let integratedAtomicPDOS = integrateAtomicPDOS pdosAtomicAll
     let rIntgAll' = rendertable
          $ (:) cleanedJdHead
