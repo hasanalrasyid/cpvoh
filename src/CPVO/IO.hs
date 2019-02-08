@@ -12,6 +12,7 @@ module CPVO.IO (
     rendertable,
     takeAOs,
     flipBy,
+    debugIt,
     hashSpaceText
   ) where
 
@@ -89,3 +90,7 @@ takeAOs k@(xx,i) ((n,ll,m):as) = if (i == n) then [(xx,(n,(ll,m)))]
 
 flipBy Keep a = a
 flipBy Flip a = reverse a
+
+debugIt :: forall a. (Show a) => String -> [a] -> IO ()
+debugIt a b =
+    putStrLn $ unlines $ a : map (('+':) . show) b

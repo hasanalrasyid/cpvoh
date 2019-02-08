@@ -8,6 +8,8 @@ module CPVO.IO.DOS (
 
 import CPVO.Numeric
 import CPVO.IO
+import CPVO.IO.Type
+import CPVO.IO.Reader.Ecalj.Util
 import CPVO.IO.Reader.Ecalj.DOS
 
 import qualified Data.Text as T
@@ -18,11 +20,12 @@ import Numeric.LinearAlgebra
 showTotPDOS :: [String] -> IO ()
 showTotPDOS allArgs = do
 --  (invStat, ymax, xmin, xmax, ctrlAtoms, uniqAtoms, ctrlAtomicAOs,jdTable, cleanedJdHead, foldernya, tailer, colAlign, texFile) <- readHeaderData allArgs
-  Right (invStat, _ , _ , _ , _ , _ , ctrlAtomicAOs,jdTable, cleanedJdHead, foldernya, tailer, _ , texFile) <- readHeaderData allArgs
+  Right (invStat, _ , _ , _ , _ , _ , ctrlAtomicAOs,jdTable, cleanedJdHead, foldernya, tailer, _ , texFile,_) <- readHeaderData allArgs
 
   -------------------------------generating DOS data------------------------
   totalDOS <- readTotalDOSText tailer foldernya
   -------------------------------integrating DOS data------------------------
+  {-
   let intgTot = map (\i -> integrateToZero $ totalDOS ¿ [0,i]) $ flipBy invStat [1,2]
   pdosAtomic <- readPDOS invStat tailer foldernya ctrlAtomicAOs
   let integratedAtPDOS = integrateAtomicPDOS pdosAtomic
@@ -40,7 +43,6 @@ showTotPDOS allArgs = do
                           , jdTable
                           ]
   putStrLn rIntgAll
-  {-
     -------------------------------generating LaTex Representation------------------------
   resIntAll' <- markdownToTex rIntgAll
   let resIntAll = T.replace "\\}" "}"
@@ -49,8 +51,8 @@ showTotPDOS allArgs = do
                           "\\begin{longtable}[]{" ++ colAlign ++ "}"
                           , unlines $ tail $ lines $ T.unpack resIntAll'
                           ]
-  -}
 
   T.writeFile texFile $ T.pack rIntgAll
+  -}
   putStrLn "====done===="
 

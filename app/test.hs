@@ -28,7 +28,6 @@ import CPVO.IO.Plot.DOS
 import CPVO.IO.Fortran
 import CPVO.IO.Type
 import CPVO.Data
-import Test
 -------------------------
 
 foreign import ccall safe "add" f_add :: IO ()

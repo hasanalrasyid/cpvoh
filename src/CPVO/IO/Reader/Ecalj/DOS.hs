@@ -16,13 +16,6 @@ import qualified System.Process as SP
 import System.IO (openTempFile,hClose)
 -- ===============================================
 
-getPDOS' :: Matrix Double -> String -> [Int] -> [String] -> IO (Matrix Double)
-getPDOS' res _ _ []  = return res
-getPDOS' res tmpf iAOs (nf:nfiles)  = do
-  _ <- SP.system $ "mkdir -p temp; more +2 " ++ nf ++ " > " ++ tmpf
-  aPDOS' <- fmap (\x -> sumRow $ (¿) x iAOs) $ loadMatrix tmpf
-  getPDOS' (fromBlocks [[res,asColumn aPDOS']]) tmpf iAOs nfiles
-
 readPDOS :: InvStat -> String -> Directory -> [Cetak]
          -> IO [(Matrix Double, Cetak)]
 readPDOS invStat tailer dir ctrlAtAOs = do
@@ -46,3 +39,10 @@ readOnePDOS theFolder tailing (Cetak spin atTarget@(AO noAt _ labelAt iAOs)) = d
   aPDOS <- fmap (dropColumns 1) $ getPDOS' zeroE tmpfile iAOs [namaFao]                                -- create sum of per atomic AOs (PDOS/atom)
   putStrLn "=========readOnePDOS@src/CPVO/IO/Reader/Ecalj/DOS.hs"
   return $ (fromBlocks [[aoE, aPDOS]] , (Cetak spin (atTarget { labelAO = hashSpaceText labelAt} )))
+
+getPDOS' :: Matrix Double -> String -> [Int] -> [String] -> IO (Matrix Double)
+getPDOS' res _ _ []  = return res
+getPDOS' res tmpf iAOs (nf:nfiles)  = do
+  _ <- SP.system $ "mkdir -p temp; more +2 " ++ nf ++ " > " ++ tmpf
+  aPDOS' <- fmap (\x -> sumRow $ (¿) x iAOs) $ loadMatrix tmpf
+  getPDOS' (fromBlocks [[res,asColumn aPDOS']]) tmpf iAOs nfiles

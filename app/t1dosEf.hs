@@ -4,6 +4,7 @@
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE Strict #-}
 {-# LANGUAGE FlexibleContexts #-}
+{-# LANGUAGE RankNTypes #-}
 
 --import Data.Maybe
 --import Data.Char (ord)
@@ -52,14 +53,15 @@ main = do
     totalDOS <- readTotalDOSText tailer foldernya
     let resTotY0 = map (\i -> getY0 $ totalDOS ¿ [0,i]) $ flipBy invStat [1,2]
     putStrLn "===========NF total DOS========="
+    debugIt "ctrlAtomicAOs=========" ctrlAtomicAOs
     putStrLn $ show resTotY0
     pdosAtAll <- readPDOS invStat tailer foldernya
                   [ Cetak s a | s <- flipBy invStat [1,2], a <- ctrlAtomicAOs ]
     --putStrLn $ "===pdosAtAll " ++ show pdosAtAll
     putStrLn "=========!readPDOS"
-    let rs' = rendertable
+    let rs' = show {- rendertable
               $ (:) jdHeads
-              $ (:)  ("Total" : (map (showDouble 3) $ processCols $ map ((* rydberg) . last . toList) $ resTotY0))
+              $ (:)  ("Total" : (map (showDouble 3) $ processCols $ map ((* fromRydberg) . last . toList) $ resTotY0))
               $ map go3
               $ groupBy (\a b -> fst a == fst b)
               $ sortBy (\a b -> compare (fst a) (fst b) )
@@ -67,10 +69,14 @@ main = do
               $ map go $ concat
               $ map go2
               $ groupBy (\(_,s) (_,s') ->  (spinID s) == (spinID s'))
-              $ map (\(mp,b) -> ((* rydberg) $ last $ toList $ getY0 mp, b)) pdosAtAll
+            -}
+              $ sortBy (\x y -> compare (atom $ snd x) (atom $ snd y))
+              $ map (\(mp,b) -> ((* fromRydberg) $ last $ toList $ getY0 mp, b)) pdosAtAll
     putStrLn $ "====rs " ++ rs'
+      {-
     let rs = unlines [ rs' , jdTable ]
     T.writeFile texFile $ T.pack rs
+    -}
       where
         go3 ((l,(_,u)):(_,(_,d)):_) = (l:(map (showDouble 3) $ processCols [u,d]))
         go3 _ = "wrongFormGO3":[]

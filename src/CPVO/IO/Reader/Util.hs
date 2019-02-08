@@ -8,8 +8,8 @@ module CPVO.IO.Reader.Util
 
 import CPVO.IO.Type
 
-rydberg :: Double
-rydberg=1/13.605
+fromRydberg :: Double
+fromRydberg=1/13.605
 
 
 getInvStat a = if a < 0 then Flip

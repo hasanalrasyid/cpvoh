@@ -66,12 +66,12 @@ genDaftarCetak availableAtoms _ _ aos = do
 -- ctrlAtomicAOs :: 14 atoms
 genCtrlAtomicAOs :: [(String, String, [Int])]
                  -> [T.Text]
-                 -- -> [(Int, (String, (String, [Int])))]
                  -> [AtOrb]
-genCtrlAtomicAOs aoSet ctrlAtoms =  map genAtOrb $ map (\x -> (head $ takeAOs x aoSet))
-          $ concat
-          $ groupBy (\(_,a:_) (_,b:_) -> (ord a) == (ord b))
-          $ zip ([1..]::[Int]) $ map T.unpack ctrlAtoms
+genCtrlAtomicAOs aoSet ctrlAtoms =
+  [ AO n s l is | let lt = zip (map T.unpack ctrlAtoms) $ ([1..] :: [Int])
+                , (s,l,is) <- aoSet
+                , (_,n) <- filter (\(b,_) -> b == s) lt
+  ]
 
 
 genAtOrb :: (Int, (String, (String, [Int]))) -> AtOrb
@@ -126,6 +126,7 @@ readHeaderData al@(texFile:jd:jdHead:colAlign:xr:ymax':_:_:invS:tailer:foldernya
               -- ((String , String,[ Int  ]),[(Int       , String )])
               -- (("O"    ,"O#2p" ,[2,3,4 ]),[(1         ,"O"     )])
       -}
+    debugIt "aoSet ===  " aoSet
     let ctrlAtomicAOs = genCtrlAtomicAOs aoSet ctrlAtoms
     let jdTable = "Table: " ++ jd
     putStrLn $ "===ctrlAtomicAOs " ++ show ctrlAtomicAOs

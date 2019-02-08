@@ -17,6 +17,7 @@ import Data.Either (rights)
 -------------------------
 import Numeric.LinearAlgebra
 
+  {-
 readMMOM :: Int -> String -> IO [Double]
 readMMOM nAtom foldernya = do
     fLLMF <- fmap (T.unpack . head) $ getLastLLMF foldernya
@@ -89,3 +90,4 @@ getMMOM allArgs = do
     -}
     T.writeFile texFile $ T.pack rIntgAll
     putStrLn "===done CPVO.IO.Reader.Ecalj.MMOM: getMMOM ==="
+    -}
