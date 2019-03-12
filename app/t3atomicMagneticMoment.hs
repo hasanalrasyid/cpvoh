@@ -97,7 +97,7 @@ getMMOM allArgs = do
          $ map (\(iu,idn,b) -> ((iu-idn),b) )
         -}
 --         $ map go5
-         $ groupBy sameLabelOfAtoms
+         $ groupBy go6
          $ map go4
          $ groupBy (\(_,a) (_,b) -> atom a == atom b)
          $ sortBy (\x y -> compare (atom $ snd x) (atom $ snd y))
@@ -128,3 +128,4 @@ getMMOM allArgs = do
                  -- in zip aos $ zipWith (\c b -> c ++ [b]) vs vals
         go4 a@((_,b):_) = (atom b,map fst a)
         go4 _ = (ErrAtOrb,[])
+        go6 (a,_) (b,_) = sameLabelOfAtoms a b
