@@ -33,7 +33,7 @@ plotPDOS (fOut:xr:yr:over:invStat:poskey':total:foldernya:daftarOrbital) = do
   -- mkdir -p plots
   let ender = genEnder
   let akhiran = unlines [ ender
-                        , "system 'cd plots && rm -f tmp*jpg && for i in {eps,pdf,png}; do mv hasil.$i " ++ fOut ++ ".$i; done '"
+                        , "system 'rm -f plots/tmp* && for i in {eps,pdf,png}; do mv plots/hasil.$i " ++ fOut ++ ".$i; done '"
                         ]
   let plotplate = "set format x '% h'; set xtics format '' nomirror ; unset xlabel; unset ylabel "
   let topTitle' = (last $ T.splitOn "." $ T.pack foldernya)

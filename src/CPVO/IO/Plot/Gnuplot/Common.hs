@@ -102,7 +102,7 @@ genTOP (xr:yr:poskey:_) = unlines [ "#!/home/aku/bin/gnuplot -persist"
                  , "set lmargin 8"
                  , "set rmargin 6"
 
-                 , "set multiplot layout 5,1 columnsfirst title '{/:Bold=15   }' \\"
+                 , "set multiplot layout 5,2 columnsfirst title '{/:Bold=15   }' \\"
                  , " margins screen MP_LEFT, MP_RIGHT, MP_BOTTOM, MP_TOP spacing screen MP_GAP"
 
                  , "set border lw 0.2"
@@ -132,6 +132,7 @@ genTOP (xr:yr:poskey:_) = unlines [ "#!/home/aku/bin/gnuplot -persist"
                  , "unset xtics"
                         , "set ytics (" ++ yticsnya ++ ") font ',10' nomirror offset .7"
                         , "set xtics " ++ xticsnya ++ " font ',10' nomirror offset 0,.6"
+                        , "## yticsnya = " ++ (show $ yDelta:(take 10 yticsnya'))
                  , "set format x ''"
                  , "#############################################################################################"
                  ]
@@ -139,7 +140,7 @@ genTOP (xr:yr:poskey:_) = unlines [ "#!/home/aku/bin/gnuplot -persist"
                      xticsnya = "-100,2,100"
                      (yInit:yLast:_) = map read $ splitOn ":" yr :: [Int]
                      yDelta = floor $ (fromIntegral $ yLast - yInit) * (1.2 / 3.0 :: Double)
-                     yticsnya' = [yInit + (a * yDelta) | a <- [0..]]
+                     yticsnya' =  [ x | a <- [0..], let x = yInit + (a * yDelta),x < yLast  ]
                      yticsnya = intercalate "," $ map show $ take 3 yticsnya'
 genTOP _ = "Error: genTOP @CPVO/IO/Plot/Gnuplot/Common.hs:142"
 

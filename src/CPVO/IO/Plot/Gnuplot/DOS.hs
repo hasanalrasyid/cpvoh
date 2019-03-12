@@ -56,30 +56,16 @@ plotStatementDOS   ( _:xr:ymax':   _:     _:invS:tailer:foldernya:aos) = do
                       $ map (\(a,label,b) -> (head $ filter (\(_,_,aa) -> aa == (T.pack a)) uniqAtoms , label, b) )
                       $ map ( (\(a:label:as) -> (a,label,as)) . splitOn ":") aos
     putStrLn $ "===" ++ show (uniqAtoms,ctrlAtoms,aos)
-    let daftarCetak = [ (i,j) | i <- daftarCetak' , j <- [1,1] ]
-      {-
---    let labelEX = show $ ((xmax + xmin)*0.5) - 2.5
---    let labelEY = show $ foldr (*) 1 [ (-1), ymax, (*) 1.25 $ fromIntegral $ length aos]
-    let labelDOSX = show $ xmin - 2.25
-    let labelDOSY = show $ foldr (*) 1 [ (-1), ymax, (+) 0 $ fromIntegral $ length aos]
-    putStrLn $ "===" ++ show daftarCetak
-    let hasilTot' = if (wTot == "T") then intercalate "," $ map (susunTot foldernya tailer invStat ) ([1,1] :: [Integer]) else ""
-        hasilTot'' = if (null hasilTot') then "" else hasilTot'
-        hasilTot  = insertLabel "Energy - E_F (eV)" "at 0,-12 center"
-                  $ insertLabel "DOS (states/eV/unit-cell)" (concat ["rotate left at ",labelDOSX,",",labelDOSY])
-                  $ insertLabel jd "at graph 0.2,1.08"
-                  $ insertLabel "Total" "at graph 0.85,0.92 font 'Times New Roman Bold,10'"
-                  -- $ insertLabel "Total" (concat ["at ",labelXr,",",labelYr," font 'Times New Roman Bold,10'"])
-                  $ (++) "plot " hasilTot''
--}
-    let tot = map (susunTot foldernya tailer invStat ) ([1,1] :: [Integer])
+    let daftarCetak = [ (i,j) | i <- daftarCetak' , j <- [1,2] ]
+
+    let tot = map (susunTot foldernya tailer invStat ) ([1,2] :: [Integer])
         spinHead = if ymin >= 0 then ""
                             else unlines $
                               "set label 'spin-up' at graph 0.15,0.8 font ',10'":
                               "set label 'spin-down' at graph 0.15,0.2 font ',10'":
                               []
         thead = unlines $
-                "set label 'Total' at graph 0.85,0.92 font 'Times New Roman Bold,10'":
+                "set label 'Total' at graph 0.80,0.92 font 'Times New Roman Bold,10'":
                 "set label 'DOS (states/eV/unit-cell)' rotate left at screen 0.04,0.5":
 --                spinHead:
                 []
@@ -90,31 +76,12 @@ plotStatementDOS   ( _:xr:ymax':   _:     _:invS:tailer:foldernya:aos) = do
         pdosPP = addHeaderToLast ("set label 'Energy - E_F (eV)' at graph 0.5,-0.25 center")
                $ addHeaderToLast ("set format x '% h';set xtics font 'Times New Roman,10' nomirror offset -.15,.6 out;")
                $ zipWith (\(_,(_,a,_)) p ->
-                    addHeader ("set label '" ++ (replace "#" " " a) ++ "' at graph 0.85,0.92 font 'Times New Roman Bold,10'") p ) daftarCetak'
+                    addHeader ("set label '" ++ (replace "#" " " a) ++ "' at graph 0.80,0.92 font 'Times New Roman Bold,10'") p ) daftarCetak'
 
                $ map (PlotPlate phead "unset label") pdos
         allPP = (tPP:pdosPP)
     putStrLn $ "====" ++ show daftarCetak'
-                {-
-    let hasilSemua = hasilTot : (
-              map (\((_,(_,a,_)) ,p) -> insertLabel (T.unpack $ T.replace "#" " " $ T.pack a) "at graph 0.85,0.92 font 'Times New Roman Bold,10'" p)
-              $ zip daftarCetak'
-              $ map ((++) "plot ")
-              $ map (intercalate ", ")
-              $ chunksOf 2
-              $ map (susunOrbs "dos" foldernya tailer invStat) daftarCetak
-              )
-    return $ concat
-        $ (\a -> concat  [ (init a)
-                         , [ "set format x '% h';"
-                           , "set xtics font 'Times New Roman,10' nomirror offset -.15,.6 out;"
-                           , (last a)
-                           ]
-                         ]
-          )
-        $ map (insertText "unset label")
-        $ map (insertSpinLabel ymin) hasilSemua
-        -}
+
     return $ unlines $ map plot allPP
 plotStatementDOS _ = return "====Error: plotStatementDOS @CPVO/IO/Plot/Gnuplot/DOS.hs:30"
 
