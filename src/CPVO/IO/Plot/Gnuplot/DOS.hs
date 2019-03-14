@@ -66,7 +66,7 @@ plotStatementDOS   ( _:xr:ymax':   _:     _:invS:tailer:foldernya:aos) = do
                               []
         thead = unlines $
                 "set label 'Total' at graph 0.80,0.92 font 'Times New Roman Bold,10'":
-                "set label 'DOS (states/eV/unit-cell)' rotate left at screen 0.04,0.5":
+                "set label 'DOS (states/eV/unit-cell)' rotate center at screen 0.04,0.5":
 --                spinHead:
                 []
         tPP = PlotPlate thead "unset label" tot

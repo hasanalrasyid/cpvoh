@@ -132,16 +132,16 @@ genTOP (xr:yr:poskey:_) = unlines [ "#!/home/aku/bin/gnuplot -persist"
                  , "unset xtics"
                         , "set ytics (" ++ yticsnya ++ ") font ',10' nomirror offset .7"
                         , "set xtics " ++ xticsnya ++ " font ',10' nomirror offset 0,.6"
-                        , "## yticsnya = " ++ (show $ yDelta:(take 10 yticsnya'))
                  , "set format x ''"
                  , "#############################################################################################"
                  ]
                    where
                      xticsnya = "-100,2,100"
                      (yInit:yLast:_) = map read $ splitOn ":" yr :: [Int]
-                     yDelta = floor $ (fromIntegral $ yLast - yInit) * (1.2 / 3.0 :: Double)
-                     yticsnya' =  [ x | a <- [0..], let x = yInit + (a * yDelta),x < yLast  ]
-                     yticsnya = intercalate "," $ map show $ take 3 yticsnya'
+--                     yDelta' = (flip quot) 5 $ floor $ (fromIntegral $ yLast - (if yInit < 0 then 0 else yInit)) * (1 / 3.0 :: Double)
+                     yDelta = (*5) $ round $ (flip (/)) 5 $ (fromIntegral $ yLast - (if yInit < 0 then 0 else yInit)) / 3.0
+                     yticsnya' =  [ x | a <- [0..], b <- [1,(-1)], let x = a * yDelta * b ]
+                     yticsnya = intercalate "," $ map show $ tail $ takeWhile (\x -> x < yLast && x > yInit) yticsnya'
 genTOP _ = "Error: genTOP @CPVO/IO/Plot/Gnuplot/Common.hs:142"
 
 genEnder :: String
