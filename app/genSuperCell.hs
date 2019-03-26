@@ -9,7 +9,7 @@ module Main where
 
 import           Options.Applicative
 import Data.Semigroup ((<>))
-import Data.List.Split (wordsBy)
+import Data.List.Split (splitOn)
 import Language.Fortran.Parser.Utils (readReal)
 import Data.Maybe (fromJust)
 import Linear.V3
@@ -36,7 +36,7 @@ genPrimitive opts = do
   fFort19 <- readFile $ _inFort19CPVO opts
   fCellDM <- readFile $ _inCellDM0 opts
   let allSize@(s1:s2:s3:_)  = map (((flip (-)) 1) . floor . getReal)
-                    $ wordsBy (=='x') $ _inSize opts
+                    $ splitOn "x" $ _inSize opts
   let (ibrav:cell_a:_) = map getReal $ words fCellDM
       fort19 = getAtomCoords [] $ lines fFort19
   let mLatVec = genLatticeVector ibrav [cell_a]

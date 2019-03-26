@@ -4,6 +4,7 @@
 {-# LANGUAGE ScopedTypeVariables #-}
 
 module CPVO.IO (
+    debugLine,
     showDouble,
     markdownToTex,
     inshell2text,
@@ -11,6 +12,7 @@ module CPVO.IO (
     rendertable,
     takeAOs,
     flipBy,
+    debugIt,
     hashSpaceText
   ) where
 
@@ -25,12 +27,18 @@ import Text.PrettyPrint.Boxes hiding ((<>),cols,rows)
 import qualified Text.PrettyPrint.Boxes as TB
 import System.Process as SP
 
+import CPVO.IO.Type
+
 system_ :: String -> IO ()
 system_ ss = SP.system ss >> return ()
 
 showDouble :: Integer -> Double -> String
 showDouble _ (0 :: Double) = show (0 :: Integer)
 showDouble i a = (flip TP.printf) a $ concat ["%0.",show i,"f"]
+
+debugLine :: Show a => Bool -> a -> IO ()
+debugLine False _ = return ()
+debugLine _ ss = putStrLn $ "===debug=== " ++ show ss
 
 
 -- Prosesor untuk pandoc
@@ -80,7 +88,9 @@ takeAOs _ [] = []
 takeAOs k@(xx,i) ((n,ll,m):as) = if (i == n) then [(xx,(n,(ll,m)))]
                                            else takeAOs k as
 
-flipBy :: Double -> [Int] -> [Int]
-flipBy invStat xx = if (invStat < 0) then reverse xx
-                                     else xx
+flipBy Keep a = a
+flipBy Flip a = reverse a
 
+debugIt :: forall a. (Show a) => String -> [a] -> IO ()
+debugIt a b =
+    putStrLn $ unlines $ a : map (('+':) . show) b

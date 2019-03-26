@@ -2,18 +2,34 @@
 {-# LANGUAGE Strict #-}
 {-# LANGUAGE FlexibleContexts #-}
 
-module CPVO.IO.Reader.Ecalj.Common where
-import CPVO.Numeric
-import CPVO.IO
+module CPVO.IO.Reader.Ecalj.Util
+  where
 
+import Data.Maybe
+import Data.Char (ord)
+import Data.List.Split
+import Control.Monad.IO.Class (MonadIO)
+--import Data.Either (rights)
+
+--import CPVO.Numeric
+import CPVO.IO
+import CPVO.IO.Type
+
+--import qualified System.Process as SP
+--import Text.Printf as TP
+--import System.IO (openTempFile,hClose)
+
+
+
+
+--import System.Environment (getArgs)
 import qualified Data.Text as T
 import qualified Data.Text.IO as T
-import Data.List.Split
 import Data.List
-import Data.Maybe
-import Numeric.LinearAlgebra
-import Data.Char (ord)
-import Control.Monad.IO.Class (MonadIO)
+-------------------------
+
+import Numeric.LinearAlgebra hiding (find)
+-------------------------
 
 readCtrlAtoms :: String -> String -> IO [T.Text]
 readCtrlAtoms tailer foldernya = do
@@ -27,35 +43,39 @@ readCtrlAtoms tailer foldernya = do
       $ last $ splitWhen (T.isPrefixOf "SITE")
       $ T.lines fCtrl
 
-    -- uniqAtoms : [(count,noFirstAtom,atomicSymbol)]
-type CntN1Atsym = (Int,Int,T.Text)
-readUniqAtoms :: [T.Text] -> [CntN1Atsym]
+readUniqAtoms :: [String] -> [UniqueAtom]
 readUniqAtoms allAtoms =
-          map (\a -> (length a, snd $ head a, fst $ head a)) $
+          map (\a -> UA (length a) (snd $ head a) (fst $ head a)) $
           groupBy (\a b -> fst a == fst b) $
           zip  allAtoms ([1..] :: [Int])
 
 -- daftarCetak :: [((notCtk,((count,noFrstAtom,atomSymbol),label  ,[    AOs ])),spin)]
 -- daftarCetak :: [(( 1    ,((  2  ,    13    ,  "Ni"    ),"Ni#2p",["3","4","5"])),1)]
-genDaftarCetak :: [CntN1Atsym] -> String -> String -> [String]
-               -> IO [((Integer,(CntN1Atsym,String,[String])),Integer)]
-genDaftarCetak listAtoms _ _ aos = do
-  return $ [ (i,j) | i <- daftarCetak' listAtoms , j <- [1,2] ]
+genDaftarCetak :: [UniqueAtom] -> String -> String -> [String]
+--               -> IO [((Integer, (UniqueAtom, String, [String])),SpinID)]
+                ->  IO [Cetak]
+genDaftarCetak availableAtoms _ _ aos = do
+  return [ Cetak i j | j <- map d3 d2 , i <- [1,2] ]
   where
-    daftarCetak' lAtoms = zip [1..]
-                      $ map (\(a,label,b) -> (head $ filter (\(_,_,aa) -> aa == (T.pack a)) lAtoms , label, b) )
-                      $ map ( (\(a:label:as) -> (a,label,as)) . splitOn ":") aos
+    d2 = map ( (\(a:label:as) -> AO 0 a label (map (read :: String -> Int) as)) . splitOn ":") aos
+    d3 x = let Just tA = find (\y -> atsymUA y == atsym x) availableAtoms
+            in x {atnum = atnumUA tA}
 
 -- ctrlAtomicAOs :: [(atomNumber,(atomSym,(label ,[intAOs])))]
 -- ctrlAtomicAOs :: [(    1     ,(  "O"  ,("O#2p",[ 2,3,4])))]
 -- ctrlAtomicAOs :: 14 atoms
 genCtrlAtomicAOs :: [(String, String, [Int])]
                  -> [T.Text]
-                 -> [(Int, (String, (String, [Int])))]
-genCtrlAtomicAOs aoSet ctrlAtoms =  map (\x -> (head $ takeAOs x aoSet))
-          $ concat
-          $ groupBy (\(_,a:_) (_,b:_) -> (ord a) == (ord b))
-          $ zip ([1..]::[Int]) $ map T.unpack ctrlAtoms
+                 -> [AtOrb]
+genCtrlAtomicAOs aoSet ctrlAtoms =
+  [ AO n s l is | let lt = zip (map T.unpack ctrlAtoms) $ ([1..] :: [Int])
+                , (s,l,is) <- aoSet
+                , (_,n) <- filter (\(b,_) -> b == s) lt
+  ]
+
+
+genAtOrb :: (Int, (String, (String, [Int]))) -> AtOrb
+genAtOrb (a,(b,(c,d))) = AO a b c d
 
 -- totalDOS :: Matrix Double [ energy, DOSspinUp, DOSspinDown ]
 readTotalDOSText :: String -> String -> IO (Matrix Double)
@@ -69,29 +89,31 @@ getLastLLMF foldernya = inshell2text $ concat ["ls -laht ", foldernya,"/llmf{,_g
 
 --readHeaderData (texFile:jd:jdHead:colAlign:xr:ymax':wTot::invS:tailer:foldernya:aos) = do
 readHeaderData :: [String]
-               -> IO ( Either String ( Double, Double, Double, Double, [T.Text]
-                      , [CntN1Atsym]
-                      , [(Int, (String, (String,[Int])))]
-                      , String, [String], String, String, String, String))
-readHeaderData (texFile:jd:jdHead:colAlign:xr:ymax':_:_:invS:tailer:foldernya:aos) = do
+               -> IO ( Either String ( InvStat, Double, Double, Double, [T.Text]
+                      , [UniqueAtom]
+                      , [AtOrb]
+                      , String, [String], String, String, String, String, [Cetak]))
+readHeaderData al@(texFile:jd:jdHead:colAlign:xr:ymax':_:_:invS:tailer:foldernya:aos) = do
   -------------------------------reading data------------------------
-    let invStat = if (invS == "flipSpin") then (-1) else 1
+    putStrLn "=========readHeaderData@CPVO.IO.Reader.Ecalj.Common"
+    putStrLn $ (++) "===allArgs==" $ unlines $ map show al
+    let invStat = if (invS == "flipSpin") then Flip else Keep
     let ymax = read ymax' :: Double
     let [xmin,xmax] = map (read :: String -> Double) $ splitOn ":" xr
     ctrlAtoms <- readCtrlAtoms tailer foldernya
     let jdHeads = splitOn "|" jdHead
-    let uniqAtoms = readUniqAtoms ctrlAtoms
-    putStrLn $ show ctrlAtoms
-    putStrLn $ show uniqAtoms
+    let uniqAtoms = readUniqAtoms $ map T.unpack ctrlAtoms
+    putStrLn $ "===ctrlAtoms " ++ show ctrlAtoms
+    putStrLn $ "===uniqAtoms " ++ show uniqAtoms
     -- daftarCetak : [(nourut,,jumlah,nourut,symbol)]
-    daftarCetak <- genDaftarCetak uniqAtoms tailer foldernya aos
-    putStrLn $ show aos
-    putStrLn $ show $ last daftarCetak
+    targetPrint <- genDaftarCetak uniqAtoms tailer foldernya aos
+    putStrLn $ "===aos " ++ show aos
+    putStrLn $ "===targetPrint " ++ show targetPrint
       -------------------------------generating DOS data------------------------
-    totalDOS <- readTotalDOSText tailer foldernya
+--    totalDOS <- readTotalDOSText tailer foldernya
       -------------------------------integrating DOS data------------------------
-    let intgTot = map (\i -> integrateToZero $ totalDOS ¿ [0,i]) [1,2] -- run it on spin [1,2]
-    putStrLn $ show intgTot
+--    let intgTot = map (\i -> integrateToZero $ totalDOS ¿ [0,i]) [1,2] -- run it on spin [1,2]
+--    putStrLn $ show intgTot
     let aoSet = map ( (\(n:l:as) -> (n,l,map ( ((+) (-1)) . read :: String -> Int) as) ) . splitOn ":") aos
     {-
       -------------------------------generating PDOS data------------------------
@@ -104,15 +126,14 @@ readHeaderData (texFile:jd:jdHead:colAlign:xr:ymax':_:_:invS:tailer:foldernya:ao
               -- ((String , String,[ Int  ]),[(Int       , String )])
               -- (("O"    ,"O#2p" ,[2,3,4 ]),[(1         ,"O"     )])
       -}
+    debugIt "aoSet ===  " aoSet
     let ctrlAtomicAOs = genCtrlAtomicAOs aoSet ctrlAtoms
     let jdTable = "Table: " ++ jd
-    putStrLn $ show $ head ctrlAtomicAOs
---    pdosAtomicPilihan <- readPDOS invStat tailer foldernya $ take 2 ctrlAtomicAOs
---    let integratedAtomicPDOS = integrateAtomicPDOS pdosAtomicPilihan
---    putStrLn $ show $ integratedAtomicPDOS
-    putStrLn "===done:readHeaderData@CPVO/IO/Reader/Common ====================="
-    return $ Right
-      (invStat, ymax, xmin, xmax, ctrlAtoms, uniqAtoms, ctrlAtomicAOs,jdTable, jdHeads, foldernya, tailer, colAlign, texFile)
+    putStrLn $ "===ctrlAtomicAOs " ++ show ctrlAtomicAOs
+    putStrLn "========!readHeaderData@CPVO.IO.Reader.Ecalj.Common"
+    let ret = (invStat, ymax, xmin, xmax, ctrlAtoms, uniqAtoms, ctrlAtomicAOs,jdTable, jdHeads, foldernya, tailer, colAlign, texFile,targetPrint)
+    putStrLn $ "====ret" ++ show ret
+    return $ Right ret
 
 readHeaderData _ = return $ Left
   "===Error:readHeaderData@CPVO/IO/Reader/Common wrong args ========"
