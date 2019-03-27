@@ -171,14 +171,15 @@ endMultiplot :: String
 endMultiplot = unlines [ "unset multiplot" ]
 
 plotWork iniSetting fOut plotter daftarLengkap = do
+  debugIt "====plotWork : INIT===" ""
   tempDir <- (T.unpack . head) <$> inshell2text "mktemp -d -p ./"
 
   putStrLn $ unlines $ concat daftarLengkap
   (plotSet,plotplate) <- genAllPics plotter daftarLengkap (iniSetting,[])
-  debugIt "daftarLengkap " [daftarLengkap]
+  debugIt "=== daftarLengkap " [daftarLengkap]
   putStrLn $ "============TEMPGLT"
   tempGLT <- head <$> inshell2text "mktemp -p ./"
-  putStrLn $ show tempGLT
+  debugIt "temps : " [show tempGLT,tempDir]
   writeFile (T.unpack tempGLT) $ genTEMPGLT tempDir plotSet plotplate
 
   system_ $ "gnuplot " ++ T.unpack tempGLT
@@ -197,6 +198,7 @@ plotWork iniSetting fOut plotter daftarLengkap = do
       "convert tmp.jpg -rotate 0 hasil.png":
       "rm -f tmp.jpg":
       target
+  system_ $ unwords ["rm -rf ",T.unpack tempGLT,tempDir]
   putStrLn "===end  : plotWork===="
 
 genAllPics _       []                 res     = return res
