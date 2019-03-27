@@ -175,7 +175,7 @@ plotWork iniSetting fOut plotter daftarLengkap = do
 
   putStrLn $ unlines $ concat daftarLengkap
   (plotSet,plotplate) <- genAllPics plotter daftarLengkap (iniSetting,[])
-
+  debugIt "daftarLengkap " [daftarLengkap]
   putStrLn $ "============TEMPGLT"
   tempGLT <- head <$> inshell2text "mktemp -p ./"
   putStrLn $ show tempGLT

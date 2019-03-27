@@ -43,7 +43,7 @@ readCtrlAtoms tailer foldernya = do
       $ last $ splitWhen (T.isPrefixOf "SITE")
       $ T.lines fCtrl
 
-readUniqAtoms :: [String] -> [UniqueAtom]
+readUniqAtoms :: [T.Text] -> [UniqueAtom]
 readUniqAtoms allAtoms =
           map (\a -> UA (length a) (snd $ head a) (fst $ head a)) $
           groupBy (\a b -> fst a == fst b) $
@@ -57,7 +57,9 @@ genDaftarCetak :: [UniqueAtom] -> String -> String -> [String]
 genDaftarCetak availableAtoms _ _ aos = do
   return [ Cetak i j | j <- map d3 d2 , i <- [1,2] ]
   where
-    d2 = map ( (\(a:label:as) -> AO 0 a label (map (read :: String -> Int) as)) . splitOn ":") aos
+    d2 = map ( (\(a:label:as) ->
+                    AO 0 (T.pack a) label (map (read :: String -> Int) as))
+               . splitOn ":") aos
     d3 x = let Just tA = find (\y -> atsymUA y == atsym x) availableAtoms
             in x {atnum = atnumUA tA}
 
@@ -69,13 +71,14 @@ genCtrlAtomicAOs :: [(String, String, [Int])]
                  -> [AtOrb]
 genCtrlAtomicAOs aoSet ctrlAtoms =
   [ AO n s l is | let lt = zip (map T.unpack ctrlAtoms) $ ([1..] :: [Int])
-                , (s,l,is) <- aoSet
-                , (_,n) <- filter (\(b,_) -> b == s) lt
+                , (s',l,is) <- aoSet
+                , let s = T.pack s'
+                , (_,n) <- filter (\(b,_) -> b == s') lt
   ]
 
 
 genAtOrb :: (Int, (String, (String, [Int]))) -> AtOrb
-genAtOrb (a,(b,(c,d))) = AO a b c d
+genAtOrb (a,(b,(c,d))) = AO a (T.pack b) c d
 
 -- totalDOS :: Matrix Double [ energy, DOSspinUp, DOSspinDown ]
 readTotalDOSText :: String -> String -> IO (Matrix Double)
@@ -102,7 +105,7 @@ readHeaderData al@(texFile:jd:jdHead:colAlign:xr:ymax':_:_:invS:tailer:foldernya
     let [xmin,xmax] = map (read :: String -> Double) $ splitOn ":" xr
     ctrlAtoms <- readCtrlAtoms tailer foldernya
     let jdHeads = splitOn "|" jdHead
-    let uniqAtoms = readUniqAtoms $ map T.unpack ctrlAtoms
+    let uniqAtoms = readUniqAtoms $ ctrlAtoms
     putStrLn $ "===ctrlAtoms " ++ show ctrlAtoms
     putStrLn $ "===uniqAtoms " ++ show uniqAtoms
     -- daftarCetak : [(nourut,,jumlah,nourut,symbol)]

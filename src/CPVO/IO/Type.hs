@@ -5,6 +5,7 @@
 module CPVO.IO.Type
   where
 
+import qualified Data.Text as T
 --import Data.Either
 --data ErrCPVO = ErrCPVO { err :: String }
 
@@ -28,7 +29,7 @@ data UniqueAtom = UA { count :: Int
                      } deriving (Show)
 
 type AtNum = Int
-type AtSym = String
+type AtSym = T.Text
 data AtOrb = ErrAtOrb | AO { atnum :: AtNum
                 , atsym :: AtSym
                 , labelAO :: String
