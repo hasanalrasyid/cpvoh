@@ -252,9 +252,9 @@ plotTDOS  useOldBw atomOs (daftarLengkap:sisa) colorId (iniSetting,res) = do
   putStrLn $ show spinnya
   putStrLn $ show legend
   -- aos :: Ni:Ni#3d:6:7:9:8:10-Co:Co#3d:6:7:8:9:10-O:O#2p:3:4:5
-  let daftaratomOs =  map (splitOn "@") $ splitOn "-" atomOs
   let theTailer = tail $ takeExtension $ T.unpack $ head fileCtrl
   debugIt "daftaratomOs: " daftaratomOs
+  let daftaratomOs =  map (splitOn "@") $ splitOn "-" atomOs
     {-
   let aos = splitOn "-" atomOs
   let xr = xrange iniSetting
