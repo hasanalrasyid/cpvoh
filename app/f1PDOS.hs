@@ -4,7 +4,9 @@
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE Strict #-}
 {-# LANGUAGE FlexibleContexts #-}
+{-# OPTIONS_GHC -fwarn-incomplete-patterns #-}
 
+import Data.Either -- partitionEithers
 --import CPVO.IO.Plot.DOS
 import CPVO.IO.Plot.Gnuplot.Common
 import CPVO.IO.Plot.Gnuplot.Type
@@ -20,6 +22,7 @@ import CPVO.IO.Type
 
 import qualified Data.Text as T
 import qualified Data.Text.IO as T
+import qualified Data.Text.Read as T
 import Data.List.Split
 import System.Process as SP
 
@@ -29,12 +32,19 @@ import Data.Maybe
 import System.FilePath.Posix -- takeExtension
 
 
+setPrintSpin "up" = [1]
+setPrintSpin "down" = [2]
+setPrintSpin _ = [1,2]
+
+getRange s = map (read :: String -> Double) $ splitOn ":" s
+
 main :: IO ()
 main = do
-  opts@(Opts fOut useOldBw judulUtama yr xr atomOs daftarLengkap) <- execParser withHelp
+  opts@(Opts fOut useOldBw judulUtama printSpin yr xr atomOs daftarLengkap) <- execParser withHelp
   let initSetting = defSetting { _titles = judulUtama
                                , _yrange = yr
                                , _xrange = xr
+                               , _printSpin = setPrintSpin printSpin
                                , _xylabel = unlines $
                                   "set xlabel 'Energy-E_F (eV)'":
                                   "set ylabel 'Density of States (states/eV.cell)'":[]
@@ -46,7 +56,7 @@ main = do
   putStrLn "========DONE======="
     where
       plotTDOSnPDOS a b c d e = do
-        h@((s,_):_) <- mapM (\f -> f a b c d e) [plotTDOS]
+        h@((s,_):_) <- mapM (\f -> f a b c d e) [plotTDOS,plotTDOS]
         --h@((s,_):_) <- mapM (\f -> f a b c d e) [plotTDOS,plotPDOS']
         let res = concat $ map snd h
         return (s,res)
@@ -57,6 +67,7 @@ data Opts = Opts {
     _fOut       :: String,
     _useOldBw   :: Bool,
     _judulUtama :: String,
+    _pSpin      :: String,
     _yr         :: String,
     _xr         :: String,
     _atomOs     :: String,
@@ -73,6 +84,10 @@ optsParser = Opts
                             metavar "SUBTITLES" <>
                             help "Titles of each Figures" <>
                             value "")
+             <*> strOption  ( long "print-all-spin" <> short 'a' <>
+                            metavar "[up/down/all]" <>
+                            help "Spin state to be printed, ex. \"up\"" <>
+                            value "all")
              <*> strOption  ( long "yrange" <> short 'y' <>
                             metavar "MIN:MAX" <>
                             help "Y-range of the figure, ex. \"-2.5:7.3\"")
@@ -183,7 +198,7 @@ genPBAND   _      _   _       []      _         = return ""
 genPBAND   useOldBw  _   invStat atomNos foldernya = do
     let daftaratomOs =  map (splitOn "@") $ splitOn "-" atomNos
         daftarJudulSpinFolders = filter (/=[""]) $ map (splitOn "@") $ splitOn ":" $ unwords foldernya
-        daftarAOJSF = zip ([1..] :: [Integer]) $ concat $ map (\a -> zip daftaratomOs $ repeat a) daftarJudulSpinFolders
+        daftarAOJSF = zip ([1..] :: [Int]) $ concat $ map (\a -> zip daftaratomOs $ repeat a) daftarJudulSpinFolders
 
     let err'' = map ( \(_,([o,a],[_,s,folder'])) -> concat [ "cd ", folder', "; BandWeight.py PROCAR.",cekSpin s invStat "1" "UP" "DN" , " ",a, " ", o]) daftarAOJSF
     if (useOldBw == True) then mapM_ system_ err''
@@ -233,6 +248,31 @@ tampilkan (a:as) = do
         putStrLn $ "++++"
         tampilkan as
 
+  -- alt :: Ni:Ni#3d@d             -Co:Co#t2g@d1:d2-O:O#2p@p
+getAOSet ctrlAtoms s =
+  let r1 = map (splitOn "@") $ splitOn "-" s
+--      res = map proc1 r1
+      defineA at = procAt $ map T.pack $ splitOn ":" at
+      procAt (aOrn:l:[]) = toDec aOrn l
+      procAt (aOrn:[]) = toDec aOrn ""
+      procAt x = Left $ "getAOSet: procAt: error form" ++ show x
+      toDec t lb = case T.decimal t of
+                     Right (v,_) -> Right (v,"",lb)
+                     Left x ->  Right $ (0, t, lb)
+
+      defineOrbs o =  let (fOrb,okOrb) = partitionEithers $ map getOrbital $ splitOn ":" o
+                       in if null fOrb then Right $ concat okOrb
+                                       else Left "Error @getAOSet: undefined orbitals found"
+      proc1 (atom:orbs:_) = (defineA atom, defineOrbs orbs)
+      res = [AO n sss ll is |
+              let lt = zip ctrlAtoms ([1..] :: [Int])
+            , (Right (i,ss,l), Right is) <- map proc1 r1
+            , (sss,n) <- filter (\(nn,ii) -> nn == ss || ii == i) lt
+            , let ll = if T.null l then T.unpack sss else T.unpack l
+            ]
+
+   in res
+
 plotTDOS :: Bool
                -> String
                -> [String]
@@ -253,8 +293,13 @@ plotTDOS  useOldBw atomOs (daftarLengkap:sisa) colorId (iniSetting,res) = do
   putStrLn $ show legend
   -- aos :: Ni:Ni#3d:6:7:9:8:10-Co:Co#3d:6:7:8:9:10-O:O#2p:3:4:5
   let theTailer = tail $ takeExtension $ T.unpack $ head fileCtrl
-  debugIt "daftaratomOs: " daftaratomOs
-  let daftaratomOs =  map (splitOn "@") $ splitOn "-" atomOs
+  ctrlAtoms <- readCtrlAtoms theTailer foldernya
+  debugIt "===ctrlAtoms: " ctrlAtoms
+  -- aos :: Ni:Ni#3d: 6: 7: 9: 8:10-Co:Co#3d:6:7:8:9:10-O:O#2p:3:4:5
+  -- alt :: Ni:Ni#3d@d             -Co:Co#t2g@d1:d2-O:O#2p@p
+  let aoSet = getAOSet ctrlAtoms atomOs
+--  let requestedAtOrbs = genCtrlAtomicAOs aoSet ctrlAtoms
+  debugIt "daftaratomOs: " aoSet
     {-
   let aos = splitOn "-" atomOs
   let xr = xrange iniSetting
@@ -268,7 +313,7 @@ plotTDOS  useOldBw atomOs (daftarLengkap:sisa) colorId (iniSetting,res) = do
       labelDOSY = show $ foldr (*) 1 [ (-1), ymax, (+) 1 $ fromIntegral $ length aos]
 -}
 
-  let [resSpin1,resSpin2] = map T.pack $ map (susunTot foldernya theTailer invStat ) ([1,2] :: [Integer])
+  let [resSpin1,resSpin2] = map T.pack $ map (susunTot foldernya theTailer invStat ) ([1,2] :: [Int])
     {-
   let ctrlAtoms =
           catMaybes $
@@ -358,7 +403,7 @@ plotStatementDOS (jd:xr:ymax':wTot:_:invS:tailer':foldernya:aos) = do
         labelDOSX = show $ xmin - 2.25
         labelDOSY = show $ foldr (*) 1 [ (-1), ymax, (+) 1 $ fromIntegral $ length aos]
 
-    let hasilTot' = if (wTot == "T") then intercalate "," $ map (susunTot foldernya tailer' invStat ) ([1,2] :: [Integer]) else ""
+    let hasilTot' = if (wTot == "T") then intercalate "," $ map (susunTot foldernya tailer' invStat ) ([1,2] :: [Int]) else ""
         hasilTot'' = if hasilTot' /= "" then hasilTot' else ""
         hasilTot  = insertLabel "Energy (eV)" (concat ["at ",labelEX,",",labelEY])
                   $ insertLabel "DOS (states/eV/unit-cell)" (concat ["rotate left at ",labelDOSX,",",labelDOSY])
@@ -414,7 +459,7 @@ susunOrbs job foldernya tailer' invStat ((urutan,((jumlah,nomor,_),_,listOrbital
                                           spin
                                           nomor
                                           (T.pack tailer')
-                                          ("$" ++ (intercalate "+$" $ delta (listOrbital /= []) listOrbital $ map show ([2..26] :: [Integer])))
+                                          ("$" ++ (intercalate "+$" $ delta (listOrbital /= []) listOrbital $ map show ([2..26] :: [Int])))
                                           jumlah
                                           invStat
                                           (delta (spin < 2) 1 (-1) :: Int)
@@ -422,7 +467,7 @@ susunOrbs job foldernya tailer' invStat ((urutan,((jumlah,nomor,_),_,listOrbital
                                           ]
 
 
-susunTot :: String -> String -> Int -> Integer -> String
+susunTot :: String -> String -> Int -> Int -> String
 susunTot foldernya tailer' invStat spin = unwords [
                                         Text.Printf.printf "'%s/dos.tot.%s' u ($1*rydberg):($%d *( %d ) *( %d ) / rydberg ) w l lc rgb 'black' notitle"
                                           (T.pack foldernya)
