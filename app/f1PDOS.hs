@@ -4,6 +4,7 @@
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE Strict #-}
 {-# LANGUAGE FlexibleContexts #-}
+{-# LANGUAGE FlexibleInstances #-}
 {-# OPTIONS_GHC -fwarn-incomplete-patterns #-}
 
 import Data.String
@@ -52,17 +53,32 @@ main = do
                                }
   debugIt "INIT: Opts == " [opts]
   debugIt "INIT: setting == " [initSetting]
-  plotWork initSetting fOut (plotTDOSnPDOS useOldBw atomOs)
+  plotWork initSetting fOut picGeneratorDOS (plotTDOSnPDOS useOldBw atomOs)
     $ map (splitOn "#") daftarLengkap
   putStrLn "========DONE======="
     where
       plotTDOSnPDOS a b c d e = do
-        h@((s,_):_) <- mapM (\f -> f a b c d e) [plotTDOS,plotTDOS]
+        h@((s,_):_) <- mapM (\f -> f a b c d e) [plotTDOS,plotPDOS]
         --h@((s,_):_) <- mapM (\f -> f a b c d e) [plotTDOS,plotPDOS']
         let res = concat $ map snd h
+        debugIt "plotTDOSnPDOS:res: " $ map snd h
+        debugIt "plotTDOSnPDOS:res: head " $ head $map snd h
         return (s,res)
 
+picGeneratorDOS plotter dirList (iniSetting,res) = do
+  debugIt "=====picGeneratorDOS init ====" ""
+  (plotSetting, generatedPlots) <- plotter (head dirList) 1 (iniSetting,[])
+  debugIt "picGeneratorDOS: generatedPlots: " generatedPlots
+  debugIt "=====picGeneratorDOS end  ====" ""
+  return (iniSetting,["---result of picGeneratorDOS","result2 of picGeneratorDOS"])
 
+plotPDOS :: Bool
+         -> String
+         -> [String]
+         -> Integer
+         -> (PlotSetting, [(T.Text, T.Text)])
+         -> IO (PlotSetting, [(T.Text, T.Text)])
+plotPDOS  = plotTDOS
 
 data Opts = Opts {
     _fOut       :: String,
@@ -265,25 +281,25 @@ getAOSet ctrlAtoms s =
                        in if null fOrb then Right $ concat okOrb
                                        else Left "Error @getAOSet: undefined orbitals found"
       proc1 (atom:orbs:_) = (defineA atom, defineOrbs orbs)
-      res = [ AO n sss ll is |
-              let lt = zip ctrlAtoms ([1..] :: [Int])
-            , (Right (i,ss,l), is) <- map proc1 r1
-            , let iss = case is of
-                          Left _ -> Left "getAOSet: res: error unknown iss"
-                          x -> x
-            , (sss,n) <- filter (\(nn,ii) -> nn == ss || ii == i) lt
-            , let ll = if T.null l then T.unpack sss else T.unpack l
-            ]
-
-   in res
+   in [ AO n sss ll is | let lt = zip ctrlAtoms ([1..] :: [Int])
+      , (Right (i,ss,l), is) <- map proc1 r1
+      , let iss = case is of
+                    Left _ -> Left "getAOSet: res: error unknown iss"
+                    x -> x
+      , (sss,n) <- filter (\(nn,ii) -> nn == ss || ii == i) lt
+      , let ll = if T.null l then T.unpack sss else T.unpack l
+      ]
 
 instance IsString ErrCPVO where
   fromString s = ErrCPVO $ "ErrCPVO: " ++ s
 
+instance IsString (PlotSetting,[String]) where
+  fromString s = (NullSetting,["Err: No PlotSetting implemented fromString"])
+
 plotTDOS :: Bool
                -> String
                -> [String]
-               -> Int
+               -> Integer
                -> (PlotSetting , [(T.Text, T.Text)])
                -> IO (PlotSetting ,[(T.Text, T.Text)])
 plotTDOS  _        _      []                   _       res = return res
@@ -476,7 +492,7 @@ susunOrbs job foldernya tailer' invStat ((urutan,((jumlah,nomor,_),_,listOrbital
 
 susunTot :: String -> String -> Int -> Int -> String
 susunTot foldernya tailer' invStat spin = unwords [
-                                        Text.Printf.printf "'%s/dos.tot.%s' u ($1*rydberg):($%d *( %d ) *( %d ) / rydberg ) w l lc rgb 'black' notitle"
+                                        Text.Printf.printf "'%s/dos.tot.%s' u ($1*rydberg):($%d *( %d ) *( %d ) / rydberg ) w l lc rgb 'black' notitle "
                                           (T.pack foldernya)
                                           (T.pack tailer')
                                           (delta (spin < 2) 2 (3) :: Int)

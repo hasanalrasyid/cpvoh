@@ -24,7 +24,7 @@ main = do
   putStrLn $ show useOldBw
   putStrLn $ atomOs
 
-  plotWork initSetting fOut (plotter1Pic useOldBw atomOs)
+  plotWork initSetting fOut (plotter1Pic useOldBw atomOs) genAllPics
     $ map (splitOn "#") daftarLengkap
   putStrLn "========DONE======="
 
