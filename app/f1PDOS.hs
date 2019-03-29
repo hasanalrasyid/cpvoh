@@ -6,6 +6,7 @@
 {-# LANGUAGE FlexibleContexts #-}
 {-# OPTIONS_GHC -fwarn-incomplete-patterns #-}
 
+import Data.String
 import Data.Either -- partitionEithers
 --import CPVO.IO.Plot.DOS
 import CPVO.IO.Plot.Gnuplot.Common
@@ -264,14 +265,20 @@ getAOSet ctrlAtoms s =
                        in if null fOrb then Right $ concat okOrb
                                        else Left "Error @getAOSet: undefined orbitals found"
       proc1 (atom:orbs:_) = (defineA atom, defineOrbs orbs)
-      res = [AO n sss ll is |
+      res = [ AO n sss ll is |
               let lt = zip ctrlAtoms ([1..] :: [Int])
-            , (Right (i,ss,l), Right is) <- map proc1 r1
+            , (Right (i,ss,l), is) <- map proc1 r1
+            , let iss = case is of
+                          Left _ -> Left "getAOSet: res: error unknown iss"
+                          x -> x
             , (sss,n) <- filter (\(nn,ii) -> nn == ss || ii == i) lt
             , let ll = if T.null l then T.unpack sss else T.unpack l
             ]
 
    in res
+
+instance IsString ErrCPVO where
+  fromString s = ErrCPVO $ "ErrCPVO: " ++ s
 
 plotTDOS :: Bool
                -> String
