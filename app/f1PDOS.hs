@@ -95,8 +95,8 @@ optsParser = Opts
              <*> strOption  ( long "xrange" <> short 'x' <>
                             metavar "MIN:MAX" <>
                             help "X-range of the figure, ex. \"-8:3\"")
-             <*> strOption (long "orbitals" <> short 'r' <> metavar "ORBITALS"
-                            <> help "List of atomic orbitals ex. p@7-dx2My2@11-dz2@11" <> value "")
+             <*> strOption (long "orbitals" <> short 'r' <> metavar "NUMATOM/NAMEATOM:[LABEL]@orb1[:orb2[..]][-..]"
+                            <> help "List of atomic orbitals ex. 7@p-Ni:Ni_label@dx2My2:d1 for p orbital of 7th atom with default label and d1+dx2My2 orbital for all Ni atom with label Ni_label." <> value "")
              <*> (many $ argument str (metavar "TARGETDIRS"))
 
 withHelp :: ParserInfo Opts
