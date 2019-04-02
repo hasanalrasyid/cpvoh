@@ -132,6 +132,11 @@ plotPDOS  useOldBw atomOs (daftarLengkap:sisa) colorId (iniSetting,res) = do
 -}
 
   let [resSpin1,resSpin2] = map T.pack $ map (susunTot foldernya theTailer invStat ) ([1,2] :: [Int])
+  let daftarCetak'  = zip [1..]
+                      $ map (\(a,label,b) -> (head $ filter (\(_,_,aa) -> aa == (T.pack a)) uniqAtoms , label, b) )
+                      $ map ( (\(a:label:as) -> (a,label,as)) . splitOn ":") aos
+      daftarCetak = [ (i,j) | i <- daftarCetak' , j <- [1,2] ]
+  debugIt "plotPDOS:res1: " $ map (susunOrbs "dos" foldernya theTailer invStat) daftarCetak
     {-
   let ctrlAtoms =
           catMaybes $
