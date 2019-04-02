@@ -53,7 +53,7 @@ main = do
                                }
   debugIt "INIT: Opts == " [opts]
   debugIt "INIT: setting == " [initSetting]
-  plotWork initSetting fOut picGeneratorDOS (plotTDOSnPDOS useOldBw atomOs)
+  plotWork initSetting fOut gltGeneratorDOS picGeneratorDOS (plotTDOSnPDOS useOldBw atomOs)
     $ map (splitOn "#") daftarLengkap
   putStrLn "========DONE======="
     where
@@ -65,12 +65,31 @@ main = do
         debugIt "plotTDOSnPDOS:res: head " $ head $map snd h
         return (s,res)
 
+gltGeneratorDOS _ NullSetting _ = "gltGeneratorDOS:Err NullSetting"
+gltGeneratorDOS tempDir (PlotSetting _ judulUtama printSpin yr xr xtics ar lbs)
+  plotplate =
+    let subTitles = splitOn "#" judulUtama
+        newxticks = if (null xtics) then ""
+                                    else concat ["set xtics (",xtics,")"]
+     in unlines [ genTOP tempDir [xr,yr,"default # --poskey-- "]
+                , unlines
+                    $ intersperse noMidLabel
+                    $ zipWith (\s p -> unlines
+                                        $ ("set title '" ++ s ++ "'"):
+                                          unwords [ar,plotInit,p]:[]
+                              ) subTitles plotplate
+                , endMultiplot
+                ]
+
 picGeneratorDOS plotter dirList (iniSetting,res) = do
   debugIt "=====picGeneratorDOS init ====" ""
   (plotSetting, generatedPlots) <- plotter (head dirList) 1 (iniSetting,[])
-  debugIt "picGeneratorDOS: generatedPlots: " generatedPlots
+  debugIt "picGeneratorDOS:iniSetting: " [plotSetting]
+  debugIt "picGeneratorDOS: generatedPlots: " $ map genPlots generatedPlots
   debugIt "=====picGeneratorDOS end  ====" ""
-  return (iniSetting,["---result of picGeneratorDOS","result2 of picGeneratorDOS"])
+  return (plotSetting,map genPlots generatedPlots)
+  --return (plotSetting,["---result1 of picGeneratorDOS","result2 of picGeneratorDOS"])
+  where genPlots (a,b) = T.unpack $ T.intercalate "," [a,b]
 
 plotPDOS :: Bool
          -> String
@@ -78,7 +97,71 @@ plotPDOS :: Bool
          -> Integer
          -> (PlotSetting, [(T.Text, T.Text)])
          -> IO (PlotSetting, [(T.Text, T.Text)])
-plotPDOS  = plotTDOS
+plotPDOS  _        _      []                   _       res = return res
+plotPDOS  useOldBw atomOs (daftarLengkap:sisa) colorId (iniSetting,res) = do
+  putStrLn "====plotPDOS======="
+  let (foldernya:spinnya:legend:_) = splitOn ":" daftarLengkap
+  fileCtrl <- inshell2text $ "ls " ++ foldernya ++ "/ctrl.*"
+  putStrLn $ "====" ++ show fileCtrl ++ "======" ++ show foldernya
+  fCtrl <- T.readFile $ T.unpack $ head fileCtrl
+--  let invStat = if (invS == "flipSpin") then (-1) else 1
+  let invStat = 1
+  putStrLn $ show spinnya
+  putStrLn $ show legend
+  -- aos :: Ni:Ni#3d:6:7:9:8:10-Co:Co#3d:6:7:8:9:10-O:O#2p:3:4:5
+  let theTailer = tail $ takeExtension $ T.unpack $ head fileCtrl
+  ctrlAtoms <- readCtrlAtoms theTailer foldernya
+  debugIt "===ctrlAtoms: " ctrlAtoms
+  -- aos :: Ni:Ni#3d: 6: 7: 9: 8:10-Co:Co#3d:6:7:8:9:10-O:O#2p:3:4:5
+  -- alt :: Ni:Ni#3d@d             -Co:Co#t2g@d1:d2-O:O#2p@p
+  let aoSet = getAOSet ctrlAtoms atomOs
+  let newSetting = iniSetting {_titles = intercalate "#" $ (:) (_titles iniSetting) $ map labelAO aoSet}
+--  let requestedAtOrbs = genCtrlAtomicAOs aoSet ctrlAtoms
+  debugIt "daftaratomOs: " aoSet
+    {-
+  let aos = splitOn "-" atomOs
+  let xr = xrange iniSetting
+      [xmin,xmax] = map (read :: String -> Double) $ splitOn ":" xr
+  let ymax' = last $ splitOn ":" $ yrange iniSetting
+  let ymax = read ymax' :: Double
+
+      labelEX = show $ ((xmax + xmin)*0.5) - 2.5
+      labelEY = show $ foldr (*) 1 [ (-1), ymax, (*) 2.5 $ fromIntegral $ length aos]
+      labelDOSX = show $ xmin - 2.25
+      labelDOSY = show $ foldr (*) 1 [ (-1), ymax, (+) 1 $ fromIntegral $ length aos]
+-}
+
+  let [resSpin1,resSpin2] = map T.pack $ map (susunTot foldernya theTailer invStat ) ([1,2] :: [Int])
+    {-
+  let ctrlAtoms =
+          catMaybes $
+          map ( T.stripPrefix "ATOM=" .  head) $
+          filter (/=[]) $
+          map ( T.words . T.takeWhile (/='#') ) $
+          head $
+          splitWhen (T.isPrefixOf "SPEC") $
+          last $ splitWhen (T.isPrefixOf "SITE")
+          $ T.lines fCtrl
+      nAtom = length ctrlAtoms
+    -- uniqAtoms : [(jumlah,nourutAtom,symbol)]
+  let uniqAtoms =
+          map (\a -> (length a, snd $ head a, fst $ head a)) $
+          groupBy (\a b -> fst a == fst b) $
+          zip  ctrlAtoms [1..nAtom]
+    -- daftarCetak : [(nourut,,jumlah,nourut,symbol)]
+  let daftarCetak'  = zip [1..]
+                      $ map (\(a,label,b) -> (head $ filter (\(_,_,aa) -> aa == (T.pack a)) uniqAtoms , label, b) )
+                      $ map ( (\(a:label:as) -> (a,label,as)) . splitOn ":") aos
+      daftarCetak = [ (i,j) | i <- daftarCetak' , j <- [1,2] ]
+      hasilTot'' = if hasilTot' /= "" then hasilTot' else ""
+      hasilTot  = insertLabel "Energy (eV)" (concat ["at ",labelEX,",",labelEY])
+                  $ insertLabel "DOS (states/eV/unit-cell)" (concat ["rotate left at ",labelDOSX,",",labelDOSY])
+                  $ insertLabel jd "at graph 0.2,1.08"
+                  $ insertLabel "Total" "at graph 0.85,0.92 font 'Times New Roman Bold,10'"
+                  -- $ insertLabel "Total" (concat ["at ",labelXr,",",labelYr," font 'Times New Roman Bold,10'"])
+                  $ (++) "plot " hasilTot''
+                  -}
+  plotPDOS useOldBw atomOs sisa (colorId+1) (newSetting,(resSpin1,resSpin2):res)
 
 data Opts = Opts {
     _fOut       :: String,
@@ -93,26 +176,26 @@ data Opts = Opts {
 
 optsParser :: Parser Opts
 optsParser = Opts
-             <$> strOption (long "out" <> short 'o' <> metavar "OUTPUT" <>
-                          help "target output file" <> value "test")
-             <*> switch (long "oldbw" <> short 'b'
-                            <> help "Using old BandWeight files")
+             <$> strOption ( long "out" <> short 'o' <> metavar "OUTPUT" <>
+                           help "target output file" <> value "test")
+             <*> switch ( long "oldbw" <> short 'b'
+                      <> help "Using old BandWeight files")
              <*> strOption (long "titles" <> short 't' <>
                             metavar "SUBTITLES" <>
-                            help "Titles of each Figures" <>
-                            value "")
-             <*> strOption  ( long "print-all-spin" <> short 'a' <>
+                            help "Titles of each Figures")
+             <*> strOption ( long "print-all-spin" <> short 'a' <>
                             metavar "[up/down/all]" <>
                             help "Spin state to be printed, ex. \"up\"" <>
                             value "all")
-             <*> strOption  ( long "yrange" <> short 'y' <>
+             <*> strOption ( long "yrange" <> short 'y' <>
                             metavar "MIN:MAX" <>
                             help "Y-range of the figure, ex. \"-2.5:7.3\"")
-             <*> strOption  ( long "xrange" <> short 'x' <>
+             <*> strOption ( long "xrange" <> short 'x' <>
                             metavar "MIN:MAX" <>
                             help "X-range of the figure, ex. \"-8:3\"")
-             <*> strOption (long "orbitals" <> short 'r' <> metavar "NUMATOM/NAMEATOM:[LABEL]@orb1[:orb2[..]][-..]"
-                            <> help "List of atomic orbitals ex. 7@p-Ni:Ni_label@dx2My2:d1 for p orbital of 7th atom with default label and d1+dx2My2 orbital for all Ni atom with label Ni_label." <> value "")
+             <*> strOption ( long "orbitals" <> short 'r' <>
+                            metavar "NUMATOM/NAMEATOM:[LABEL]@orb1[:orb2[..]][-..]" <>
+                            help "List of atomic orbitals ex. 7@p-Ni:Ni_label@dx2My2:d1 for p orbital of 7th atom with default label and d1+dx2My2 orbital for all Ni atom with label Ni_label." <> value "")
              <*> (many $ argument str (metavar "TARGETDIRS"))
 
 withHelp :: ParserInfo Opts
@@ -154,7 +237,7 @@ plotPDOS' (fOut:xr:yr:over:invStat:poskey':total:foldernya:daftarOrbital) = do
 
   plotplate1 <- plotStatementDOS (topTitle:xr:yr:total:over:invStat:tailer':foldernya:daftarOrbital)
   putStrLn "==========================================="
-  T.writeFile "temp.glt" $ T.pack $ unlines [ genTOP [xr,yr,poskey]
+  T.writeFile "temp.glt" $ T.pack $ unlines [ genTOP "plots" [xr,yr,poskey]
                      , plotplate
                      , plotplate1
                      , akhiran
@@ -323,6 +406,7 @@ plotTDOS  useOldBw atomOs (daftarLengkap:sisa) colorId (iniSetting,res) = do
   let aoSet = getAOSet ctrlAtoms atomOs
 --  let requestedAtOrbs = genCtrlAtomicAOs aoSet ctrlAtoms
   debugIt "daftaratomOs: " aoSet
+  let newSetting = iniSetting {_titles = intercalate "#" $ (:) (_titles iniSetting) $ nub $ map labelAO aoSet}
     {-
   let aos = splitOn "-" atomOs
   let xr = xrange iniSetting
@@ -366,7 +450,7 @@ plotTDOS  useOldBw atomOs (daftarLengkap:sisa) colorId (iniSetting,res) = do
                   -- $ insertLabel "Total" (concat ["at ",labelXr,",",labelYr," font 'Times New Roman Bold,10'"])
                   $ (++) "plot " hasilTot''
                   -}
-  plotTDOS useOldBw atomOs sisa (colorId+1) (iniSetting,(resSpin1,resSpin2):res)
+  plotTDOS useOldBw atomOs sisa (colorId+1) (newSetting,(resSpin1,resSpin2):res)
 
 
   {-
