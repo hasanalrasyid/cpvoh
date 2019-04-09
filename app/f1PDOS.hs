@@ -132,12 +132,21 @@ plotPDOS  useOldBw atomOs (daftarLengkap:sisa) colorId (iniSetting,res) = do
 -}
 
   let [resSpin1,resSpin2] = map T.pack $ map (susunTot foldernya theTailer invStat ) ([1,2] :: [Int])
+    {-
   let daftarCetak'  = zip [1..]
                       $ map (\(a,label,b) -> (head $ filter (\(_,_,aa) -> aa == (T.pack a)) uniqAtoms , label, b) )
                       $ map ( (\(a:label:as) -> (a,label,as)) . splitOn ":") aos
       daftarCetak = [ (i,j) | i <- daftarCetak' , j <- [1,2] ]
-  debugIt "plotPDOS:res1: " $ map (susunOrbs "dos" foldernya theTailer invStat) daftarCetak
-    {-
+-}
+  let dCetak = [ (s,u,j,a) | (u,as) <- zip [1..]
+                                $ groupBy (\a b -> labelAO a == labelAO b && intAOs a == intAOs b) aoSet
+               , let j = length as
+               , let a = head as
+               , s <- [1,2]
+               ]
+  --                 ((urutan,((jumlah,nomor,  _),_   ,listOrbital)),spin)
+  -- $ map (susunOrbs "dos" foldernya theTailer invStat) daftarCetak
+{-
   let ctrlAtoms =
           catMaybes $
           map ( T.stripPrefix "ATOM=" .  head) $
@@ -166,7 +175,10 @@ plotPDOS  useOldBw atomOs (daftarLengkap:sisa) colorId (iniSetting,res) = do
                   -- $ insertLabel "Total" (concat ["at ",labelXr,",",labelYr," font 'Times New Roman Bold,10'"])
                   $ (++) "plot " hasilTot''
                   -}
-  plotPDOS useOldBw atomOs sisa (colorId+1) (newSetting,(resSpin1,resSpin2):res)
+  let (rSpin1,rSpin2) = partition (T.isInfixOf ".isp1.") $ map T.pack $ map (drawOrb "dos" foldernya theTailer invStat) dCetak
+  debugIt "plotPDOS:res1: " $ zip rSpin1 rSpin2
+  return $ (newSetting,zip rSpin1 rSpin2)
+--  plotPDOS useOldBw atomOs sisa (colorId+1) (newSetting,(resSpin1,resSpin2):res)
 
 data Opts = Opts {
     _fOut       :: String,
@@ -556,6 +568,30 @@ insertText t p = unlines [t,p]
 
 insertLabel :: String -> String -> String -> String
 insertLabel l a p = unlines [ concat [ "set label '",l,"' ",a], p]
+
+drawOrb :: T.Text
+        -> String
+        -> String
+        -> Int
+        -> (Int, Int, Int, AtOrb)
+        -> String
+drawOrb job foldernya tailer' invStat
+  (spin, urutan, jumlah, AO nomor _ _ (Right lAOs)) =
+    let lOrbitals = (++) "$" $ intercalate "+$" $ map show (lAOs :: [Integer])
+     in unwords [ Text.Printf.printf "'%s/%s.isp%d.site%03d.%s' u ($1*rydberg):((%s)*%d*(%d)*(%d)/rydberg ) w l ls %d notitle"
+                  (T.pack foldernya)
+                  job
+                  spin
+                  nomor
+                  (T.pack tailer')
+                  lOrbitals
+--                  ("$" ++ (intercalate "+$" $ delta (listOrbital /= []) listOrbital $ map show ([2..26] :: [Int])))
+                  jumlah
+                  invStat
+                  (delta (spin < 2) 1 (-1) :: Int)
+                  urutan
+                ]
+
 
 susunOrbs :: T.Text
                 -> String
