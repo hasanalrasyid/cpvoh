@@ -61,6 +61,7 @@ main = do
         h@((s,_):_) <- mapM (\f -> f a b c d e) [plotTDOS,plotPDOS]
         --h@((s,_):_) <- mapM (\f -> f a b c d e) [plotTDOS,plotPDOS']
         let res = concat $ map snd h
+        let ss = fst $ last h
         debugIt "plotTDOSnPDOS:res: " $ map snd h
         debugIt "plotTDOSnPDOS:res: head " $ head $map snd h
         return (s,res)
@@ -68,18 +69,27 @@ main = do
 gltGeneratorDOS _ NullSetting _ = "gltGeneratorDOS:Err NullSetting"
 gltGeneratorDOS tempDir (PlotSetting _ judulUtama printSpin yr xr xtics ar lbs)
   plotplate =
-    let subTitles = splitOn "#" judulUtama
+    let (title:subTitles') = splitOn "#" judulUtama
+        subTitles = "Total":subTitles'
+        locLabel = "at graph 0.8,0.92 font 'Times New Roman Bold,10'"
         newxticks = if (null xtics) then ""
                                     else concat ["set xtics (",xtics,")"]
      in unlines [ genTOP tempDir [xr,yr,"default # --poskey-- "]
+                , "set title '" ++ title ++ "'"
                 , unlines
-                    $ intersperse noMidLabel
+                    $ intersperse noMidThings
                     $ zipWith (\s p -> unlines
-                                        $ ("set title '" ++ s ++ "'"):
+                                        $ ("set label '" ++ s ++ "' " ++ locLabel):
                                           unwords [ar,plotInit,p]:[]
                               ) subTitles plotplate
                 , endMultiplot
                 ]
+
+noMidThings = unlines $ "unset ylabel":
+                        "unset title":
+                        "unset label":
+                        []
+
 
 picGeneratorDOS plotter dirList (iniSetting,res) = do
   debugIt "=====picGeneratorDOS init ====" ""
@@ -177,6 +187,7 @@ plotPDOS  useOldBw atomOs (daftarLengkap:sisa) colorId (iniSetting,res) = do
                   -}
   let (rSpin1,rSpin2) = partition (T.isInfixOf ".isp1.") $ map T.pack $ map (drawOrb "dos" foldernya theTailer invStat) dCetak
   debugIt "plotPDOS:res1: " $ zip rSpin1 rSpin2
+  debugIt "plotPDOS:iniSetting: " [iniSetting]
   return $ (newSetting,zip rSpin1 rSpin2)
 --  plotPDOS useOldBw atomOs sisa (colorId+1) (newSetting,(resSpin1,resSpin2):res)
 
