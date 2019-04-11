@@ -54,7 +54,7 @@ main = do
                                   []
                                   (unlines $ "#set label 'repeated' ":[])
                                   (unlines $
-                                    "set label 'Density of States (states/eV/cell)' rotate left at screen 0.05,0.5":
+                                    "set label 'Density of States (states/eV/cell)' rotate center at screen 0.05,0.5":
                                     "set label 'Energy-E_F (eV)' center at graph 0.5,-0.1":[] )
                                }
   debugIt "INIT: Opts == " [opts]
@@ -80,7 +80,8 @@ gltGeneratorDOS tempDir (PlotSetting _ judulUtama printSpin yr xr xtics ar _ lbb
         locLabel = "at graph 0.8,0.95 font 'Times New Roman Bold,10'"
         newxticks = if (null xtics) then ""
                                     else concat ["set xtics (",xtics,")"]
-     in unlines [ genTOP tempDir [xr,yr,"default # --poskey-- "]
+        numPlots = show $ length plotplate
+     in unlines [ genTOP tempDir [numPlots,xr,yr,"default # --poskey-- "]
                 , "set title '" ++ title ++ "'"
                 , unlines
                     $ intersperse noMidThings
