@@ -48,8 +48,14 @@ main = do
                                , _xrange = xr
                                , _printSpin = setPrintSpin printSpin
                                , _xylabel = unlines $
-                                  "set xlabel 'Energy-E_F (eV)'":
-                                  "set ylabel 'Density of States (states/eV.cell)'":[]
+                                  "set label 'Energy-E_F (eV)' at center":
+                                  "set label 'Density of States (states/eV/cell)'":[]
+                               , _addenda = Addenda
+                                  []
+                                  (unlines $ "#set label 'repeated' ":[])
+                                  (unlines $
+                                    "set label 'Density of States (states/eV/cell)' rotate left at screen 0.05,0.5":
+                                    "set label 'Energy-E_F (eV)' center at graph 0.5,-0.1":[] )
                                }
   debugIt "INIT: Opts == " [opts]
   debugIt "INIT: setting == " [initSetting]
@@ -67,23 +73,34 @@ main = do
         return (s,res)
 
 gltGeneratorDOS _ NullSetting _ = "gltGeneratorDOS:Err NullSetting"
-gltGeneratorDOS tempDir (PlotSetting _ judulUtama printSpin yr xr xtics ar lbs)
+gltGeneratorDOS tempDir (PlotSetting _ judulUtama printSpin yr xr xtics ar lbs lbb)
   plotplate =
     let (title:subTitles') = splitOn "#" judulUtama
         subTitles = "Total":subTitles'
-        locLabel = "at graph 0.8,0.92 font 'Times New Roman Bold,10'"
+        locLabel = "at graph 0.8,0.95 font 'Times New Roman Bold,10'"
         newxticks = if (null xtics) then ""
                                     else concat ["set xtics (",xtics,")"]
      in unlines [ genTOP tempDir [xr,yr,"default # --poskey-- "]
                 , "set title '" ++ title ++ "'"
                 , unlines
                     $ intersperse noMidThings
+                    $ addLabels lbb
                     $ zipWith (\s p -> unlines
                                         $ ("set label '" ++ s ++ "' " ++ locLabel):
                                           unwords [ar,plotInit,p]:[]
                               ) subTitles plotplate
                 , endMultiplot
                 ]
+
+addLabels (Addenda top mid btm) (i:is) =
+  let topAdd = unlines $ "#topAdd":top:[]
+      midAdd = unlines $ "#midAdd":mid:[]
+      btmAdd = unlines $ "#btmAdd":btm:[]
+      ims = map (midAdd ++) $ init is
+      ii = last is
+   in [topAdd ++ midAdd ++ i] ++ ims ++ [midAdd ++ btmAdd ++ ii]
+
+addLabels NullAddenda is = "#NullAddenda":is
 
 noMidThings = unlines $ "unset ylabel":
                         "unset title":
