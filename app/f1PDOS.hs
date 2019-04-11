@@ -73,7 +73,7 @@ main = do
         return (s,res)
 
 gltGeneratorDOS _ NullSetting _ = "gltGeneratorDOS:Err NullSetting"
-gltGeneratorDOS tempDir (PlotSetting _ judulUtama printSpin yr xr xtics ar lbs lbb)
+gltGeneratorDOS tempDir (PlotSetting _ judulUtama printSpin yr xr xtics ar _ lbb)
   plotplate =
     let (title:subTitles') = splitOn "#" judulUtama
         subTitles = "Total":subTitles'

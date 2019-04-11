@@ -16,9 +16,11 @@ import Data.Semigroup -- <>
 main :: IO ()
 main = do
   (Opts fOut useOldBw judulUtama yr atomOs daftarLengkap) <- execParser withHelp
-  let initSetting = PlotSetting "" judulUtama yr "" "" "" $
-                      unlines $ "set xlabel 'Wave Vector'":
-                                "set ylabel 'Energy-E_F (eV)'":[]
+  let initSetting = defSetting { _titles = judulUtama
+                               , _yrange = yr
+                               , _xylabel = unlines $ "set xlabel 'Wave Vector'":
+                                                      "set ylabel 'Energy-E_F (eV)'":[]
+                               }
   putStrLn $ show initSetting
   putStrLn $ fOut
   putStrLn $ show useOldBw
