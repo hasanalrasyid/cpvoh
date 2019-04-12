@@ -42,7 +42,7 @@ getRange s = map (read :: String -> Double) $ splitOn ":" s
 
 main :: IO ()
 main = do
-  opts@(Opts fOut useOldBw judulUtama printSpin yr xr atomOs daftarLengkap) <- execParser withHelp
+  opts@(Opts fOut noTDOS useOldBw judulUtama printSpin yr xr atomOs daftarLengkap) <- execParser withHelp
   let initSetting = defSetting { _titles = judulUtama
                                , _yrange = yr
                                , _xrange = xr
@@ -59,12 +59,13 @@ main = do
                                }
   debugIt "INIT: Opts == " [opts]
   debugIt "INIT: setting == " [initSetting]
-  plotWork initSetting fOut gltGeneratorDOS picGeneratorDOS (plotTDOSnPDOS useOldBw atomOs)
+  plotWork initSetting fOut gltGeneratorDOS picGeneratorDOS (plotTDOSnPDOS noTDOS useOldBw atomOs)
     $ map (splitOn "#") daftarLengkap
   putStrLn "========DONE======="
     where
-      plotTDOSnPDOS a b c d e = do
-        h@((s,_):_) <- mapM (\f -> f a b c d e) [plotTDOS,plotPDOS]
+      plotTDOSnPDOS noTDOS a b c d e = do
+        h@((s,_):_) <- mapM (\f -> f a b c d e) $ if noTDOS then [plotPDOS]
+                                                           else [plotTDOS,plotPDOS]
         --h@((s,_):_) <- mapM (\f -> f a b c d e) [plotTDOS,plotPDOS']
         let res = concat $ map snd h
         let ss = fst $ last h
@@ -211,6 +212,7 @@ plotPDOS  useOldBw atomOs (daftarLengkap:sisa) colorId (iniSetting,res) = do
 
 data Opts = Opts {
     _fOut       :: String,
+    _totalDOS   :: Bool,
     _useOldBw   :: Bool,
     _judulUtama :: String,
     _pSpin      :: String,
@@ -224,6 +226,8 @@ optsParser :: Parser Opts
 optsParser = Opts
              <$> strOption ( long "out" <> short 'o' <> metavar "OUTPUT" <>
                            help "target output file" <> value "test")
+             <*> switch ( long "no-tdos" <> short 'd'
+                      <> help "Remove Total DOS")
              <*> switch ( long "oldbw" <> short 'b'
                       <> help "Using old BandWeight files")
              <*> strOption (long "titles" <> short 't' <>
