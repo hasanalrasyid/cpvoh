@@ -77,7 +77,8 @@ gltGeneratorDOS _ NullSetting _ = "gltGeneratorDOS:Err NullSetting"
 gltGeneratorDOS tempDir (PlotSetting _ judulUtama printSpin yr xr xtics ar _ lbb)
   plotplate =
     let (title:subTitles') = splitOn "#" judulUtama
-        subTitles = "Total":subTitles'
+        subTitles = if (length plotplate > length subTitles') then "Total":subTitles'
+                                                              else subTitles'
         locLabel = "at graph 0.8,0.95 font 'Times New Roman Bold,10'"
         newxticks = if (null xtics) then ""
                                     else concat ["set xtics (",xtics,")"]
