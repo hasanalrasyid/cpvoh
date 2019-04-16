@@ -55,7 +55,9 @@ main = do
                                   (unlines $ "#set label 'repeated' ":[])
                                   (unlines $
                                     "set label 'Density of States (states/eV/cell)' rotate center at screen 0.05,0.5":
-                                    "set label 'Energy-E_F (eV)' center at graph 0.5,-0.1":[] )
+                                    "set format x '% h'":
+                                    "set xtics font 'Times New Roman,10' nomirror offset -.15,.6 out":
+                                    "set label 'Energy-E_F (eV)' center at graph 0.5,-0.3":[] )
                                }
   debugIt "INIT: Opts == " [opts]
   debugIt "INIT: setting == " [initSetting]
@@ -76,7 +78,7 @@ main = do
 gltGeneratorDOS _ NullSetting _ = "gltGeneratorDOS:Err NullSetting"
 gltGeneratorDOS tempDir (PlotSetting _ judulUtama printSpin yr xr xtics ar _ lbb)
   plotplate =
-    let (title:subTitles') = splitOn "#" judulUtama
+    let (title:subTitles') = nub $ splitOn "#" judulUtama
         subTitles = if (length plotplate > length subTitles') then "Total":subTitles'
                                                               else subTitles'
         locLabel = "at graph 0.8,0.95 font 'Times New Roman Bold,10'"
