@@ -109,6 +109,8 @@ pilihOrbs "dx2My2" = [10]
 pilihOrbs "eg" = [8,10]
 pilihOrbs "t2g" = [6,7,9]
 pilihOrbs "p" = [3,4,5]
+pilihOrbs "ppi" = [3,4]
+pilihOrbs "psigma" = [5]
 pilihOrbs _ = [6,7,8,9,10]
 
 susunOrbs :: T.Text

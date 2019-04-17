@@ -5,6 +5,8 @@ def getOrbitalArray(x):
     return {
             "s" : [2],
             "p" : [3,4,5],
+            "ppi" : [3,4],
+            "psigma" : [5],
             "eg": [8,10],
             "t2g": [6,7,9],
             "py" : [3],
@@ -20,9 +22,9 @@ def getOrbitalArray(x):
 namafilein = sys.argv[1]
 atomInt = sys.argv[2]
 namaOrbital = sys.argv[3]
-#orbitalArray = sys.argv[4:] 
+#orbitalArray = sys.argv[4:]
 orbitalArray = getOrbitalArray(namaOrbital);
-print ' s  py pz  px  dxy dyz dz2 dxz dx2-y2  f-3 f-2 f-1 f0  f1  f2  f3  ' 
+print ' s  py pz  px  dxy dyz dz2 dxz dx2-y2  f-3 f-2 f-1 f0  f1  f2  f3  '
 print ' 2  3  4   5   6   7   8   9   10      11  12  13  14  15  16  17 '
 print ' p   3 4 5'
 print ' t2g 6 7 9'
@@ -34,11 +36,11 @@ fo = open(namafileout, 'w')
 lines = f1.readlines()
 nline= len(lines)
 kali3 = False
-if "g" in namaOrbital : kali3 = False 
+if "g" in namaOrbital : kali3 = False
 #print nline
 ionline=0
 for iline in lines:
-	if 'k-point' in iline: 
+	if 'k-point' in iline:
 		x = (iline.split('x =')[1]).split('\n')[0]
 		iband=0
 		#print
@@ -59,7 +61,7 @@ for iline in lines:
 
 	if ionline ==1:
 		ilines=re.split('\s+',iline)
-		if 'tot' in iline : continue #continue goto next iteration. Different from continue of 
+		if 'tot' in iline : continue #continue goto next iteration. Different from continue of
 		if len(ilines)<3  : continue
 		#print ilines,len(ilines)
 		if(int(ilines[1])==int(atomInt)) : #oxygen site --- ini kudu disesuaikan sitenya
