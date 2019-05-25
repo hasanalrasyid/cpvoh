@@ -5,6 +5,8 @@
 {-# LANGUAGE Strict #-}
 {-# LANGUAGE FlexibleContexts #-}
 
+import Data.List
+
 import CPVO.Numeric
 import CPVO.IO
 import CPVO.IO.Type
@@ -14,6 +16,7 @@ import CPVO.IO.Reader.Ecalj.DOS
 
 import qualified Data.Text as T
 import qualified Data.Text.Read as T
+import qualified Data.Text.IO as T
 import Data.Either (rights)
 -------------------------
 import Numeric.LinearAlgebra
@@ -59,7 +62,7 @@ getMMOM :: [String] -> IO ()
 getMMOM allArgs = do
 --getMMOM allArgs = do
     putStrLn "===start ==== CPVO.IO.Reader.Ecalj.MMOM: getMMOM ==="
-    Right (invStat,_,_,_,ctrlAtoms,_, ctrlAtomicAOs,jdTable, cleanedJdHead,foldernya,tailer,_,texFile,_) <- readHeaderData allArgs
+    Right (invStat,_,_,_,ctrlAtoms,_, ctrlAtomicAOs,jdTable, cleanedJdHead,foldernya,tailer,colAlign,texFile,_) <- readHeaderData allArgs
 
     -------------------------------generating data------------------------
     -------------------------------generating DOS data------------------------
@@ -78,13 +81,19 @@ getMMOM allArgs = do
   -------------------------------integrating PDOS data------------------------
     putStrLn $ "========invStat=" ++ (show invStat)
     (tMMomSD:mmomSD) <- fmap (map (* (invStat2Double invStat))) $ readMMOM nAtom foldernya
-    putStrLn $ show $ map (showDouble (3::Integer)) mmomSD
-    putStrLn $ show tMMomSD
-    putStrLn "==========show tMMomSD==========="
-    pdosAtomicAll <- readPDOS invStat tailer foldernya
-      [ Cetak s a | s <- flipBy invStat [1,2], a <- ctrlAtomicAOs ]
+
+    pdosAtomicAll <- readPDOS invStat tailer foldernya [ Cetak s a | s <- flipBy invStat [1,2], a <- ctrlAtomicAOs ]
     let integratedAtomicPDOS = integrateAtomicPDOS pdosAtomicAll
-    let rIntgAll' = id -- rendertable
+--    let integratedAtomicPDOS = [(4.46416536665,Cetak {spinID = 2, atom = AO {atnum = 9, atsym = "Ni", labelAO = "Ni 3d", intAOs = Right [5,6,8,7,9]}}),(4.463953005124999,Cetak {spinID = 2, atom = AO {atnum = 10, atsym = "Ni", labelAO = "Ni 3d", intAOs = Right [5,6,8,7,9]}}),(1.8869112533249992,Cetak {spinID = 2, atom = AO {atnum = 13, atsym = "CoTd", labelAO = "Co_Td", intAOs = Right [5,6,7,8,9]}}),(1.8869449115749999,Cetak {spinID = 2, atom = AO {atnum = 14, atsym = "CoTd", labelAO = "Co_Td", intAOs = Right [5,6,7,8,9]}}),(3.3089247563250015,Cetak {spinID = 2, atom = AO {atnum = 11, atsym = "Co", labelAO = "Co 3d", intAOs = Right [5,6,7,8,9]}}),(3.3090371868,Cetak {spinID = 2, atom = AO {atnum = 12, atsym = "Co", labelAO = "Co 3d", intAOs = Right [5,6,7,8,9]}}),(1.640961028275002,Cetak {spinID = 2, atom = AO {atnum = 1, atsym = "O", labelAO = "O 2p", intAOs = Right [2,3,4]}}),(1.6409132271249995,Cetak {spinID = 2, atom = AO {atnum = 2, atsym = "O", labelAO = "O 2p", intAOs = Right [2,3,4]}}),(1.6320303127249973,Cetak {spinID = 2, atom = AO {atnum = 3, atsym = "O", labelAO = "O 2p", intAOs = Right [2,3,4]}}),(1.632206124225001,Cetak {spinID = 2, atom = AO {atnum = 4, atsym = "O", labelAO = "O 2p", intAOs = Right [2,3,4]}}),(1.6409606058749984,Cetak {spinID = 2, atom = AO {atnum = 5, atsym = "O", labelAO = "O 2p", intAOs = Right [2,3,4]}}),(1.6320295385999992,Cetak {spinID = 2, atom = AO {atnum = 6, atsym = "O", labelAO = "O 2p", intAOs = Right [2,3,4]}}),(1.632207104299999,Cetak {spinID = 2, atom = AO {atnum = 7, atsym = "O", labelAO = "O 2p", intAOs = Right [2,3,4]}}),(1.6409136864250018,Cetak {spinID = 2, atom = AO {atnum = 8, atsym = "O", labelAO = "O 2p", intAOs = Right [2,3,4]}}),(3.074838110349999,Cetak {spinID = 1, atom = AO {atnum = 9, atsym = "Ni", labelAO = "Ni 3d", intAOs = Right [5,6,8,7,9]}}),(3.0748409857000003,Cetak {spinID = 1, atom = AO {atnum = 10, atsym = "Ni", labelAO = "Ni 3d", intAOs = Right [5,6,8,7,9]}}),(4.658541561950002,Cetak {spinID = 1, atom = AO {atnum = 13, atsym = "CoTd", labelAO = "Co_Td", intAOs = Right [5,6,7,8,9]}}),(4.658537525849999,Cetak {spinID = 1, atom = AO {atnum = 14, atsym = "CoTd", labelAO = "Co_Td", intAOs = Right [5,6,7,8,9]}}),(3.3823911824999993,Cetak {spinID = 1, atom = AO {atnum = 11, atsym = "Co", labelAO = "Co 3d", intAOs = Right [5,6,7,8,9]}}),(3.382312940599999,Cetak {spinID = 1, atom = AO {atnum = 12, atsym = "Co", labelAO = "Co 3d", intAOs = Right [5,6,7,8,9]}}),(1.7342360182500012,Cetak {spinID = 1, atom = AO {atnum = 1, atsym = "O", labelAO = "O 2p", intAOs = Right [2,3,4]}}),(1.7342569759499995,Cetak {spinID = 1, atom = AO {atnum = 2, atsym = "O", labelAO = "O 2p", intAOs = Right [2,3,4]}}),(1.7405769262499997,Cetak {spinID = 1, atom = AO {atnum = 3, atsym = "O", labelAO = "O 2p", intAOs = Right [2,3,4]}}),(1.7405829991500015,Cetak {spinID = 1, atom = AO {atnum = 4, atsym = "O", labelAO = "O 2p", intAOs = Right [2,3,4]}}),(1.7342378289000024,Cetak {spinID = 1, atom = AO {atnum = 5, atsym = "O", labelAO = "O 2p", intAOs = Right [2,3,4]}}),(1.7405716288500022,Cetak {spinID = 1, atom = AO {atnum = 6, atsym = "O", labelAO = "O 2p", intAOs = Right [2,3,4]}}),(1.7405883332000014,Cetak {spinID = 1, atom = AO {atnum = 7, atsym = "O", labelAO = "O 2p", intAOs = Right [2,3,4]}}),(1.7342548785500007,Cetak {spinID = 1, atom = AO {atnum = 8, atsym = "O", labelAO = "O 2p", intAOs = Right [2,3,4]}})]
+
+    putStrLn "==========show tMMomSD==========="
+    putStrLn $ show tMMomSD
+    putStrLn "==========show mmomSD==========="
+    putStrLn $ show $ map (showDouble (3::Integer)) mmomSD
+    putStrLn "==========show integratedAtomicPDOS==========="
+    let diffIntegratedAtomicPDOS = sortOn (atnum . snd) $ map diffCetak $ groupBy (\a b -> atnumFromCetak a == atnumFromCetak b) $ sortOn atnumFromCetak $ integratedAtomicPDOS
+    --putStrLn $ "====" ++ (show $ zip mmomSD $ map (atnum . snd) diffIntegratedAtomicPDOS)
+    let rIntgAll' = id $ rendertable
       {-
          $ (:) cleanedJdHead
          $ (:) (concat [ ["Total" ]
@@ -95,12 +104,19 @@ getMMOM allArgs = do
          $ zipWith (\sdMom (intMom,(_,(j,_))) -> j:(map (showDouble (3::Integer)) [sdMom,intMom,sdMom-intMom])) mmomSD
          $ map (\(iu,idn,b) -> ((iu-idn),b) )
         -}
-         $ integratedAtomicPDOS
-    {-
+         $ (:) cleanedJdHead
+         $ (:) (concat [ ["Total" ]
+           , ["  "]
+           , map (showDouble (3::Integer)) $ (\[t,iu,idn] -> [t,iu-idn,t-(iu-idn)]) $ (tMMomSD:intgTot)
+           ])
+         $ zipWith (\sdMom (intMom, a) -> (show $ atnum a):(labelAO a):(map (showDouble (3::Integer)) [sdMom,intMom,sdMom-intMom]) ) mmomSD
+         $ diffIntegratedAtomicPDOS
+    putStrLn $ rIntgAll'
     let rIntgAll = unlines  [
                             rIntgAll'
                             , jdTable
                             ]
+                              {-
     resIntAll' <- markdownToTex rIntgAll
     let resIntAll = T.replace "\\}" "}"
                   $ T.replace "\\{" "{" $ T.pack
@@ -108,8 +124,13 @@ getMMOM allArgs = do
                             "\\begin{longtable}[]{" ++ colAlign ++ "}"
                             , unlines $ tail $ lines $ T.unpack resIntAll'
                             ]
-    putStrLn rIntgAll
-    T.putStrLn resIntAll
+--    putStrLn rIntgAll
+--    T.putStrLn resIntAll
+--    -}
     T.writeFile texFile $ T.pack rIntgAll
-    -}
     putStrLn "===done CPVO.IO.Reader.Ecalj.MMOM: getMMOM ==="
+      where
+        atnumFromCetak = atnum . atom . snd
+        diffCetak ((i1, Cetak 1 a):(i2,Cetak 2 _):_) = (i1 - i2, a)
+        diffCetak ((i2, Cetak 2 a):(i1,Cetak 1 _):_) = (i2 - i1, a)
+        diffCetak _ = (0, ErrAtOrb)
