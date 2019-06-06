@@ -93,7 +93,7 @@ done
 perintahDOS="/home/aku/kanazawa/dev/cpvoh/app/genPDOSvert.hs $atomOs $gapnya $spinnya $daftarFolder"
 echo ===========$perintahDOS
 generatedDOS=$($perintahDOS)
-echo $generatedDOS
+echo =======generatedDOS: $generatedDOS
 echo ===========DONE:genPDOSvert.hs
 
 #  generatedPBAND=$(genPBAND.hs $foldernya $spinnya 0 $atomnya@$orbitalnya )

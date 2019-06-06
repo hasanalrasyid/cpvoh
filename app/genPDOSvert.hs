@@ -52,7 +52,7 @@ main = do
     (atomOrbs:gapnya:spinnya:daftarFolder') <- getArgs
     let daftarAtomOs =  map (splitOn "@") $ splitOn "-" atomOrbs
     let daftarFolder = filter (/=[[]]) $ map (splitOn "@") $ splitOn ":" $ unwords daftarFolder'
-    tailernya <- fmap (T.unpack . last . T.splitOn "." . head) $ inshell2text $ unwords $ ["ls ", (last $ last daftarFolder) ++ "/dos.tot.*"]
+    tailernya <- fmap (T.unpack . last . T.splitOn "." . head) $ inshell2text $ unwords $ ["ls", (last $ last daftarFolder) ++ "/dos.tot.*"]
     fCtrl <- T.readFile $ ( last $ head daftarFolder ) ++ "/ctrl." ++ tailernya
 --    debugIt "genPDOSvert:main:daftarFolder" [daftarFolder]
     let ctrlAtoms =
@@ -88,7 +88,7 @@ main = do
                          , "set xtics 5"
                          , "set xrange [0:5]"
                          , "rydberg=13.605"
-                         , "set key right bottom Left samplen 1 spacing 1 "
+                         , "set key right bottom Left samplen 1 spacing 1"
                          , "set xlabel 'PDOS (states / eV) ' offset 0,0;"
                          , gap
                          , "plot " ++  plotter

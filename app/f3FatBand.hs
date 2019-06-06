@@ -15,21 +15,20 @@ import Data.Semigroup -- <>
 
 main :: IO ()
 main = do
-  (Opts fOut useOldBw judulUtama yr atomOs daftarLengkap) <- execParser withHelp
+  opts@(Opts fOut useOldBw judulUtama yr atomOs daftarLengkap) <- execParser withHelp
   let initSetting = defSetting { _titles = judulUtama
                                , _yrange = yr
                                , _xylabel = unlines $ "set xlabel 'Wave Vector'":
                                                       "set ylabel 'Energy-E_F (eV)'":[]
                                }
-  putStrLn $ show initSetting
-  putStrLn $ fOut
-  putStrLn $ show useOldBw
-  putStrLn $ atomOs
-
+  putStrLn $ show opts
+  plotWork initSetting fOut genTEMPGLT genAllPics
+  {-
   plotWork initSetting fOut genTEMPGLT genAllPics
     (plotter1Pic useOldBw atomOs)
     $ map (splitOn "#") daftarLengkap
   putStrLn "========DONE======="
+-}
 
 data Opts = Opts {
     _fOut       :: String,
