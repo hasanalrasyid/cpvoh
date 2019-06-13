@@ -1,5 +1,5 @@
 #!/usr/bin/env stack
---stack --resolver lts-11.3 --install-ghc runghc --stack-yaml /home/aku/kanazawa/dev/cpvoh/stack.yaml
+-- stack --install-ghc runghc --resolver lts-11.3 --package fortran-src
 
 {-# LANGUAGE FlexibleContexts #-}
 {-# LANGUAGE FlexibleInstances #-}
@@ -9,11 +9,10 @@ module Main where
 
 import           Options.Applicative
 import Data.Semigroup
-import Language.Fortran.Parser.Utils (readReal)
 import Data.Maybe (fromJust,fromMaybe)
+import Language.Fortran.Parser.Utils (readReal)
 
 import System.Directory (doesFileExist)
-
 import System.IO (openTempFile,hClose)
 import qualified System.Process as SP
 import Numeric.LinearAlgebra.Data hiding ((<>))
@@ -28,8 +27,14 @@ main = do
 
 w_eps_FromLine l = let (_:_:_:w:er:ei:_) = map (fromJust . readReal) $ words l
                           in (w,er,ei)
+
+c = 137 --speed of light (a.u)
+eV2hartree = 1/27.211386
+
 genRI (w,er,ei) = let r = sqrt (er :+ ei)
-                         in [w,er,ei,realPart r,imagPart r]
+                      wHartree = w * eV2hartree
+                      a = 2 * wHartree * (imagPart r)/c
+                         in [w,er,ei,realPart r,imagPart r,a]
 
 genRefIndex :: Opts -> IO ()
 genRefIndex opts = do
@@ -42,7 +47,6 @@ genRefIndex opts = do
   fEPS <- readFile tmpfile
   let eps = lines fEPS
       res = map (genRI . w_eps_FromLine) eps
-  _ <- SP.system $ "rm -fr " ++ tmpfile
   saveMatrix fOut "%.12f" $ fromLists res
 
 data Opts = Opts {
