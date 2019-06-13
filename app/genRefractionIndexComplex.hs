@@ -56,14 +56,14 @@ data Opts = Opts {
 
 optsParser :: Parser Opts
 optsParser = Opts
-             <$> strOption (help "target output" <> value "out.dat")
+             <$> strOption (help "target output" <> short 'o' <> value "out.dat")
              <*> strOption (long "input-epsnolfc" <> short 'i' <> metavar "EPSnoLFC"
                             <> help "file EPS*.nolfc.dat from ecalj run")
 
 withHelp :: ParserInfo Opts
 withHelp = info
        (helper <*> optsParser)
-       (fullDesc <> progDesc "Generating Refractive Index Complex from Dielectric, output format in omega : eps_real : eps_imag : n : k"
+       (fullDesc <> progDesc "Generating Refractive Index Complex from Dielectric, output format in [w,er,ei,realPart r,imagPart r,a]"
        <> header "ecalj: Refractive Index from Dielectric Function using n + ik = sqrt eps")
 
 defAtHeaders = [ "H   1 1  1.00 0.800   1.000   0.80  0.80  NZA NA ZV RCMAX PMASS RATS RATS1"
