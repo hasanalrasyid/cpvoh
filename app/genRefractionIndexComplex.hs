@@ -42,6 +42,7 @@ genRefIndex opts = do
   fEPS <- readFile tmpfile
   let eps = lines fEPS
       res = map (genRI . w_eps_FromLine) eps
+  _ <- SP.system $ "rm -fr " ++ tmpfile
   saveMatrix fOut "%.12f" $ fromLists res
 
 data Opts = Opts {
