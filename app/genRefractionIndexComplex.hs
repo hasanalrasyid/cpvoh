@@ -9,26 +9,10 @@ module Main where
 
 import           Options.Applicative
 import Data.Semigroup
-
-
-import Data.List.Split (splitOn)
 import Language.Fortran.Parser.Utils (readReal)
 import Data.Maybe (fromJust,fromMaybe)
-import qualified Data.Map.Strict as M (fromList,lookup,Map)
-import Data.Sequence (fromList,(|>),Seq,index)
-import Data.Foldable (toList)
-import Linear.Quaternion
-import Linear.V3
-import Linear.Metric (norm)
-import Linear.Vector (zero, (*^),(^/),(^+^),(^-^),(*^))
-import Text.Printf (printf)
-import Linear.V as V
-import Data.Char (isAlpha,toUpper)
-import Data.List (groupBy)
-import System.Directory (doesFileExist)
-import Data.Complex
 
-import Linear.Matrix -- inv33, M33
+import System.Directory (doesFileExist)
 
 import System.IO (openTempFile,hClose)
 import qualified System.Process as SP
