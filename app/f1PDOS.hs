@@ -151,63 +151,15 @@ plotPDOS  useOldBw atomOs (daftarLengkap:sisa) colorId (iniSetting,res) = do
   let newSetting = iniSetting {_titles = intercalate "#" $ (:) (_titles iniSetting) $ map labelAO aoSet}
 --  let requestedAtOrbs = genCtrlAtomicAOs aoSet ctrlAtoms
   debugIt "daftaratomOs: " aoSet
-    {-
-  let aos = splitOn "-" atomOs
-  let xr = xrange iniSetting
-      [xmin,xmax] = map (read :: String -> Double) $ splitOn ":" xr
-  let ymax' = last $ splitOn ":" $ yrange iniSetting
-  let ymax = read ymax' :: Double
-
-      labelEX = show $ ((xmax + xmin)*0.5) - 2.5
-      labelEY = show $ foldr (*) 1 [ (-1), ymax, (*) 2.5 $ fromIntegral $ length aos]
-      labelDOSX = show $ xmin - 2.25
-      labelDOSY = show $ foldr (*) 1 [ (-1), ymax, (+) 1 $ fromIntegral $ length aos]
--}
 
   let [resSpin1,resSpin2] = map T.pack $ map (susunTot foldernya theTailer invStat ) ([1,2] :: [Int])
-    {-
-  let daftarCetak'  = zip [1..]
-                      $ map (\(a,label,b) -> (head $ filter (\(_,_,aa) -> aa == (T.pack a)) uniqAtoms , label, b) )
-                      $ map ( (\(a:label:as) -> (a,label,as)) . splitOn ":") aos
-      daftarCetak = [ (i,j) | i <- daftarCetak' , j <- [1,2] ]
--}
   let dCetak = [ (s,u,j,a) | (u,as) <- zip [1..]
                                 $ groupBy (\a b -> labelAO a == labelAO b && intAOs a == intAOs b) aoSet
                , let j = length as
                , let a = head as
                , s <- [1,2]
                ]
-  --                 ((urutan,((jumlah,nomor,  _),_   ,listOrbital)),spin)
-  -- $ map (susunOrbs "dos" foldernya theTailer invStat) daftarCetak
-{-
-  let ctrlAtoms =
-          catMaybes $
-          map ( T.stripPrefix "ATOM=" .  head) $
-          filter (/=[]) $
-          map ( T.words . T.takeWhile (/='#') ) $
-          head $
-          splitWhen (T.isPrefixOf "SPEC") $
-          last $ splitWhen (T.isPrefixOf "SITE")
-          $ T.lines fCtrl
-      nAtom = length ctrlAtoms
-    -- uniqAtoms : [(jumlah,nourutAtom,symbol)]
-  let uniqAtoms =
-          map (\a -> (length a, snd $ head a, fst $ head a)) $
-          groupBy (\a b -> fst a == fst b) $
-          zip  ctrlAtoms [1..nAtom]
-    -- daftarCetak : [(nourut,,jumlah,nourut,symbol)]
-  let daftarCetak'  = zip [1..]
-                      $ map (\(a,label,b) -> (head $ filter (\(_,_,aa) -> aa == (T.pack a)) uniqAtoms , label, b) )
-                      $ map ( (\(a:label:as) -> (a,label,as)) . splitOn ":") aos
-      daftarCetak = [ (i,j) | i <- daftarCetak' , j <- [1,2] ]
-      hasilTot'' = if hasilTot' /= "" then hasilTot' else ""
-      hasilTot  = insertLabel "Energy (eV)" (concat ["at ",labelEX,",",labelEY])
-                  $ insertLabel "DOS (states/eV/unit-cell)" (concat ["rotate left at ",labelDOSX,",",labelDOSY])
-                  $ insertLabel jd "at graph 0.2,1.08"
-                  $ insertLabel "Total" "at graph 0.85,0.92 font 'Times New Roman Bold,10'"
-                  -- $ insertLabel "Total" (concat ["at ",labelXr,",",labelYr," font 'Times New Roman Bold,10'"])
-                  $ (++) "plot " hasilTot''
-                  -}
+
   let (rSpin1,rSpin2) = partition (T.isInfixOf ".isp1.") $ map T.pack $ map (drawOrb "dos" foldernya theTailer invStat) dCetak
   debugIt "plotPDOS:res1: " $ zip rSpin1 rSpin2
   debugIt "plotPDOS:iniSetting: " [iniSetting]
@@ -261,64 +213,6 @@ withHelp = info
   (fullDesc <> (progDesc
     "Density of States (DOS) and Partial DOS Generator for ecalj, please make sure that TARGETDIRS are the last arguments."
   ))
-
---plotPDOS plotStatementDOS_args@(jd:xr:ymax':wTot:tumpuk:invS:tailer:foldernya:aos) = do
-  --invStat : spin inversal... it means switching between up n down spin
-  --          flipSpin : flip it
-  --          otherwise: keep it straight
-  --
---plotPDOS :: [String] -> IO ()
-
-plotPDOS' (fOut:xr:yr:over:invStat:poskey':total:foldernya:daftarOrbital) = do
-  putStrLn "====start: CPVO.IO.Plot.DOS===="
--------------draft---------------------------------------
-  let poskey = unwords $ splitOn ":" poskey'
-  tailer' <- fmap (T.unpack . last . T.splitOn "." . head ) $ inshell2text $ unwords [ "ls", foldernya ++ "/dos.tot.*" ]
-  putStrLn $ show poskey
-  -- tailer="$(ls "${dirs[0]}" |grep dos.tot | awk -F '.' '{print $NF}' )"
-  -- over=$3
-  -- mkdir -p plots
-  let ender = genEnder
-  let akhiran = unlines [ ender
-                        , "system 'cd plots && rm -f tmp*jpg && for i in {eps,pdf,png}; do mv hasil.$i " ++ fOut ++ ".$i; done '"
-                        ]
-  let plotplate = "set format x '% h'; set xtics format '' nomirror ; unset xlabel; unset ylabel "
-  let topTitle' = (last $ T.splitOn "." $ T.pack foldernya)
-  let topTitle = case topTitle' of
-                      "0GGA" -> "GGA(PBE)"
-                      _ -> concat [ "QSGW_{"
-                                  , T.unpack $ last $ T.splitOn "G" topTitle'
-                                  , "}"
-                                  ]
-      --generator="f1.genPDOSAtomicOrbitalTot.hs $topTitle $xr $yr $total $over $invStat $tailer $foldernya $daftarOrbital"
-
-  plotplate1 <- plotStatementDOS (topTitle:xr:yr:total:over:invStat:tailer':foldernya:daftarOrbital)
-  putStrLn "==========================================="
-  T.writeFile "temp.glt" $ T.pack $ unlines [ genTOP "plots" [xr,yr,poskey]
-                     , plotplate
-                     , plotplate1
-                     , akhiran
-                     ]
-  _ <- SP.system "gnuplot temp.glt"
-    -- #---#dimensi=$(convert plots/hasil.jpg -fuzz 5% -transparent white sparse-color:-|sed -e 's/ /\n/g'|awk -F ',' 'BEGIN{a=0; b=0;aa=10000;bb=10000}{if (a<$1) a=$1; if ($1<aa) aa=$1;  if (b<$2) b=$2; if (bb>$2) bb=$2 }END{print a-(10-a%10)"x"b-bb+(10-b%10)"+"aa-(30+aa%10)"+"bb-(10-aa%10)}')
-    -- #---#convert plots/hasil.jpg -crop $dimensi plots/hasil.jpg
-    -- #---##convert plots/hasil.jpg -pointsize 24 -font "monofur" label:'Energy (eV)' -gravity Center -append plots/hasil.jpg
-    -- #---##convert plots/hasil.jpg -gravity West -font monofur -pointsize 24 -draw 'rotate -90 text 0,20 "DOS (states/eV)"' plots/hasil.jpg
-
-  ------------------------------
-  putStrLn "====finish: CPVO.IO.Plot.PDOS===="
-plotPDOS' _ =
-  putStrLn "====Error: CPVO.IO.Plot.PDOS : incomplete Arguments===="
-
-  {-
-module CPVO.IO.Plot.Band
-  where
-
-
-import CPVO.IO -- inshell2text
-import Data.List.Split (splitOn)
-import qualified Data.Text as T
--}
 
 plotter1Pic :: Bool
                -> String
@@ -376,20 +270,6 @@ genBandTicks foldernya = do
     let namaTicks =  map (\a -> if a == "Gamma" then "{/Symbol G}" else a) $ (map head $ filter (/=[]) $ map (snd . (splitAt 7) . words . T.unpack)  namaTicks'')
     return $ (,) (last lTicks)
            $ unwords $ intersperse "," $ map (\(a,b) -> unwords ["'"++a++"'",b]) $ zip  namaTicks lTicks
-
-  {-
-{-# LANGUAGE OverloadedStrings #-}
-{-# LANGUAGE Strict #-}
-
-module CPVO.IO.Plot.Gnuplot.DOS
-  where
-
-import qualified Data.Text as T
-import qualified Data.Text.IO as T
-import Data.List.Split
-import Data.List
-import Data.Maybe
--}
 
 delta :: Bool -> b -> b -> b
 delta x y z = if x then y else z
@@ -465,144 +345,8 @@ plotTDOS  useOldBw atomOs (daftarLengkap:sisa) colorId (iniSetting,res) = do
 --  let requestedAtOrbs = genCtrlAtomicAOs aoSet ctrlAtoms
   debugIt "daftaratomOs: " aoSet
   let newSetting = iniSetting {_titles = intercalate "#" $ (:) (_titles iniSetting) $ nub $ map labelAO aoSet}
-    {-
-  let aos = splitOn "-" atomOs
-  let xr = xrange iniSetting
-      [xmin,xmax] = map (read :: String -> Double) $ splitOn ":" xr
-  let ymax' = last $ splitOn ":" $ yrange iniSetting
-  let ymax = read ymax' :: Double
-
-      labelEX = show $ ((xmax + xmin)*0.5) - 2.5
-      labelEY = show $ foldr (*) 1 [ (-1), ymax, (*) 2.5 $ fromIntegral $ length aos]
-      labelDOSX = show $ xmin - 2.25
-      labelDOSY = show $ foldr (*) 1 [ (-1), ymax, (+) 1 $ fromIntegral $ length aos]
--}
-
   let [resSpin1,resSpin2] = map T.pack $ map (susunTot foldernya theTailer invStat ) ([1,2] :: [Int])
-    {-
-  let ctrlAtoms =
-          catMaybes $
-          map ( T.stripPrefix "ATOM=" .  head) $
-          filter (/=[]) $
-          map ( T.words . T.takeWhile (/='#') ) $
-          head $
-          splitWhen (T.isPrefixOf "SPEC") $
-          last $ splitWhen (T.isPrefixOf "SITE")
-          $ T.lines fCtrl
-      nAtom = length ctrlAtoms
-    -- uniqAtoms : [(jumlah,nourutAtom,symbol)]
-  let uniqAtoms =
-          map (\a -> (length a, snd $ head a, fst $ head a)) $
-          groupBy (\a b -> fst a == fst b) $
-          zip  ctrlAtoms [1..nAtom]
-    -- daftarCetak : [(nourut,,jumlah,nourut,symbol)]
-  let daftarCetak'  = zip [1..]
-                      $ map (\(a,label,b) -> (head $ filter (\(_,_,aa) -> aa == (T.pack a)) uniqAtoms , label, b) )
-                      $ map ( (\(a:label:as) -> (a,label,as)) . splitOn ":") aos
-      daftarCetak = [ (i,j) | i <- daftarCetak' , j <- [1,2] ]
-      hasilTot'' = if hasilTot' /= "" then hasilTot' else ""
-      hasilTot  = insertLabel "Energy (eV)" (concat ["at ",labelEX,",",labelEY])
-                  $ insertLabel "DOS (states/eV/unit-cell)" (concat ["rotate left at ",labelDOSX,",",labelDOSY])
-                  $ insertLabel jd "at graph 0.2,1.08"
-                  $ insertLabel "Total" "at graph 0.85,0.92 font 'Times New Roman Bold,10'"
-                  -- $ insertLabel "Total" (concat ["at ",labelXr,",",labelYr," font 'Times New Roman Bold,10'"])
-                  $ (++) "plot " hasilTot''
-                  -}
   plotTDOS useOldBw atomOs sisa (colorId+1) (newSetting,(resSpin1,resSpin2):res)
-
-
-  {-
-    let hasilSemua = hasilTot : (
-              map (\((_,(_,a,_)) ,p) -> insertLabel (T.unpack $ T.replace "#" " " $ T.pack a) "at graph 0.85,0.92 font 'Times New Roman Bold,10'" p)
-              $ zip daftarCetak'
-              $ map ((++) "plot ")
-              $ map (intercalate ", ")
-              $ chunksOf 2
-              $ map (susunOrbs "dos" foldernya tailer invStat) daftarCetak
-              )
-    return $ concat
-        $ (\a -> concat  [ (init a)
-                         , [ "set format x '% h';"
-                           , "set xtics font 'Times New Roman,10' nomirror offset -.15,.6 out;"
-                           , (last a)
-                           ]
-                         ]
-          )
-        $ map (insertText "unset label")
-        $ map (insertLabel "spin-up" "at graph 0.15,0.9 font ',10'")
-        $ map (insertLabel "spin-down" "at graph 0.15,0.1 font ',10'") hasilSemua
-        -}
---plotStatementDOS _ = return "====Error: plotStatementDOS @CPVO/IO/Plot/Gnuplot/DOS.hs:30"
-
-
-plotStatementDOS :: [String] -> IO String
---plotStatementDOS (jd:xr:ymax':wTot:tumpuk:invS:tailer:foldernya:aos) = do
-plotStatementDOS (jd:xr:ymax':wTot:_:invS:tailer':foldernya:aos) = do
-    fCtrl <- T.readFile $ foldernya ++ "/ctrl." ++ tailer'
-    let invStat = (invS == "flipSpin")
-    let ymax = read ymax' :: Double
-        [xmin,xmax] = map (read :: String -> Double) $ splitOn ":" xr
-    let ctrlAtoms =
-          catMaybes $
-          map ( T.stripPrefix "ATOM=" .  head) $
-          filter (/=[]) $
-          map ( T.words . T.takeWhile (/='#') ) $
-          head $
-          splitWhen (T.isPrefixOf "SPEC") $
-          last $ splitWhen (T.isPrefixOf "SITE")
-          $ T.lines fCtrl
-        nAtom = length ctrlAtoms
-    -- uniqAtoms : [(jumlah,nourutAtom,symbol)]
-    let uniqAtoms =
-          map (\a -> (length a, snd $ head a, fst $ head a)) $
-          groupBy (\a b -> fst a == fst b) $
-          zip  ctrlAtoms [1..nAtom]
-    -- daftarCetak : [(nourut,,jumlah,nourut,symbol)]
-    let daftarCetak'  = zip [1..]
-                      $ map (\(a,label,b) -> (head $ filter (\(_,_,aa) -> aa == (T.pack a)) uniqAtoms , label, b) )
-                      $ map ( (\(a:label:as) -> (a,label,as)) . splitOn ":") aos
-        daftarCetak = [ (i,j) | i <- daftarCetak' , j <- [1,2] ]
-
-        labelEX = show $ ((xmax + xmin)*0.5) - 2.5
-        labelEY = show $ foldr (*) 1 [ (-1), ymax, (*) 2.5 $ fromIntegral $ length aos]
-        labelDOSX = show $ xmin - 2.25
-        labelDOSY = show $ foldr (*) 1 [ (-1), ymax, (+) 1 $ fromIntegral $ length aos]
-
-    let hasilTot' = if (wTot == "T") then intercalate "," $ map (susunTot foldernya tailer' invStat ) ([1,2] :: [Int]) else ""
-        hasilTot'' = if hasilTot' /= "" then hasilTot' else ""
-        hasilTot  = insertLabel "Energy (eV)" (concat ["at ",labelEX,",",labelEY])
-                  $ insertLabel "DOS (states/eV/unit-cell)" (concat ["rotate left at ",labelDOSX,",",labelDOSY])
-                  $ insertLabel jd "at graph 0.2,1.08"
-                  $ insertLabel "Total" "at graph 0.85,0.92 font 'Times New Roman Bold,10'"
-                  -- $ insertLabel "Total" (concat ["at ",labelXr,",",labelYr," font 'Times New Roman Bold,10'"])
-                  $ (++) "plot " hasilTot''
-
-    let hasilSemua = hasilTot : (
-              map (\((_,(_,a,_)) ,p) -> insertLabel (T.unpack $ T.replace "#" " " $ T.pack a) "at graph 0.85,0.92 font 'Times New Roman Bold,10'" p)
-              $ zip daftarCetak'
-              $ map ((++) "plot ")
-              $ map (intercalate ", ")
-              $ chunksOf 2
-              $ map (susunOrbs "dos" foldernya tailer' invStat) daftarCetak
-              )
-    return $ concat
-        $ (\a -> concat  [ (init a)
-                         , [ "set format x '% h';"
-                           , "set xtics font 'Times New Roman,10' nomirror offset -.15,.6 out;"
-                           , (last a)
-                           ]
-                         ]
-          )
-        $ map (insertText "unset label")
-        $ map (insertLabel "spin-up" "at graph 0.15,0.9 font ',10'")
-        $ map (insertLabel "spin-down" "at graph 0.15,0.1 font ',10'") hasilSemua
-plotStatementDOS _ = return "====Error: plotStatementDOS @CPVO/IO/Plot/Gnuplot/DOS.hs:30"
-
-pSubPlot :: ((a0, (a1, String, c0)), String) -> String
-pSubPlot ( (_,(_,a,_)) ,p) = unlines [
-    concat [ "set label '",a,"' at 3,15 font 'Times New Roman Bold,10'"]
-  , unwords ["plot", p]
-  ]
 
 insertText :: String -> String -> String
 insertText t p = unlines [t,p]
