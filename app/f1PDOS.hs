@@ -42,11 +42,12 @@ getRange s = map (read :: String -> Double) $ splitOn ":" s
 
 main :: IO ()
 main = do
-  opts@(Opts fOut noTDOS useOldBw judulUtama printSpin yr xr atomOs daftarLengkap) <- execParser withHelp
+  opts@(Opts fOut spinFlip noTDOS useOldBw judulUtama printSpin yr xr atomOs daftarLengkap) <- execParser withHelp
   let initSetting = defSetting { _titles = judulUtama
                                , _yrange = yr
                                , _xrange = xr
                                , _printSpin = setPrintSpin printSpin
+                               , _flipSpin = spinFlip
                                , _xylabel = unlines $
                                   "set label 'Energy-E_F (eV)' at center":
                                   "set label 'Density of States (states/eV/cell)'":[]
@@ -215,6 +216,7 @@ plotPDOS  useOldBw atomOs (daftarLengkap:sisa) colorId (iniSetting,res) = do
 
 data Opts = Opts {
     _fOut       :: String,
+    _spinFlip   :: Bool,
     _totalDOS   :: Bool,
     _useOldBw   :: Bool,
     _judulUtama :: String,
@@ -229,6 +231,8 @@ optsParser :: Parser Opts
 optsParser = Opts
              <$> strOption ( long "out" <> short 'o' <> metavar "OUTPUT" <>
                            help "target output file" <> value "test")
+             <*> switch ( long "flip-spin" <> short 'f'
+                      <> help "Flip up and down spin, default is False")
              <*> switch ( long "no-tdos" <> short 'd'
                       <> help "Remove Total DOS")
              <*> switch ( long "oldbw" <> short 'b'
