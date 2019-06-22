@@ -76,7 +76,7 @@ main = do
         return (s,res)
 
 gltGeneratorDOS _ NullSetting _ = "gltGeneratorDOS:Err NullSetting"
-gltGeneratorDOS tempDir (PlotSetting _ judulUtama printSpin yr xr xtics ar _ lbb)
+gltGeneratorDOS tempDir (PlotSetting _ judulUtama _ printSpin yr xr xtics ar _ lbb)
   plotplate =
     let (title:subTitles') = nub $ splitOn "#" judulUtama
         subTitles = if (length plotplate > length subTitles') then "Total":subTitles'
@@ -97,15 +97,15 @@ gltGeneratorDOS tempDir (PlotSetting _ judulUtama printSpin yr xr xtics ar _ lbb
                 , endMultiplot
                 ]
 
-addLabels (Addenda top mid btm) (i:is) =
+addLabels (Addenda top mid btm) ls@(i:is) =
   let topAdd = unlines $ "#topAdd":top:[]
       midAdd = unlines $ "#midAdd":mid:[]
       btmAdd = unlines $ "#btmAdd":btm:[]
       ims = map (midAdd ++) $ init is
       ii = last is
    in [topAdd ++ midAdd ++ i] ++ ims ++ [midAdd ++ btmAdd ++ ii]
-
 addLabels NullAddenda is = "#NullAddenda":is
+addLabels _ [] = ["#error: Empty is @addLabels"]
 
 noMidThings = unlines $ "unset ylabel":
                         "unset title":
@@ -137,7 +137,7 @@ plotPDOS  useOldBw atomOs (daftarLengkap:sisa) colorId (iniSetting,res) = do
   putStrLn $ "====" ++ show fileCtrl ++ "======" ++ show foldernya
   fCtrl <- T.readFile $ T.unpack $ head fileCtrl
 --  let invStat = if (invS == "flipSpin") then (-1) else 1
-  let invStat = 1
+  let invStat = _flipSpin iniSetting
   putStrLn $ show spinnya
   putStrLn $ show legend
   -- aos :: Ni:Ni#3d:6:7:9:8:10-Co:Co#3d:6:7:8:9:10-O:O#2p:3:4:5
@@ -417,6 +417,7 @@ getAOSet ctrlAtoms s =
                        in if null fOrb then Right $ concat okOrb
                                        else Left "Error @getAOSet: undefined orbitals found"
       proc1 (atom:orbs:_) = (defineA atom, defineOrbs orbs)
+      proc1 _ = (Left "error @getAOSet", Left "error @getAOSet: error proc1")
    in [ AO n sss ll is | let lt = zip ctrlAtoms ([1..] :: [Int])
       , (Right (i,ss,l), is) <- map proc1 r1
       , let iss = case is of
@@ -447,7 +448,7 @@ plotTDOS  useOldBw atomOs (daftarLengkap:sisa) colorId (iniSetting,res) = do
   putStrLn $ "====" ++ show fileCtrl ++ "======" ++ show foldernya
   fCtrl <- T.readFile $ T.unpack $ head fileCtrl
 --  let invStat = if (invS == "flipSpin") then (-1) else 1
-  let invStat = 1
+  let invStat = _flipSpin iniSetting
   putStrLn $ show spinnya
   putStrLn $ show legend
   -- aos :: Ni:Ni#3d:6:7:9:8:10-Co:Co#3d:6:7:8:9:10-O:O#2p:3:4:5
@@ -534,7 +535,7 @@ plotStatementDOS :: [String] -> IO String
 --plotStatementDOS (jd:xr:ymax':wTot:tumpuk:invS:tailer:foldernya:aos) = do
 plotStatementDOS (jd:xr:ymax':wTot:_:invS:tailer':foldernya:aos) = do
     fCtrl <- T.readFile $ foldernya ++ "/ctrl." ++ tailer'
-    let invStat = if (invS == "flipSpin") then (-1) else 1
+    let invStat = (invS == "flipSpin")
     let ymax = read ymax' :: Double
         [xmin,xmax] = map (read :: String -> Double) $ splitOn ":" xr
     let ctrlAtoms =
@@ -608,7 +609,7 @@ insertLabel l a p = unlines [ concat [ "set label '",l,"' ",a], p]
 drawOrb :: T.Text
         -> String
         -> String
-        -> Int
+        -> Bool
         -> (Int, Int, Int, AtOrb)
         -> String
 drawOrb job foldernya tailer' invStat
@@ -623,16 +624,17 @@ drawOrb job foldernya tailer' invStat
                   lOrbitals
 --                  ("$" ++ (intercalate "+$" $ delta (listOrbital /= []) listOrbital $ map show ([2..26] :: [Int])))
                   jumlah
-                  invStat
+                  (delta invStat (-1) 1 :: Int)
                   (delta (spin < 2) 1 (-1) :: Int)
                   urutan
                 ]
+drawOrb _ _ _ _ _ = "sin(x) #error drawOrb"
 
 
 susunOrbs :: T.Text
                 -> String
                 -> String
-                -> Int
+                -> Bool
                 -> ((Int,((Int, Int, T.Text),String,[String])),Int) -- DaftarCetak
                 -> String
 --susunOrbs job foldernya tailer invStat ((urutan,((jumlah,nomor,nama),judul,listOrbital)),spin) = unwords [
@@ -645,21 +647,22 @@ susunOrbs job foldernya tailer' invStat ((urutan,((jumlah,nomor,_),_,listOrbital
                                           (T.pack tailer')
                                           ("$" ++ (intercalate "+$" $ delta (listOrbital /= []) listOrbital $ map show ([2..26] :: [Int])))
                                           jumlah
-                                          invStat
+                                          (delta invStat (-1) 1 :: Int)
                                           (delta (spin < 2) 1 (-1) :: Int)
                                           urutan
                                           ]
 
 
-susunTot :: String -> String -> Int -> Int -> String
-susunTot foldernya tailer' invStat spin = unwords [
-                                        Text.Printf.printf "'%s/dos.tot.%s' u ($1*rydberg):($%d *( %d ) *( %d ) / rydberg ) w l lc rgb 'black' notitle "
-                                          (T.pack foldernya)
-                                          (T.pack tailer')
-                                          (delta (spin < 2) 2 (3) :: Int)
-                                          invStat
-                                          (delta (spin < 2) 1 (-1) :: Int)
-                                          ]
+susunTot :: String -> String -> Bool -> Int -> String
+susunTot foldernya tailer' flipSpin spin =
+  unwords [ Text.Printf.printf
+              "'%s/dos.tot.%s' u ($1*rydberg):($%d *( %d ) *( %d ) / rydberg ) w l lc rgb 'black' notitle "
+              (T.pack foldernya)
+              (T.pack tailer')
+              (delta (spin < 2) 2 (3) :: Int)
+              (delta flipSpin (-1) 1 :: Int)
+              (delta (spin < 2) 1 (-1) :: Int)
+          ]
 
 
 

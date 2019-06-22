@@ -1,2 +1,2 @@
-#plotpbanddos.sh f.invB/test 0 '-' -3.5:3.5 dz2@9 invB.11G20:2:"QSGW Majority"
-./app/f3FatBand.hs -o f.invB/test -b -t '-' -y "-3.5:3.5" -r dz2@9 invB.11G20:2:"QSGW Majority"
+plotpbanddos.sh f.invB/test 0 '-' -3.5:3.5 dz2@9 invB.11G20:2:"QSGW Majority"
+#./app/f3FatBand.hs -o f.invB/test -b -t '-' -y "-3.5:3.5" -r dz2@9 invB.11G20:2:"QSGW Majority"
