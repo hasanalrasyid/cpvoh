@@ -1,0 +1,55 @@
+# Sample .bashrc for SuSE Linux
+# Copyright (c) SuSE GmbH Nuernberg
+
+# There are 3 different types of shells in bash: the login shell, normal shell
+# and interactive shell. Login shells read ~/.profile and interactive shells
+# read ~/.bashrc; in our setup, /etc/profile sources ~/.bashrc - thus all
+# settings made here will also take effect in a login shell.
+#
+# NOTE: It is recommended to make language settings in ~/.profile rather than
+# here, since multilingual X sessions would not work properly if LANG is over-
+# ridden in every subshell.
+
+# Some applications read the EDITOR variable to determine your favourite text
+# editor. So uncomment the line below and enter the editor of your choice :-)
+#export EDITOR=/usr/bin/vim
+#export EDITOR=/usr/bin/mcedit
+
+# For some news readers it makes sense to specify the NEWSSERVER variable here
+#export NEWSSERVER=your.news.server
+
+# If you want to use a Palm device with Linux, uncomment the two lines below.
+# For some (older) Palm Pilots, you might need to set a lower baud rate
+# e.g. 57600 or 38400; lowest is 9600 (very slow!)
+#
+#export PILOTPORT=/dev/pilot
+#export PILOTRATE=115200
+
+. /etc/bash.bashrc
+
+
+test -s ~/.alias && . ~/.alias || true
+
+. /etc/profile.d/modules.sh
+module purge
+#module load gnu/7.2.0 intel/18.0.3.222 intel-mpi/2018.3.222 cuda git/2.16.2 gnuplot/5.2.3 python/2.7.14
+#module load intel/18.0.3.222 intel-mpi/2018.3.222 git/2.16.2 gnuplot/5.2.3 python/2.7.14
+module load intel/18.0.3.222 intel-mpi/2018.3.222 git/2.16.2 gnuplot/5.2.3 python/2.7.14 gnu/5.4.0
+
+export PATH=/home/k0044/k004407/.local/bin:/home/k0044/k004407/opt/local/bin:/home/k0044/k004407/opt/llvm/bin:/home/k0044/k004407/opt/llvm/libexec:/home/k0044/k004407/bin:/home/k0044/k004407/opt/ghc/bin:$PATH
+export LD_LIBRARY_PATH=/home/k0044/k004407/opt/local/lib64:/home/k0044/k004407/opt/local/lib:/home/k0044/k004407/opt/libs/lib:/home/k0044/k004407/opt/llvm/lib:/home/k0044/k004407/opt/ghc/lib:$LD_LIBRARY_PATH
+export LIBRARY_PATH=/home/k0044/k004407/opt/local/lib64:/home/k0044/k004407/opt/libs/lib:/home/k0044/k004407/opt/llvm/lib:/home/k0044/k004407/opt/ghc/lib:$LIBRARY_PATH
+export CPATH=/home/k0044/k004407/opt/local/include:/home/k0044/k004407/opt/libs/include:/home/k0044/k004407/opt/llvm/include:/home/k0044/k004407/opt/ghc/include:$CPATH
+export LD_RUN_PATH=/home/k0044/k004407/opt/local/lib64:/home/k0044/k004407/opt/libs/lib:/home/k0044/k004407/opt/llvm/lib:/home/k0044/k004407/opt/ghc/lib:$LD_RUN_PATH
+export PYTHONPATH=/home/k0044/k004407/opt/rdiff-backup/lib64/python2.6/site-packages:$PYTHONPATH
+export CMAKE_ROOT=/home/k0044/k004407/opt/local
+
+export LESS="-eirMX"
+
+
+
+case "$TERM" in
+  xterm-color|*-256color) color_prompt=yes;;
+esac
+alias cek='qstat |grep k004407'
+umask 077
