@@ -86,7 +86,7 @@ main = do
                          , "unset ylabel"
                          , "set format y '  '"
                          , "set xtics 5"
-                         , "set xrange [0:5]"
+                         , "set xrange [0:10]"
                          , "rydberg=13.605"
                          , "set key right bottom Left samplen 1 spacing 1"
                          , "set xlabel 'PDOS (states / eV) ' offset 0,0;"
