@@ -87,7 +87,7 @@ gltGeneratorDOS tempDir (PlotSetting _ judulUtama _ printSpin yr xr xtics ar _ l
                                     else concat ["set xtics (",xtics,")"]
         numPlots = show $ length plotplate
      in unlines [ genTOP tempDir [numPlots,xr,yr,"default # --poskey-- "]
-                , "set title '" ++ title ++ "'"
+                , "#set title '" ++ title ++ "'"
                 , unlines
                     $ intersperse noMidThings
                     $ addLabels lbb
