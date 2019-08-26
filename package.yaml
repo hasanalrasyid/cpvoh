@@ -44,6 +44,7 @@ dependencies:
 - machines
 - attoparsec
 
+- string-qq
   #- cryptohash           # ---  temporary needed
   #- base16-bytestring           # --- !temporary needed
   #- bytestring           # --- !temporary needed
@@ -101,19 +102,19 @@ executables:
       #    - split
       #    - text
 
-  f2:
-    main        : f2BandStructure.hs
-    source-dirs : app
-    ghc-options :
-    - -threaded
-    - -rtsopts
-    - -with-rtsopts=-N
-    - -Wall
-    dependencies:
-    - cpvoh
-    - text-format
-    - split
-    - text
+#--#  f2:
+#--#    main        : f2BandStructure.hs
+#--#    source-dirs : app
+#--#    ghc-options :
+#--#    - -threaded
+#--#    - -rtsopts
+#--#    - -with-rtsopts=-N
+#--#    - -Wall
+#--#    dependencies:
+#--#    - cpvoh
+#--#    - text-format
+#--#    - split
+#--#    - text
 
   t1:
     main        : t1dosEf.hs

@@ -14,7 +14,7 @@ import           Foreign.C.Types
 import CPVO.IO
 import CPVO.Numeric
 import CPVO.IO.DOS
-import CPVO.IO.Reader.Parser
+--import CPVO.IO.Reader.Parser
 import CPVO.IO.Reader.Ecalj.Band
 import CPVO.IO.Reader.Ecalj.DOS
 import CPVO.IO.Reader.Ecalj.MMOM
@@ -27,7 +27,7 @@ import CPVO.IO.Plot.Gnuplot.Type
 import CPVO.IO.Plot.DOS
 import CPVO.IO.Fortran
 import CPVO.IO.Type
-import CPVO.Data
+--import CPVO.Data
 -------------------------
 
 foreign import ccall safe "add" f_add :: IO ()
