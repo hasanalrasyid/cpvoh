@@ -89,18 +89,18 @@ executables:
     - cpvoh
     - bytestring
 
-      #  f1:
-      #    main        : f1PDOS.hs
-      #    source-dirs : app
-      #    ghc-options :
-      #    - -threaded
-      #    - -rtsopts
-      #    - -with-rtsopts=-N
-      #    dependencies:
-      #    - cpvoh
-      #    - text-format
-      #    - split
-      #    - text
+  f1:
+    main        : f1PDOS.hs
+    source-dirs : app
+    ghc-options :
+    - -threaded
+    - -rtsopts
+    - -with-rtsopts=-N
+    dependencies:
+    - cpvoh
+    #    - text-format
+    #    - split
+    #    - text
 
 #--#  f2:
 #--#    main        : f2BandStructure.hs
