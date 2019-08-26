@@ -85,7 +85,7 @@ gltGeneratorDOS tempDir (PlotSetting _ judulUtama _ printSpin yr xr xtics ar _ l
         locLabel = "at graph 0.8,0.95 font 'Times New Roman Bold,10'"
         newxticks = if (null xtics) then ""
                                     else concat ["set xtics (",xtics,")"]
-        numPlots = show $ length plotplate
+        numPlots = show $ length subTitles
      in unlines [ genTOP tempDir [numPlots,xr,yr,"default # --poskey-- "]
                 , "#set title '" ++ title ++ "'"
                 , unlines
