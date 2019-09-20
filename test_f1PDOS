@@ -1,3 +1,3 @@
 #./app/f1PDOS.hs -f -t "QSGW" -a all -y "-20:20" -x "-8:3" -o temp/kadal -b -r "7@p-Ni:Ni label@dx2My2:d1" ext.nico2o4.invB/nico2o4.invB.11G20:1:Majority
-./f1 -f -t "QSGW" -a all -y "-20:20" -x "-8:3" -o temp/kadal -b -r "7@p-Ni:Ni label@dx2My2:d1" ext.nico2o4.invB/nico2o4.invB.11G20:1:Majority
+./f1 -f -t "QSGW" -a all -y "-20:20" -x "-8:3" -o temp/kadal -b -r "O@p-Ni:Ni label@dx2My2:d1" ext.nico2o4.invB/nico2o4.invB.11G20:1:Majority
 
