@@ -45,6 +45,9 @@ dependencies:
 - attoparsec
 
 - string-qq
+
+- parsec
+- lens
   #- cryptohash           # ---  temporary needed
   #- base16-bytestring           # --- !temporary needed
   #- bytestring           # --- !temporary needed
