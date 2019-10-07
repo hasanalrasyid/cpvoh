@@ -1,0 +1,4 @@
+[submodule "subs/cif"]
+	path = subs/cif
+	url = https://github.com/samueljackson92/cif
+	branch = master
