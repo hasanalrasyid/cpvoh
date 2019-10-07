@@ -2,3 +2,7 @@
 	path = subs/cif
 	url = https://github.com/samueljackson92/cif
 	branch = master
+[submodule "subs/CIF2XYZ"]
+	path = subs/CIF2XYZ
+	url = https://github.com/JJPPeters/CIF2XYZ
+	branch = master
