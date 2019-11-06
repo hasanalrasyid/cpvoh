@@ -41,8 +41,8 @@ main = do
 genPOSCAR opts = do
   putStrLn "genPOSCAR"
   sPoscar <- readProcess "cif2poscar.py" [_inCIF opts] []
-  let crystal = A.parseOnly fileParser $ T.pack sPoscar
-  putStrLn $ show crystal
+  let (Right (pos,crystal)) = A.parseOnly fileParser $ T.pack sPoscar
+  putStrLn $ show $ fromRows pos
   putStrLn "!genPOSCAR"
 
 skipLine :: A.Parser ()
@@ -61,7 +61,7 @@ skipLine = A.skipWhile (not . A.isEndOfLine) >> A.endOfLine
 
 -}
 
-fileParser :: A.Parser Crystal
+fileParser :: A.Parser ([Vector Double], Crystal)
 fileParser = do
   skipLine
   latParam <- A.double
@@ -71,12 +71,14 @@ fileParser = do
   let atSym = concat $ zipWith replicate atCount atSym'
   skipLine
   latCoord <- A.count (length atSym) parseVec
-  return $ Crystal { bravType = 0
-                   , celldm = LatConst latParam
-                   , translatVectorReciprocal = matrix 0 []
-                   , translatVector = fromColumns latVec
-                   , atomList = map genAtom $ group $ zip atSym latCoord
-                   }
+  return $ ( latCoord
+           , Crystal { bravType = 0
+                     , celldm = LatConst latParam
+                     , translatVectorReciprocal = matrix 0 []
+                     , translatVector = fromColumns latVec
+                     , atomList = map genAtom $ group $ zip atSym latCoord
+                     }
+           )
   where
     genCoord s = Coord "" $ Cart s
     genAtom as@((s,_):_) = Atoms (AtomSymbol s) (map (genCoord . snd) as)
