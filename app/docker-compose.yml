@@ -1,0 +1,53 @@
+#TODO BEFORE
+#~/Android/Sdk/platform-tools/adb reverse tcp:8800 tcp:8800
+#~/Android/Sdk/platform-tools/adb disconnect
+#~/Android/Sdk/platform-tools/adb kill-server
+
+
+#chcon -Rt svirt_sandbox_file_t ankiserver/data.ankiserver
+
+#mount -o bind /home/aku/localFiles/var.lib.docker /var/lib/docker
+#service docker restart
+
+
+
+version: "2"
+
+services:
+  ankiserver:
+    image: kuklinistvan/anki-sync-server:latest
+    volumes:
+      - ./ankiserver/data.ankiserver:/app/data
+    ports:
+      #- "8800:8800"
+      - "127.0.0.1:8800:8800"
+
+  sage:
+    image: sagemath/sagemath:latest
+    environment:
+      - USER_UID=1000
+      - USER_GID=1000
+    restart: always
+    command:
+      sage-jupyter
+    volumes:
+      - ./sagemath/work.sagemath:/home/sage/work
+    ports:
+      #- "8888:8888"
+      - "127.0.0.1:8888:8888"
+
+  gitea:
+    image: gitea/gitea:latest
+    environment:
+      - USER_UID=1000
+      - USER_GID=1000
+      - GITEA_CUSTOM=/data/mods
+    restart: always
+    volumes:
+      - ./gitea/repo.gitea:/data
+      - ./gitea/mods.gitea:/data/mods
+    ports:
+      #- "127.0.0.1:3000:3000"
+      #- "127.0.0.1:2202:22"
+      - "3000:3000"
+      - "2202:22"
