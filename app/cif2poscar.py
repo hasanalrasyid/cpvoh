@@ -1,7 +1,7 @@
-import json
-import re
-import os
-from fnmatch import fnmatch
+#!/usr/bin/env python3
+
+import sys
+
 from pymatgen.io.cif import CifParser, CifWriter
 from pymatgen.io.vasp import Poscar
 
@@ -9,6 +9,7 @@ def read_structure(filename, primitive = True, sort = False):
     parser = CifParser(filename)
     s = parser.get_structures(primitive=primitive)[0]
     p = Poscar(s)
-    p.write_file('POSCAR')
+    print (p.get_string())
 
-st = read_structure('kadal.cif')
+cifFile = sys.argv[1]
+st = read_structure(cifFile)
