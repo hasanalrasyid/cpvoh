@@ -53,7 +53,9 @@ dependencies:
   #- bytestring           # --- !temporary needed
 
 library:
-  source-dirs     : src
+  source-dirs     :
+    - src
+    - lib
   #  c-sources       :
   #  - ./c-src/A_C.cpp
   #include-dirs    :

@@ -4,6 +4,7 @@
 {-# LANGUAGE FlexibleContexts #-}
 {-# LANGUAGE FlexibleInstances #-}
 {-# LANGUAGE Strict #-}
+{-# LANGUAGE OverloadedStrings #-}
 
 module Main where
 
@@ -18,6 +19,11 @@ import Text.Printf (printf)
 import Data.List (isInfixOf,findIndex,intercalate)
 import System.Directory (doesFileExist)
 import Linear.Matrix -- inv33, M33
+import CPVO.IO
+import CPVO.Data.Type
+import qualified Data.Attoparsec.Text as A
+import qualified Data.Text as T
+import Numeric.LinearAlgebra.Data
 
 deg2rad deg = deg * pi / 180
 
@@ -25,6 +31,64 @@ v3fromList [a,b,c] = V3 a b c
 
 main :: IO ()
 main = do
+  opts <- execParser withHelp
+  bOK <- doesFileExist $ _inCIF opts
+  if bOK then genPOSCAR opts
+         else do
+           putStrLn "Error... input needed"
+           putStrLn "genSurface.hs -i fort.19 -c celldm0 -s 2x2x1"
+
+genPOSCAR opts = do
+  putStrLn "genPOSCAR"
+  sPoscar <- readProcess "cif2poscar.py" [_inCIF opts] []
+  let crystal = A.parseOnly fileParser $ T.pack sPoscar
+  putStrLn $ show crystal
+  putStrLn "!genPOSCAR"
+
+skipLine :: A.Parser ()
+skipLine = A.skipWhile (not . A.isEndOfLine) >> A.endOfLine
+
+fileParser :: A.Parser String
+fileParser = do
+  skipLine
+  latParam <- A.double
+  latVec <- A.count 3 parseVec
+  atSym' <- parseAtSym
+  atCount <- parseAtCount
+  let atSym = concat $ zipWith replicate atCount atSym'
+  skipLine
+  latCoord <- A.count (length atSym) parseVec
+  return $ show latCoord
+
+parseAtCount :: A.Parser [Int]
+parseAtCount = do
+  ls <- A.manyTill takeInt A.endOfLine
+  return ls
+    where
+      takeInt = do
+        A.try A.skipSpace
+        d <- A.decimal
+        return d
+
+parseAtSym :: A.Parser [String]
+parseAtSym = do
+  ls <- A.manyTill A.anyChar A.endOfLine
+  return $ words ls
+
+parseVec :: A.Parser (Vector Double)
+parseVec = do
+  A.try A.skipSpace
+  d1 <- A.double
+  A.skipSpace
+  d2 <- A.double
+  A.skipSpace
+  d3 <- A.double
+  skipLine
+  return $ fromList [d1,d2,d3]
+
+
+main1 :: IO ()
+main1 = do
     opts <- execParser withHelp
     bOK <- doesFileExist $ _inFort19CPVO opts
     if bOK then genPrimitive opts
@@ -101,6 +165,7 @@ getReal s = case readReal s of
 v3fromLine l = v3fromList $ map (fromJust . readReal) $ take 3 $ words l
 
 data Opts = Opts {
+    _inCIF :: FilePath,
     _inFort19CPVO :: FilePath,
     _inCellDM0 :: FilePath,
     _inSize :: String
@@ -108,7 +173,9 @@ data Opts = Opts {
 
 optsParser :: Parser Opts
 optsParser = Opts
-             <$> strOption (long "input-cpvo" <> short 'i' <> metavar "FORT19"
+             <$> strOption (long "input-CIF" <> short 'i' <> metavar "CIF"
+                            <> help "file input from CIF file, can be acquired from CIF database")
+             <*> strOption (long "input-cpvo" <> short 'v' <> metavar "FORT19"
                             <> help "file input from fort.19 in CPVO run, usually came out after opts" <> value "fort.19")
              <*> strOption (long "input-celldm0" <> short 'c' <> metavar "CELLDM0"
                             <> help "file input from celldm0 in CPVO run, usually defined as an input" <> value "celldm0")

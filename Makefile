@@ -1,5 +1,6 @@
-shake: 
-	./build.hs
+shake:
+	stack build cpvoh:lib
+#	./build.hs
 #	stack exec ./build.shake.sh
 
 cleanf:
