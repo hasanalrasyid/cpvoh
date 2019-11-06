@@ -16,7 +16,7 @@ import Data.Maybe (fromJust)
 import Linear.V3
 import Linear.Vector ((*^))
 import Text.Printf (printf)
-import Data.List (isInfixOf,findIndex,intercalate)
+import Data.List (isInfixOf,findIndex,intercalate,group)
 import System.Directory (doesFileExist)
 import Linear.Matrix -- inv33, M33
 import CPVO.IO
@@ -48,6 +48,19 @@ genPOSCAR opts = do
 skipLine :: A.Parser ()
 skipLine = A.skipWhile (not . A.isEndOfLine) >> A.endOfLine
 
+{-
+  In the direct mode the positions are given by
+
+         {\vec R} = x_1 {\vec a}_1 + x_2 {\vec a}_2 + x_3 {\vec a}_3
+
+      where $ {\vec a}_{1...3}$ are the three basis vectors,
+        and $ x_{1...3}$ are the supplied values.
+  In the cartesian mode the positions are only scaled by the factor $ s$
+  on the second line of the POSCAR file.
+
+
+-}
+
 fileParser :: A.Parser Crystal
 fileParser = do
   skipLine
@@ -59,11 +72,14 @@ fileParser = do
   skipLine
   latCoord <- A.count (length atSym) parseVec
   return $ Crystal { bravType = 0
-                   , celldm = NullCellDM
-                   , translatVectorR = matrix 0 []
+                   , celldm = LatConst latParam
+                   , translatVectorReciprocal = matrix 0 []
                    , translatVector = fromColumns latVec
-                   , atomList = []
+                   , atomList = map genAtom $ group $ zip atSym latCoord
                    }
+  where
+    genCoord s = Coord "" $ Cart s
+    genAtom as@((s,_):_) = Atoms (AtomSymbol s) (map (genCoord . snd) as)
 
 parseAtCount :: A.Parser [Int]
 parseAtCount = do
