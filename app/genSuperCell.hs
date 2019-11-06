@@ -48,7 +48,7 @@ genPOSCAR opts = do
 skipLine :: A.Parser ()
 skipLine = A.skipWhile (not . A.isEndOfLine) >> A.endOfLine
 
-fileParser :: A.Parser String
+fileParser :: A.Parser Crystal
 fileParser = do
   skipLine
   latParam <- A.double
@@ -58,7 +58,12 @@ fileParser = do
   let atSym = concat $ zipWith replicate atCount atSym'
   skipLine
   latCoord <- A.count (length atSym) parseVec
-  return $ show latCoord
+  return $ Crystal { bravType = 0
+                   , celldm = NullCellDM
+                   , translatVectorR = matrix 0 []
+                   , translatVector = fromColumns latVec
+                   , atomList = []
+                   }
 
 parseAtCount :: A.Parser [Int]
 parseAtCount = do
