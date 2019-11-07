@@ -40,10 +40,26 @@ main = do
 
 genPOSCAR opts = do
   putStrLn "genPOSCAR"
-  sPoscar <- readProcess "cif2poscar.py" [_inCIF opts] []
-  let (Right (pos,crystal)) = A.parseOnly fileParser $ T.pack sPoscar
-  putStrLn $ show $ fromRows pos
+  sPoscar1 <- readProcess "cif2poscar.py" [_inCIF opts,"c","d"] []
+  --                                                    |   +- cartesian not d direct
+  --                                                    +- full cell not p primitive
+  let (Right (fracCart,crystalCell)) = A.parseOnly fileParser $ T.pack sPoscar1
+  putStrLn $ show $ fromRows fracCart
+  putStrLn $ show $ translatVector crystalCell
+  putStrLn $ show $ fromRows ([fromList [i,j,k] | i <- [0..2], j <- [0..2], k <- [0..2] ] :: [Vector Double])
+  putStrLn $ show $ fromRows $ concat $ map (map toCart . positions) $ atomList $ genNewPos (fromList [1,1,1]) crystalCell
+  putStrLn $ show $ fromRows $ concat $ map (map toCart . positions) $ atomList $ crystalCell
+--when we want to generate coordinates from this ...
+--putStrLn $ show $ (<>) (fromRows fracCart) $ translatVector crystalCell
   putStrLn "!genPOSCAR"
+
+genNewPos :: Vector Double -> Crystal -> Crystal
+genNewPos v c =
+  let updateCoord _ ErrCoord = ErrCoord
+      updateCoord v (Coord r t) = Coord r $ v t
+      genPos (Atoms a ps) = Atoms a $ map (updateCoord (+v)) ps
+      as' = map genPos $ atomList c
+   in c {atomList = as'}
 
 skipLine :: A.Parser ()
 skipLine = A.skipWhile (not . A.isEndOfLine) >> A.endOfLine
@@ -58,6 +74,10 @@ skipLine = A.skipWhile (not . A.isEndOfLine) >> A.endOfLine
   In the cartesian mode the positions are only scaled by the factor $ s$
   on the second line of the POSCAR file.
 
+  if we have matrix A as column vector of lattice vector a,
+  and matrix X as row vector of coordinate x,
+  then we have:
+  cartCord = X A
 
 -}
 
@@ -79,9 +99,9 @@ fileParser = do
                      , atomList = map genAtom $ group $ zip atSym latCoord
                      }
            )
-  where
-    genCoord s = Coord "" $ Cart s
-    genAtom as@((s,_):_) = Atoms (AtomSymbol s) (map (genCoord . snd) as)
+
+genCoord s = Coord "" s
+genAtom as@((s,_):_) = Atoms (AtomSymbol s) (map (genCoord . snd) as)
 
 parseAtCount :: A.Parser [Int]
 parseAtCount = do
