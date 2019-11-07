@@ -49,7 +49,7 @@ genPOSCAR opts = do
   putStrLn $ show $ fromRows fracCart
   putStrLn $ show $ translatVector crystalCell
   putStrLn $ show $ fromRows ([fromList [i,j,k] | i <- [0..2], j <- [0..2], k <- [0..2] ] :: [Vector Double])
-  let crystal1 = genNewPos (fromList [1,1,1]) crystalCell
+  let crystal1 = applyNewPos ( + fromList [1,1,1]) crystalCell
   putStrLn $ show $ fromRows $ concat $ map (map toCart . positions) $ atomList $ crystalCell <>  crystal1
 --when we want to generate coordinates from this ...
 --putStrLn $ show $ (<>) (fromRows fracCart) $ translatVector crystalCell
@@ -63,12 +63,13 @@ instance Semigroup Crystal where
 
 instance Monoid Crystal where
   mempty = ErrCrystal
+  mappend = (<>)
 
-genNewPos :: Vector Double -> Crystal -> Crystal
-genNewPos v c =
+applyNewPos :: (Vector Double -> Vector Double) -> Crystal -> Crystal
+applyNewPos f c =
   let updateCoord _ ErrCoord = ErrCoord
-      updateCoord v (Coord r t) = Coord r $ v t
-      genPos (Atoms a ps) = Atoms a $ map (updateCoord (+v)) ps
+      updateCoord f (Coord r t) = Coord r $ f t
+      genPos (Atoms a ps) = Atoms a $ map (updateCoord f) ps
       as' = map genPos $ atomList c
    in c {atomList = as'}
 
