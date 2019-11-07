@@ -5,6 +5,7 @@
 {-# LANGUAGE FlexibleInstances #-}
 {-# LANGUAGE Strict #-}
 {-# LANGUAGE OverloadedStrings #-}
+{-# LANGUAGE InstanceSigs #-}
 
 module Main where
 
@@ -24,6 +25,7 @@ import CPVO.Data.Type
 import qualified Data.Attoparsec.Text as A
 import qualified Data.Text as T
 import Numeric.LinearAlgebra.Data
+import Data.Semigroup
 
 deg2rad deg = deg * pi / 180
 
@@ -47,11 +49,18 @@ genPOSCAR opts = do
   putStrLn $ show $ fromRows fracCart
   putStrLn $ show $ translatVector crystalCell
   putStrLn $ show $ fromRows ([fromList [i,j,k] | i <- [0..2], j <- [0..2], k <- [0..2] ] :: [Vector Double])
-  putStrLn $ show $ fromRows $ concat $ map (map toCart . positions) $ atomList $ genNewPos (fromList [1,1,1]) crystalCell
-  putStrLn $ show $ fromRows $ concat $ map (map toCart . positions) $ atomList $ crystalCell
+  let crystal1 = genNewPos (fromList [1,1,1]) crystalCell
+  putStrLn $ show $ fromRows $ concat $ map (map toCart . positions) $ atomList $ crystalCell <>  crystal1
 --when we want to generate coordinates from this ...
 --putStrLn $ show $ (<>) (fromRows fracCart) $ translatVector crystalCell
   putStrLn "!genPOSCAR"
+
+instance Semigroup Crystal where
+  (<>) :: Crystal -> Crystal -> Crystal
+  (<>) ErrCrystal _ = ErrCrystal
+  (<>) _ ErrCrystal = ErrCrystal
+  (<>) a b = a {atomList = atomList a ++ atomList b}
+
 
 genNewPos :: Vector Double -> Crystal -> Crystal
 genNewPos v c =
