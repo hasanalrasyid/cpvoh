@@ -61,6 +61,8 @@ instance Semigroup Crystal where
   (<>) _ ErrCrystal = ErrCrystal
   (<>) a b = a {atomList = atomList a ++ atomList b}
 
+instance Monoid Crystal where
+  mempty = ErrCrystal
 
 genNewPos :: Vector Double -> Crystal -> Crystal
 genNewPos v c =
