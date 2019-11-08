@@ -11,7 +11,7 @@ module Main where
 
 import           Options.Applicative
 import Data.Semigroup ((<>))
-import Data.List.Split (splitOn)
+import Data.List.Split (splitOn, chunksOf)
 import Language.Fortran.Parser.Utils (readReal)
 import Data.Maybe (fromJust)
 import Linear.V3
@@ -24,6 +24,7 @@ import CPVO.IO
 import CPVO.Data.Type
 import qualified Data.Attoparsec.Text as A
 import qualified Data.Text as T
+import Numeric.LinearAlgebra hiding ((<>))
 import Numeric.LinearAlgebra.Data
 import Data.Semigroup
 
@@ -39,39 +40,82 @@ main = do
          else do
            putStrLn "Error... input needed"
            putStrLn "genSurface.hs -i fort.19 -c celldm0 -s 2x2x1"
+             {-
+-- new lattice vector should be in a, and real space lattice vector
+-- in case of CPVO, this is IBRAV 2
+-- [  0   a/2 a/2
+--    a/2  0  a/2
+--    a/2 a/2 0   ]
+-- so we should input "0.0 0.5 0.5 0.5 0 0.5 0.5 0.5 0"
+-- with a = 8.114 for example
+ (3><3)
+ [ 8.114,   0.0,   0.0
+ ,   0.0, 8.114,   0.0
+ ,   0.0,   0.0, 8.114 ]
+
+-}
+
+type BasisVector = Matrix Double
 
 genPOSCAR opts = do
   putStrLn "genPOSCAR"
+  (ibrav:cell_a:_) <- fmap ((map getReal) . words) $ readFile $ _inCellDM0 opts
+  let newBasis = scale cell_a $ tr' $ fromLists $ chunksOf 3 $ map getReal $ words $ _newBasis opts :: BasisVector
+  putStrLn $ show $ newBasis
   sPoscar1 <- readProcess "cif2poscar.py" [_inCIF opts,"c","d"] []
-  --                                                    |   +- cartesian not d direct
+  --                                                    |   +- direct not cartesian
   --                                                    +- full cell not p primitive
   let (Right (fracCart,crystalCell)) = A.parseOnly fileParser $ T.pack sPoscar1
   putStrLn $ show $ fromRows fracCart
   putStrLn $ show $ translatVector crystalCell
-  putStrLn $ show $ fromRows ([fromList [i,j,k] | i <- [0..2], j <- [0..2], k <- [0..2] ] :: [Vector Double])
-  let crystal1 = applyNewPos ( + fromList [1,1,1]) crystalCell
-  putStrLn $ show $ fromRows $ concat $ map (map toCart . positions) $ atomList $ crystalCell <>  crystal1
+
+  let target = map getReal $ splitOn "x" $ _inSize opts :: [Double]
+      doubleSize@(d1:d2:d3:_)  = map (\x -> fromIntegral $ ceiling $ (x-1) * 2) target
+      expander = [ fromList [x,y,z] | x <- [0..d1]
+                                    , y <- [0..d2]
+                                    , z <- [0..d3]
+                 ] :: [Vector Double]
+--  let expander = [fromList [i,j,k] | i <- [0..1], j <- [0..1], k <- [0..1] ] :: [Vector Double]
+--  let crystal1 = applyNewPos ( + fromList [1,1,1]) crystalCell
+  --let css = foldr (<>) crystalCell $ map (\x -> applyNewPos (+ x) crystalCell) expander
+  let expandedCrystal = foldr (\x -> (<>) (applyNewPos (+x) crystalCell)) (ErrCrystal) expander
+--  putStrLn $ showCoords $ crystalCell <>  crystal1
+  putStrLn $ showCoords expandedCrystal
+  putStrLn $ show $ translatVector crystalCell
 --when we want to generate coordinates from this ...
 --putStrLn $ show $ (<>) (fromRows fracCart) $ translatVector crystalCell
   putStrLn "!genPOSCAR"
 
+showCoords x = show $ fromRows $ concat $ map (map toCart . positions) $ atomList x
+getCoords  x = fromRows $ concat $ map (map toCart . positions) $ atomList x
+getCoordsNAtoms x =
+  let c  = map (map toCart . positions) $ atomList x
+      cs = fromRows $ concat c
+      atomCounts = map length c
+      atoms = concat $ zipWith (\a b -> replicate a b) atomCounts $ map atomspec $ atomList x
+   in atoms
+
+getAtom    x = concat $ map (map toCart . positions) $ atomList x
 instance Semigroup Crystal where
   (<>) :: Crystal -> Crystal -> Crystal
-  (<>) ErrCrystal _ = ErrCrystal
-  (<>) _ ErrCrystal = ErrCrystal
+  (<>) ErrCrystal a = a
+  (<>) a ErrCrystal = a
   (<>) a b = a {atomList = atomList a ++ atomList b}
 
 instance Monoid Crystal where
   mempty = ErrCrystal
   mappend = (<>)
 
+applyToAtoms f c =
+  let as' = map f $ atomList c
+   in c {atomList = as'}
+
 applyNewPos :: (Vector Double -> Vector Double) -> Crystal -> Crystal
 applyNewPos f c =
   let updateCoord _ ErrCoord = ErrCoord
-      updateCoord f (Coord r t) = Coord r $ f t
+      updateCoord g (Coord r t) = Coord r $ g t
       genPos (Atoms a ps) = Atoms a $ map (updateCoord f) ps
-      as' = map genPos $ atomList c
-   in c {atomList = as'}
+   in applyToAtoms genPos c
 
 skipLine :: A.Parser ()
 skipLine = A.skipWhile (not . A.isEndOfLine) >> A.endOfLine
@@ -213,6 +257,7 @@ genLatticeVector 2 (a:_) = (a/2) *!! V3 (V3 0.0 1.0 1.0)
                                         (V3 1.0 0.0 1.0)
                                         (V3 1.0 1.0 0.0)
 
+getReal :: String -> Double
 getReal s = case readReal s of
               Just x -> x
               _ -> 0
@@ -223,7 +268,8 @@ data Opts = Opts {
     _inCIF :: FilePath,
     _inFort19CPVO :: FilePath,
     _inCellDM0 :: FilePath,
-    _inSize :: String
+    _inSize :: String,
+    _newBasis :: String
                  } deriving Show
 
 optsParser :: Parser Opts
@@ -236,6 +282,8 @@ optsParser = Opts
                             <> help "file input from celldm0 in CPVO run, usually defined as an input" <> value "celldm0")
              <*> strOption (long "input-size" <> short 's' <> metavar "N1xN2xN3"
                             <> help "Expansion size of the supercell, should be integer: 2x2x1" <> value "2x2x1")
+             <*> strOption (long "new-basis-vector" <> short 'b' <> metavar "Va Vb Vc"
+                            <> help "new real cart basis vector, read in row based" <> value "0.0 0.5 0.5 0.5 0 0.5 0.5 0.5 0")
 
 withHelp :: ParserInfo Opts
 withHelp = info
