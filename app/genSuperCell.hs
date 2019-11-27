@@ -65,10 +65,10 @@ genPOSCAR opts = do
   sPoscar1 <- readProcess "cif2poscar.py" [_inCIF opts,"c","d"] []
   --                                                    |   +- direct not cartesian
   --                                                    +- full cell not p primitive
-  let (Right (fracCart,crystalCell)) = A.parseOnly fileParser $ T.pack sPoscar1
-  putStrLn $ show $ fromRows fracCart
-  putStrLn $ show $ translatVector crystalCell
-
+  let (Right crystalCell) = A.parseOnly fileParser $ T.pack sPoscar1
+  putStrLn $ show $ fromRows $ fractional crystalCell
+  putStrLn $ show $ fromRows $ cartesian  crystalCell
+  hLine
   let target = map getReal $ splitOn "x" $ _inSize opts :: [Double]
       doubleSize@(d1:d2:d3:_)  = map (\x -> fromIntegral $ ceiling $ (x-1) * 2) target
       expander = [ fromList [x,y,z] | x <- [0..d1]
@@ -80,11 +80,32 @@ genPOSCAR opts = do
   --let css = foldr (<>) crystalCell $ map (\x -> applyNewPos (+ x) crystalCell) expander
   let expandedCrystal = foldr (\x -> (<>) (applyNewPos (+x) crystalCell)) (ErrCrystal) expander
 --  putStrLn $ showCoords $ crystalCell <>  crystal1
-  putStrLn $ showCoords expandedCrystal
-  putStrLn $ show $ translatVector crystalCell
 --when we want to generate coordinates from this ...
 --putStrLn $ show $ (<>) (fromRows fracCart) $ translatVector crystalCell
+--steps to generate new cell:
+--1. expand the crystal into oldXYZ=[-1..1]
+  putStrLn $ showCoords expandedCrystal
+  putStrLn $ show $ translatVector crystalCell
+--2. generate cartesian from 1
+--3. generate new fract coord from new basis vector
+--4. filter 3 for under 1
+--5. generate cartesian from 4
   putStrLn "!genPOSCAR"
+
+hLine = putStrLn $ replicate 70 '='
+
+class Structure a where
+  cartesian  :: a -> [Vector Double]
+  fractional :: a -> [Vector Double]
+  getAtom    :: a -> [Atom]
+
+instance Structure Crystal where -- Crystal have to be saved as fractional to real lattice
+  cartesian  c@(Crystal _ _ tReal _  ) = toRows $ (getCoords c) <> tReal
+  fractional c                         = toRows $ getCoords c
+  getAtom    (Crystal _ _ _       atL) =
+    let at = map atomSpec atL
+        ct = map (length . positions) atL
+     in concat $ zipWith replicate ct at
 
 showCoords x = show $ fromRows $ concat $ map (map toCart . positions) $ atomList x
 getCoords  x = fromRows $ concat $ map (map toCart . positions) $ atomList x
@@ -92,10 +113,10 @@ getCoordsNAtoms x =
   let c  = map (map toCart . positions) $ atomList x
       cs = fromRows $ concat c
       atomCounts = map length c
-      atoms = concat $ zipWith (\a b -> replicate a b) atomCounts $ map atomspec $ atomList x
+      atoms = concat $ zipWith (\a b -> replicate a b) atomCounts $ map atomSpec $ atomList x
    in atoms
 
-getAtom    x = concat $ map (map toCart . positions) $ atomList x
+-- getAtom    x = concat $ map (map toCart . positions) $ atomList x
 instance Semigroup Crystal where
   (<>) :: Crystal -> Crystal -> Crystal
   (<>) ErrCrystal a = a
@@ -137,7 +158,7 @@ skipLine = A.skipWhile (not . A.isEndOfLine) >> A.endOfLine
 
 -}
 
-fileParser :: A.Parser ([Vector Double], Crystal)
+fileParser :: A.Parser Crystal
 fileParser = do
   skipLine
   latParam <- A.double
@@ -147,10 +168,8 @@ fileParser = do
   let atSym = concat $ zipWith replicate atCount atSym'
   skipLine
   latCoord <- A.count (length atSym) parseVec
-  return $ ( latCoord
-           , Crystal { bravType = 0
+  return $ ( Crystal { bravType = 0
                      , celldm = LatConst latParam
-                     , translatVectorReciprocal = matrix 0 []
                      , translatVector = fromColumns latVec
                      , atomList = map genAtom $ group $ zip atSym latCoord
                      }
