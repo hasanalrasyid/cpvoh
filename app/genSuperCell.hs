@@ -101,11 +101,17 @@ genPOSCAR opts = do
                                , atomList = map genAtom' $ group newAtoms
                                }
   putStrLn $ show newCrystal
-  putStrLn $ show $ fromRows $ fractional newCrystal
+  putStrLn $ dispf 6 $ fromRows $ fractional newCrystal
   putStrLns $ zip [1..] $ atomCoord cartesian newCrystal
+  putStrLns (\(a,(b,c)) -> unwords [show a, show b, dispv c])
+    $ zip [1..] $ atomCoord fractional newCrystal
+  putStrLn $ dispf 6 $ translatVector newCrystal
   putStrLn "!genPOSCAR"
 
-putStrLns = mapM_ (putStrLn . show)
+dispv v = unwords $ map show $ toList v
+--dispv v = unwords $ map (\x -> printf "%.6f" x) $ toList v
+
+putStrLns s = mapM_ (putStrLn . s)
 
 genAtom' a@((at,_):_) = Atoms at $ map (\(_,x) -> Coord "" $ fromList x) a
 
