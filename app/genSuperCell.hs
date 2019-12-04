@@ -11,7 +11,7 @@ module Main where
 
 import           Options.Applicative
 import Data.Semigroup ((<>))
-import Data.List.Split (splitOn, chunksOf)
+import Data.List.Split (splitOn, chunksOf, wordsBy)
 import Language.Fortran.Parser.Utils (readReal)
 import Data.Maybe (fromJust)
 import Linear.V3
@@ -60,37 +60,60 @@ type BasisVector = Matrix Double
 genPOSCAR opts = do
   putStrLn "genPOSCAR"
   (ibrav:cell_a:_) <- fmap ((map getReal) . words) $ readFile $ _inCellDM0 opts
-  let newBasis = scale cell_a $ tr' $ fromLists $ chunksOf 3 $ map getReal $ words $ _newBasis opts :: BasisVector
-  putStrLn $ show $ newBasis
   sPoscar1 <- readProcess "cif2poscar.py" [_inCIF opts,"c","d"] []
   --                                                    |   +- direct not cartesian
   --                                                    +- full cell not p primitive
   let (Right crystalCell) = A.parseOnly fileParser $ T.pack sPoscar1
-  putStrLn $ show $ fromRows $ fractional crystalCell
-  putStrLn $ show $ fromRows $ cartesian  crystalCell
+  let newBasis =
+        case _newBasis opts of
+          Just s -> (scale cell_a . tr' . fromLists . chunksOf 3 . map getReal . words) s
+          Nothing -> translatVector crystalCell
+  putStrLn $ "newBasis: " ++ show newBasis
+  putStrLn $ show crystalCell
   hLine
   let target = map getReal $ splitOn "x" $ _inSize opts :: [Double]
-      doubleSize@(d1:d2:d3:_)  = map (\x -> fromIntegral $ ceiling $ (x-1) * 2) target
-      expander = [ fromList [x,y,z] | x <- [0..d1]
-                                    , y <- [0..d2]
-                                    , z <- [0..d3]
+      doubleSize@(d1:d2:d3:_)  = map (\x -> fromIntegral $ ceiling $ (x*2-1)) target
+      expander = [ fromList [x,y,z] | x <- [-d1..d1]
+                                    , y <- [-d2..d2]
+                                    , z <- [-d3..d3]
                  ] :: [Vector Double]
 --  let expander = [fromList [i,j,k] | i <- [0..1], j <- [0..1], k <- [0..1] ] :: [Vector Double]
 --  let crystal1 = applyNewPos ( + fromList [1,1,1]) crystalCell
   --let css = foldr (<>) crystalCell $ map (\x -> applyNewPos (+ x) crystalCell) expander
-  let expandedCrystal = foldr (\x -> (<>) (applyNewPos (+x) crystalCell)) (ErrCrystal) expander
+  let expandedCrystal = expand crystalCell expander
 --  putStrLn $ showCoords $ crystalCell <>  crystal1
 --when we want to generate coordinates from this ...
 --putStrLn $ show $ (<>) (fromRows fracCart) $ translatVector crystalCell
 --steps to generate new cell:
 --1. expand the crystal into oldXYZ=[-1..1]
   putStrLn $ showCoords expandedCrystal
-  putStrLn $ show $ translatVector crystalCell
 --2. generate cartesian from 1
+  putStrLn $ show $ length $ cartesian expandedCrystal
 --3. generate new fract coord from new basis vector
+--    Xf = Xc * (inv B)
+  let mVector = fromList $ map getReal $ wordsBy (== ',') $ _moveCoord opts
+  putStrLn $ show mVector
+  let frac' = (fromRows $ map (\x -> x - mVector) $ cartesian expandedCrystal) <> (inv newBasis)
 --4. filter 3 for under 1
+  let newAtoms = filter under1 $ zip (getAtom expandedCrystal) $ map toList $ toRows frac'
 --5. generate cartesian from 4
+      newCrystal = crystalCell { translatVector = newBasis
+                               , atomList = map genAtom' $ group newAtoms
+                               }
+  putStrLn $ show newCrystal
+  putStrLn $ show $ fromRows $ fractional newCrystal
+  putStrLns $ zip [1..] $ atomCoord cartesian newCrystal
   putStrLn "!genPOSCAR"
+
+putStrLns = mapM_ (putStrLn . show)
+
+genAtom' a@((at,_):_) = Atoms at $ map (\(_,x) -> Coord "" $ fromList x) a
+
+under1 (_, (v1:v2:v3:_))
+  |    0 <= v1 && v1 < 1
+    && 0 <= v2 && v2 < 1
+    && 0 <= v3 && v3 < 1 = True
+  | otherwise = False
 
 hLine = putStrLn $ replicate 70 '='
 
@@ -98,6 +121,8 @@ class Structure a where
   cartesian  :: a -> [Vector Double]
   fractional :: a -> [Vector Double]
   getAtom    :: a -> [Atom]
+  expand     :: a -> [Vector Double] -> a
+  atomCoord  :: (a -> [Vector Double]) -> a -> [(Atom,Vector Double)]
 
 instance Structure Crystal where -- Crystal have to be saved as fractional to real lattice
   cartesian  c@(Crystal _ _ tReal _  ) = toRows $ (getCoords c) <> tReal
@@ -106,6 +131,12 @@ instance Structure Crystal where -- Crystal have to be saved as fractional to re
     let at = map atomSpec atL
         ct = map (length . positions) atL
      in concat $ zipWith replicate ct at
+  expand c vs = foldr (\x -> (<>) (applyNewPos (+x) c)) (ErrCrystal) vs
+  atomCoord f c =
+    let ats = getAtom c
+        cs  = f c
+     in zip ats cs
+
 
 showCoords x = show $ fromRows $ concat $ map (map toCart . positions) $ atomList x
 getCoords  x = fromRows $ concat $ map (map toCart . positions) $ atomList x
@@ -288,7 +319,9 @@ data Opts = Opts {
     _inFort19CPVO :: FilePath,
     _inCellDM0 :: FilePath,
     _inSize :: String,
-    _newBasis :: String
+    _moveCoord :: String,
+    _zeroAtom :: Maybe String,
+    _newBasis :: Maybe String
                  } deriving Show
 
 optsParser :: Parser Opts
@@ -300,9 +333,17 @@ optsParser = Opts
              <*> strOption (long "input-celldm0" <> short 'c' <> metavar "CELLDM0"
                             <> help "file input from celldm0 in CPVO run, usually defined as an input" <> value "celldm0")
              <*> strOption (long "input-size" <> short 's' <> metavar "N1xN2xN3"
-                            <> help "Expansion size of the supercell, should be integer: 2x2x1" <> value "2x2x1")
-             <*> strOption (long "new-basis-vector" <> short 'b' <> metavar "Va Vb Vc"
-                            <> help "new real cart basis vector, read in row based" <> value "0.0 0.5 0.5 0.5 0 0.5 0.5 0.5 0")
+                            <> help "Expansion size of the supercell, based on new basis vectors: 2x2x1" <> value "2x2x1")
+             <*> strOption (long "move" <> short 'm' <> metavar "X,Y,Z"
+                            <> help "Move all crystal by m:(x y z), following c' = c - m" <> value "0,0,0" )
+             <*> (optional $
+                 strOption (long "atom-zero" <> short 'z' <> metavar "ATINDEX"
+                            <> help "atom index that become init coordinate" )
+                 )
+             <*> (optional $
+                 strOption (long "new-basis-vector" <> short 'b' <> metavar "Va Vb Vc"
+                            <> help "new real cart basis vector, read in row based" )
+                 )
 
 withHelp :: ParserInfo Opts
 withHelp = info
