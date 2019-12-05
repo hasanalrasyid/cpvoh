@@ -13,7 +13,7 @@ import           Options.Applicative
 import Data.Semigroup ((<>))
 import Data.List.Split (splitOn, chunksOf, wordsBy)
 import Language.Fortran.Parser.Utils (readReal)
-import Data.Maybe (fromJust)
+import Data.Maybe (fromJust,fromMaybe)
 import Linear.V3
 import Linear.Vector ((*^))
 import Text.Printf (printf)
@@ -111,7 +111,13 @@ genPOSCAR opts = do
 --  putStrLns show $ getAtom newCrystal
 
   site <- genSITE cell_a newCrystal $ _atomString opts
+  ctrlFile <- case _ctrlTemplate opts of
+                Nothing -> return Nothing
+                Just o -> fmap Just $ readFile o
+  let (ctrlU:ctrlD:_) = fromMaybe [] $ fmap ( splitOn "#${site}" ) ctrlFile
+  putStrLn ctrlU
   putStrLns id site
+  putStrLn ctrlD
 --  putStrLn "!genPOSCAR"
 
 genSITE cell_a c ats = do
@@ -342,6 +348,7 @@ data Opts = Opts {
     _inSize :: String,
     _moveCoord :: String,
     _zeroAtom :: Maybe String,
+    _ctrlTemplate :: Maybe String,
     _atomString :: Maybe String,
     _newBasis :: Maybe String
                  } deriving Show
@@ -361,6 +368,10 @@ optsParser = Opts
              <*> (optional $
                  strOption (long "atom-zero" <> short 'z' <> metavar "ATINDEX"
                             <> help "atom index that become init coordinate" )
+                 )
+             <*> (optional $
+                 strOption (long "ctrl-template" <> short 't' <> metavar "CTRLTEMPLATE"
+                            <> help "template for ctrl of ecalj/lm7k" )
                  )
              <*> (optional $
                  strOption (long "atom-name" <> short 's' <> metavar "ATNAME"
