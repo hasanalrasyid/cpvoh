@@ -34,22 +34,24 @@ STRUC
   PLAT= 0.0 0.5 0.5  0.5 0.0 0.5  0.5 0.5 0.0
      NL=4  NBAS= 14  NSPEC=5
 SITE
-  ATOM=S  POS=0.38270 0.38270 0.38270 
-  ATOM=S  POS=0.86730 0.63270 0.63270 
-  ATOM=S  POS=0.86730 0.86730 0.86730 
-  ATOM=S  POS=0.38270 0.61730 0.61730 
-  ATOM=S  POS=0.63270 0.63270 0.86730 
-  ATOM=S  POS=0.61730 0.38270 0.61730 
-  ATOM=S  POS=0.61730 0.61730 0.38270 
-  ATOM=S  POS=0.63270 0.86730 0.63270 
-  ATOM=Ni1  POS=0.625 0.625 0.625
-  ATOM=Ni2  POS=0.625 0.375 0.375
-  ATOM=Co  POS=0.375 0.375 0.625
-  ATOM=Co  POS=0.375 0.625 0.375
-  ATOM=CoTd  POS=0.25 0.25 0.25
-  ATOM=CoTd  POS=0.0 0.0 0.0
+# Co Co Ni1 Ni2 CoTd CoTd S S S S S S S S
+  ATOM=Co POS= 0.375000 0.375000 0.375000
+  ATOM=Co POS= 0.625000 0.375000 0.625000
+  ATOM=Ni1 POS= 0.375000 0.625000 0.625000
+  ATOM=Ni2 POS= 0.625000 0.625000 0.375000
+  ATOM=CoTd POS= 0.000000 0.000000 0.000000
+  ATOM=CoTd POS= 0.750000 0.750000 0.750000
+  ATOM=S POS= 0.128700 0.128700 0.128700
+  ATOM=S POS= 0.378700 0.621300 0.378700
+  ATOM=S POS= 0.371300 0.128700 0.371300
+  ATOM=S POS= 0.128700 0.371300 0.371300
+  ATOM=S POS= 0.621300 0.378700 0.378700
+  ATOM=S POS= 0.621300 0.621300 0.621300
+  ATOM=S POS= 0.378700 0.378700 0.621300
+  ATOM=S POS= 0.371300 0.371300 0.128700
+ 
 SPEC
-    ATOM=S Z=16 R=2.18    
+    ATOM=S Z=16 R=2.1
       EH=-1 -1 -1 -1  RSMH=1.08 1.08 1.08 1.08 
       EH2=-2 -2 -2  RSMH2=1.08 1.08 1.08 
       KMXA={kmxa}  LMX=3 LMXA=4 NMCORE=1
@@ -58,7 +60,7 @@ SPEC
       #Q=0 0.5 1 0 #s,p,d,f initial condition 
       #MMOM and Q are to set electron population. grep conf: in lmfa output
 
-    ATOM=CoTd Z=27 R=2.14 #PZ=0,3.9   
+    ATOM=CoTd Z=27 R=1.76 #PZ=0,3.9   
       EH=-1 -1 -1 -1  RSMH=1.03 1.03 1.03 1.03 
       EH2=-2 -2 -2  RSMH2=1.03 1.03 1.03 
       KMXA={kmxa}  LMX=3 LMXA=4 NMCORE=1
@@ -67,7 +69,7 @@ SPEC
       #Q=0 0.5 1 0 #s,p,d,f initial condition 
       #MMOM and Q are to set electron population. grep conf: in lmfa output
 
-    ATOM=Co Z=27 R=2.14 #PZ=0,3.9   
+    ATOM=Co Z=27 R=1.76 #PZ=0,3.9   
       EH=-1 -1 -1 -1  RSMH=1.03 1.03 1.03 1.03 
       EH2=-2 -2 -2  RSMH2=1.03 1.03 1.03 
       KMXA={kmxa}  LMX=3 LMXA=4 NMCORE=1
@@ -76,7 +78,7 @@ SPEC
       #Q=0 0.5 1 0 #s,p,d,f initial condition 
       #MMOM and Q are to set electron population. grep conf: in lmfa output
 
-    ATOM=Ni1 Z=28 R=1.91 #PZ=0,3.9   
+    ATOM=Ni1 Z=28 R=1.89 #PZ=0,3.9   
       EH=-1 -1 -1 -1  RSMH=0.95 0.95 0.95 0.95 
       EH2=-2 -2 -2  RSMH2=0.95 0.95 0.95 
       KMXA={kmxa}  LMX=3 LMXA=4 NMCORE=1
@@ -85,7 +87,7 @@ SPEC
       #Q=0 0.5 1 0 #s,p,d,f initial condition 
       #MMOM and Q are to set electron population. grep conf: in lmfa output
 
-    ATOM=Ni2 Z=28 R=1.91 #PZ=0,3.9   
+    ATOM=Ni2 Z=28 R=1.89 #PZ=0,3.9   
       EH=-1 -1 -1 -1  RSMH=0.95 0.95 0.95 0.95 
       EH2=-2 -2 -2  RSMH2=0.95 0.95 0.95 
       KMXA={kmxa}  LMX=3 LMXA=4 NMCORE=1

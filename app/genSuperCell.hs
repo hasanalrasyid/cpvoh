@@ -57,10 +57,15 @@ main = do
 
 type BasisVector = Matrix Double
 
+replace old new = intercalate new . splitOn old
+
 genPOSCAR opts = do
 --  putStrLn "genPOSCAR"
   (ibrav:cell_a:_) <- fmap ((map getReal) . words) $ readFile $ _inCellDM0 opts
-  sPoscar1 <- readProcess "cif2poscar.py" [_inCIF opts,"c","d"] []
+  inCIF0 <- readFile $ _inCIF opts
+  let vectorNew = fromMaybe "0.0 0.0 0.0" $ _vectorNew opts
+  let inCIF = replace "${dynVec}" vectorNew inCIF0
+  sPoscar1 <- readProcess "cif2poscar.py" ["c","d"] inCIF
   --                                                    |   +- direct not cartesian
   --                                                    +- full cell not p primitive
   let (Right crystalCell) = A.parseOnly fileParser $ T.pack sPoscar1
@@ -112,12 +117,11 @@ genPOSCAR opts = do
 
   site <- genSITE cell_a newCrystal $ _atomString opts
   ctrlFile <- case _ctrlTemplate opts of
-                Nothing -> return Nothing
-                Just o -> fmap Just $ readFile o
-  let (ctrlU:ctrlD:_) = fromMaybe [] $ fmap ( splitOn "#${site}" ) ctrlFile
-  putStrLn ctrlU
+                Nothing -> return ""
+                Just o -> readFile o
+  let ctrl = replace "#${site}" (unlines site) ctrlFile
+--  putStrLn ctrl
   putStrLns id site
-  putStrLn ctrlD
 --  putStrLn "!genPOSCAR"
 
 genSITE cell_a c ats = do
@@ -349,6 +353,7 @@ data Opts = Opts {
     _moveCoord :: String,
     _zeroAtom :: Maybe String,
     _ctrlTemplate :: Maybe String,
+    _vectorNew :: Maybe String,
     _atomString :: Maybe String,
     _newBasis :: Maybe String
                  } deriving Show
@@ -357,7 +362,7 @@ optsParser :: Parser Opts
 optsParser = Opts
              <$> strOption (long "input-CIF" <> short 'i' <> metavar "CIF"
                             <> help "file input from CIF file, can be acquired from CIF database")
-             <*> strOption (long "input-cpvo" <> short 'v' <> metavar "FORT19"
+             <*> strOption (long "input-cpvo" <> short 'u' <> metavar "FORT19"
                             <> help "file input from fort.19 in CPVO run, usually came out after opts" <> value "fort.19")
              <*> strOption (long "input-celldm0" <> short 'c' <> metavar "CELLDM0"
                             <> help "file input from celldm0 in CPVO run, usually defined as an input" <> value "celldm0")
@@ -372,6 +377,10 @@ optsParser = Opts
              <*> (optional $
                  strOption (long "ctrl-template" <> short 't' <> metavar "CTRLTEMPLATE"
                             <> help "template for ctrl of ecalj/lm7k" )
+                 )
+             <*> (optional $
+                 strOption (long "vector-update" <> short 'v' <> metavar "VECTORUPDATE"
+                            <> help "vector value of CIF template" )
                  )
              <*> (optional $
                  strOption (long "atom-name" <> short 's' <> metavar "ATNAME"
