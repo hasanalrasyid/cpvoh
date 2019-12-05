@@ -58,7 +58,7 @@ main = do
 type BasisVector = Matrix Double
 
 genPOSCAR opts = do
-  putStrLn "genPOSCAR"
+--  putStrLn "genPOSCAR"
   (ibrav:cell_a:_) <- fmap ((map getReal) . words) $ readFile $ _inCellDM0 opts
   sPoscar1 <- readProcess "cif2poscar.py" [_inCIF opts,"c","d"] []
   --                                                    |   +- direct not cartesian
@@ -68,9 +68,9 @@ genPOSCAR opts = do
         case _newBasis opts of
           Just s -> (scale cell_a . tr' . fromLists . chunksOf 3 . map getReal . words) s
           Nothing -> translatVector crystalCell
-  putStrLn $ "newBasis: " ++ show newBasis
-  putStrLn $ show crystalCell
-  hLine
+--  putStrLn $ "newBasis: " ++ show newBasis
+--  putStrLn $ show crystalCell
+--  hLine
   let target = map getReal $ splitOn "x" $ _inSize opts :: [Double]
       doubleSize@(d1:d2:d3:_)  = map (\x -> fromIntegral $ ceiling $ (x*2-1)) target
       expander = [ fromList [x,y,z] | x <- [-d1..d1]
@@ -86,13 +86,13 @@ genPOSCAR opts = do
 --putStrLn $ show $ (<>) (fromRows fracCart) $ translatVector crystalCell
 --steps to generate new cell:
 --1. expand the crystal into oldXYZ=[-1..1]
-  putStrLn $ showCoords expandedCrystal
+--  putStrLn $ showCoords expandedCrystal
 --2. generate cartesian from 1
-  putStrLn $ show $ length $ cartesian expandedCrystal
+--  putStrLn $ show $ length $ cartesian expandedCrystal
 --3. generate new fract coord from new basis vector
 --    Xf = Xc * (inv B)
-  let mVector = fromList $ map getReal $ wordsBy (== ',') $ _moveCoord opts
-  putStrLn $ show mVector
+  let mVector = fromList $ map getReal $ words $ _moveCoord opts
+--  putStrLn $ show mVector
   let frac' = (fromRows $ map (\x -> x - mVector) $ cartesian expandedCrystal) <> (inv newBasis)
 --4. filter 3 for under 1
   let newAtoms = filter under1 $ zip (getAtom expandedCrystal) $ map toList $ toRows frac'
@@ -100,15 +100,30 @@ genPOSCAR opts = do
       newCrystal = crystalCell { translatVector = newBasis
                                , atomList = map genAtom' $ group newAtoms
                                }
-  putStrLn $ show newCrystal
-  putStrLn $ dispf 6 $ fromRows $ fractional newCrystal
-  putStrLns $ zip [1..] $ atomCoord cartesian newCrystal
-  putStrLns (\(a,(b,c)) -> unwords [show a, show b, dispv c])
-    $ zip [1..] $ atomCoord fractional newCrystal
-  putStrLn $ dispf 6 $ translatVector newCrystal
-  putStrLn "!genPOSCAR"
+--  putStrLn $ show newCrystal
+--  putStrLns (\(a,(b,c)) -> unwords [show a, show b, dispv c])
+--    $ zip [1..] $ atomCoord fractional newCrystal
+--  putStrLn $ dispf 6 $ translatVector newCrystal
+--  putStrLns (\(a,(b,c)) -> unwords [show a, show b, dispv c])
+--    $ zip [1..] $ atomCoord cartesian newCrystal
+--  hLine
+--  putStrLn $ dispf 6 $ (fromRows $ cartesian newCrystal) <> (inv $ scale cell_a $ diagl [1,1,1])
+--  putStrLns show $ getAtom newCrystal
 
-dispv v = unwords $ map show $ toList v
+  site <- genSITE cell_a newCrystal $ _atomString opts
+  putStrLns id site
+--  putStrLn "!genPOSCAR"
+
+genSITE cell_a c ats = do
+  let p = toRows $ (fromRows $ cartesian c) <> (inv $ scale cell_a $ diagl [1,1,1])
+  let a = case ats of
+            Nothing -> map (\(AtomSymbol s) -> s) $ getAtom c
+            Just s -> words s
+      strSITE (a,b) = unwords ["ATOM="++a,"POS=",dispv b]
+  putStrLn $ unwords $ "#":a
+  return $ map strSITE $ zip a p
+
+dispv v = unwords $ map (printf "%.6f") $ toList v
 --dispv v = unwords $ map (\x -> printf "%.6f" x) $ toList v
 
 putStrLns s = mapM_ (putStrLn . s)
@@ -327,6 +342,7 @@ data Opts = Opts {
     _inSize :: String,
     _moveCoord :: String,
     _zeroAtom :: Maybe String,
+    _atomString :: Maybe String,
     _newBasis :: Maybe String
                  } deriving Show
 
@@ -345,6 +361,10 @@ optsParser = Opts
              <*> (optional $
                  strOption (long "atom-zero" <> short 'z' <> metavar "ATINDEX"
                             <> help "atom index that become init coordinate" )
+                 )
+             <*> (optional $
+                 strOption (long "atom-name" <> short 's' <> metavar "ATNAME"
+                            <> help "atom strings to be pasted as ATOM=a " )
                  )
              <*> (optional $
                  strOption (long "new-basis-vector" <> short 'b' <> metavar "Va Vb Vc"
