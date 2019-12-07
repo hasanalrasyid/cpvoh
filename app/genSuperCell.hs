@@ -63,8 +63,11 @@ genPOSCAR opts = do
 --  putStrLn "genPOSCAR"
   (ibrav:cell_a:_) <- fmap ((map getReal) . words) $ readFile $ _inCellDM0 opts
   inCIF0 <- readFile $ _inCIF opts
-  let vectorNew = fromMaybe "0.0 0.0 0.0" $ _vectorNew opts
-  let inCIF = replace "${dynVec}" vectorNew inCIF0
+  let vNew1 = fromList $ map getReal $ words $ fromMaybe "0.0 0.0 0.0" $ _vectorNew opts
+  let forceV = fromList $ map getReal $ words $ fromMaybe "0.0 0.0 0.0" $ _forceVec opts
+  let vNew = vNew1 + forceV
+  putStrLn $ show forceV
+  let inCIF = replace "${dynVec}" (dispv vNew) inCIF0
   sPoscar1 <- readProcess "cif2poscar.py" ["c","d"] inCIF
   --                                                    |   +- direct not cartesian
   --                                                    +- full cell not p primitive
@@ -354,6 +357,7 @@ data Opts = Opts {
     _zeroAtom :: Maybe String,
     _ctrlTemplate :: Maybe String,
     _vectorNew :: Maybe String,
+    _forceVec :: Maybe String,
     _atomString :: Maybe String,
     _newBasis :: Maybe String
                  } deriving Show
@@ -381,6 +385,10 @@ optsParser = Opts
              <*> (optional $
                  strOption (long "vector-update" <> short 'v' <> metavar "VECTORUPDATE"
                             <> help "vector value of CIF template" )
+                 )
+             <*> (optional $
+                 strOption (long "force" <> short 'f' <> metavar "FORCEVECTOR"
+                            <> help "force to apply upon dynVec" )
                  )
              <*> (optional $
                  strOption (long "atom-name" <> short 's' <> metavar "ATNAME"
