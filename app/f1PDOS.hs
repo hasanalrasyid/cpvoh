@@ -42,7 +42,7 @@ getRange s = map (read :: String -> Double) $ splitOn ":" s
 
 main :: IO ()
 main = do
-  opts@(Opts fOut spinFlip noTDOS useOldBw judulUtama printSpin yr xr atomOs daftarLengkap) <- execParser withHelp
+  opts@(Opts fOut spinFlip compactMode noTDOS useOldBw judulUtama printSpin yr xr atomOs daftarLengkap) <- execParser withHelp
   let initSetting = defSetting { _titles = judulUtama
                                , _yrange = yr
                                , _xrange = xr
@@ -169,6 +169,7 @@ plotPDOS  useOldBw atomOs (daftarLengkap:sisa) colorId (iniSetting,res) = do
 data Opts = Opts {
     _fOut       :: String,
     _spinFlip   :: Bool,
+    _compactMode :: Bool,
     _totalDOS   :: Bool,
     _useOldBw   :: Bool,
     _judulUtama :: String,
@@ -185,6 +186,8 @@ optsParser = Opts
                            help "target output file" <> value "test")
              <*> switch ( long "flip-spin" <> short 'f'
                       <> help "Flip up and down spin, default is False")
+             <*> switch ( long "compact-mode" <> short 'c'
+                      <> help "Put all graphs in single frame")
              <*> switch ( long "no-tdos" <> short 'd'
                       <> help "Remove Total DOS")
              <*> switch ( long "oldbw" <> short 'b'
