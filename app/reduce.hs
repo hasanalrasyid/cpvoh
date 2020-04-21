@@ -14,6 +14,7 @@ import System.IO (isEOF)
 import Control.Monad (unless)
 import Data.List
 import System.Environment (getArgs)
+import Prelude hiding ((<>))
 
 main :: IO ()
 main = do

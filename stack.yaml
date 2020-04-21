@@ -18,7 +18,7 @@
 #
 # resolver: ./custom-snapshot.yaml
 # resolver: https://example.com/snapshots/2018-01-01.yaml
-resolver: lts-11.3 
+resolver: lts-14.27
 
 # User packages to be built.
 # Various formats can be used as shown in the example below.
@@ -40,7 +40,8 @@ packages:
 # (e.g., acme-missiles-0.3)
 # extra-deps: []
 extra-deps:
-  - fortran-src-0.2.1.1@sha256:5f1b6b15cfdae6105c7b774643a09c2b87174d163a9078b6ddf6d99d79e25220
+  - fortran-src-0.4.0@sha256:c1ffc55546e01b6a7443d9ed4d29c1adcebd686964f5b98e62cf6ee1f6ac6ab7,4955
+# - fortran-src-0.2.1.1@sha256:5f1b6b15cfdae6105c7b774643a09c2b87174d163a9078b6ddf6d99d79e25220
 
 # Override default flag values for local packages and extra-deps
 # flags: {}
