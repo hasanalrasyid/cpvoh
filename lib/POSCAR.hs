@@ -55,7 +55,7 @@ parseCart = do
   skipSpace
   a3 <- double
   rs <- takeTill isEndOfLine
-  return $ Coord rs $ (3 |> [a1,a2,a3])
+  return $ Coord rs $ Cart (3 |> [a1,a2,a3])
 
 parseCellParam :: Parser (Int, [Vars Double])
 parseCellParam = do
