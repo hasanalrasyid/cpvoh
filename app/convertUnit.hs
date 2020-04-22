@@ -1,5 +1,5 @@
 #!/usr/bin/env stack
---stack --resolver lts-11.3 --install-ghc runghc --stack-yaml /home/aku/kanazawa/dev/cpvoh/stack.yaml
+--stack --resolver lts-14.27 --install-ghc runghc --stack-yaml /home/aku/kanazawa/dev/cpvoh/stack.yaml
 
 
 {-# LANGUAGE OverloadedStrings #-}
