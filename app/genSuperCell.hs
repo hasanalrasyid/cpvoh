@@ -30,7 +30,9 @@ import Data.Semigroup
 
 deg2rad deg = deg * pi / 180
 
-v3fromList [a,b,c] = V3 a b c
+v3fromList :: [Double] -> V3 Double
+v3fromList (a:b:c:_) = V3 a b c
+v3fromList _ = V3 999 999 999
 
 main :: IO ()
 main = do
@@ -80,7 +82,8 @@ genPOSCAR opts = do
 --  putStrLn $ show crystalCell
 --  hLine
   let target = map getReal $ splitOn "x" $ _inSize opts :: [Double]
-      doubleSize@(d1:d2:d3:_)  = map (\x -> fromIntegral $ ceiling $ (x*2-1)) target
+      doubleSizeInt  = map ceiling $ map (\x -> x*2-1 ) target :: [Integer]
+      doubleSize@(d1:d2:d3:_)  = map fromIntegral doubleSizeInt :: [Double]
       expander = [ fromList [x,y,z] | x <- [-d1..d1]
                                     , y <- [-d2..d2]
                                     , z <- [-d3..d3]
@@ -132,7 +135,7 @@ genSITE cell_a c ats = do
   let a = case ats of
             Nothing -> map (\(AtomSymbol s) -> s) $ getAtom c
             Just s -> words s
-      strSITE (a,b) = unwords ["ATOM="++a,"POS=",dispv b]
+      strSITE (aa,b) = unwords ["ATOM="++aa,"POS=",dispv b]
   putStrLn $ unwords $ "#":a
   return $ map strSITE $ zip a p
 
@@ -141,13 +144,15 @@ dispv v = unwords $ map (printf "%.6f") $ toList v
 
 putStrLns s = mapM_ (putStrLn . s)
 
-genAtom' a@((at,_):_) = Atoms at $ map (\(_,x) -> Coord "" $ fromList x) a
+genAtom' a@((at,_):_) = Atoms at $ map (\(_,x) -> Coord "" $ Cart $ fromList x) a
+genAtom' _ = ErrAtoms
 
 under1 (_, (v1:v2:v3:_))
   |    0 <= v1 && v1 < 1
     && 0 <= v2 && v2 < 1
     && 0 <= v3 && v3 < 1 = True
   | otherwise = False
+under1 _ = False
 
 hLine = putStrLn $ replicate 70 '='
 
@@ -159,9 +164,12 @@ class Structure a where
   atomCoord  :: (a -> [Vector Double]) -> a -> [(Atom,Vector Double)]
 
 instance Structure Crystal where -- Crystal have to be saved as fractional to real lattice
-  cartesian  c@(Crystal _ _ tReal _  ) = toRows $ (getCoords c) <> tReal
-  fractional c                         = toRows $ getCoords c
-  getAtom    (Crystal _ _ _       atL) =
+  cartesian  c@(Crystal _ _ tReal _ _  ) = toRows $ (getCoords c) <> tReal
+  cartesian ErrCrystal = []
+  fractional ErrCrystal = []
+  fractional c                           = toRows $ getCoords c
+  getAtom ErrCrystal = []
+  getAtom    (Crystal _ _ _       _ atL) =
     let at = map atomSpec atL
         ct = map (length . positions) atL
      in concat $ zipWith replicate ct at
@@ -172,11 +180,11 @@ instance Structure Crystal where -- Crystal have to be saved as fractional to re
      in zip ats cs
 
 
-showCoords x = show $ fromRows $ concat $ map (map toCart . positions) $ atomList x
-getCoords  x = fromRows $ concat $ map (map toCart . positions) $ atomList x
+showCoords x = show $ fromRows $ map fromCart $ concat $ map (map toCart . positions) $ atomList x
+getCoords  x = fromRows $ map fromCart $ concat $ map (map toCart . positions) $ atomList x
 getCoordsNAtoms x =
   let c  = map (map toCart . positions) $ atomList x
-      cs = fromRows $ concat c
+      cs = fromRows $ map fromCart $ concat c
       atomCounts = map length c
       atoms = concat $ zipWith (\a b -> replicate a b) atomCounts $ map atomSpec $ atomList x
    in atoms
@@ -199,8 +207,9 @@ applyToAtoms f c =
 applyNewPos :: (Vector Double -> Vector Double) -> Crystal -> Crystal
 applyNewPos f c =
   let updateCoord _ ErrCoord = ErrCoord
-      updateCoord g (Coord r t) = Coord r $ g t
+      updateCoord g (Coord r (Cart t)) = Coord r $ Cart $ g t
       genPos (Atoms a ps) = Atoms a $ map (updateCoord f) ps
+      genPos ErrAtoms = ErrAtoms
    in applyToAtoms genPos c
 
 skipLine :: A.Parser ()
@@ -236,12 +245,14 @@ fileParser = do
   return $ ( Crystal { bravType = 0
                      , celldm = LatConst latParam
                      , translatVector = fromColumns latVec
+                     , translatVectorReciprocal = inv $ fromColumns latVec
                      , atomList = map genAtom $ group $ zip atSym latCoord
                      }
            )
 
-genCoord s = Coord "" s
+genCoord s = Coord "" $ Cart s
 genAtom as@((s,_):_) = Atoms (AtomSymbol s) (map (genCoord . snd) as)
+genAtom _ = ErrAtoms
 
 parseAtCount :: A.Parser [Int]
 parseAtCount = do
@@ -295,7 +306,7 @@ genPrimitive opts = do
   putStrLn $ unlines $ filter (not . null) $ concat $ map lines h
   let xnel = genXNEL 0 $ map words $ filter (isInfixOf "IS") h
   putStrLn $ "XNEL " ++ show xnel
-  putStrLn $ show (floor $ xnel/2) ++ "*1.0"
+  putStrLn $ show (floor $ xnel/2 :: Integer) ++ "*1.0"
   putStrLn $ "allSize = " ++ show (map (+1) allSize)
   let newCell_a = cell_a * fromIntegral (1 + maximum allSize)
   putStrLn $ "cell_a * maxSize = " ++ show newCell_a
@@ -304,7 +315,9 @@ genPrimitive opts = do
 genXNEL res [] = res
 genXNEL res ((_:sAts:sZV:_):ls) =
   genXNEL ((+) res $ foldr (*) 1.0 $ map getReal [sAts,sZV]) ls
+genXNEL _ _ = -1
 
+showVec :: Int -> V3 Double -> String
 showVec n (V3 a b c) = unwords $ map (printf (concat ["  %.",show n,"f"])) [a,b,c]
 
 genMirror _ _ r [] = r
@@ -324,7 +337,7 @@ genMirror t m res (a:cs)
 
 genMirrorFromSingle :: M33 Double -> V3 Double -> (Integer,Integer,Integer)
                     -> V3 Double
-genMirrorFromSingle m@(V3 v1 v2 v3) l all@(n1,n2,n3) =
+genMirrorFromSingle m@(V3 v1 v2 v3) l (n1,n2,n3) =
   foldr (+) l $ zipWith calcMove [v1,v2,v3] [n1,n2,n3]
     where
       calcMove v' n' = fromIntegral n' *^ v'
@@ -340,6 +353,8 @@ genLatticeVector :: Double -> [Double] -> M33 Double
 genLatticeVector 2 (a:_) = (a/2) *!! V3 (V3 0.0 1.0 1.0)
                                         (V3 1.0 0.0 1.0)
                                         (V3 1.0 1.0 0.0)
+
+genLatticeVector _ _ = identity -- unimplemented term
 
 getReal :: String -> Double
 getReal s = case readReal s of

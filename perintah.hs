@@ -4,4 +4,4 @@
  -t sample/ctrl.ncsib.template -v $1
 
 # "0.25770 0.25770 0.25770"
-
+# ./perintah.hs 0.25770 0.25770 0.25770

@@ -1,5 +1,5 @@
 if [ -z "$1" ]; then
-  tipe="exe:t3"
+  tipe="cpvoh:exe:t3"
 else
   tipe=$1
 fi
@@ -9,4 +9,4 @@ else
   dev= ""
 fi
 
-LD_LIBRARY_PATH=./foreign/lib:$LD_LIBRARY_PATH ghcid -c "stack ghci --main-is cpvoh:${tipe} --only-main --ghci-options '-Wall $dev'"
+LD_LIBRARY_PATH=./foreign/lib:$LD_LIBRARY_PATH ghcid -c "stack ghci --main-is ${tipe} --only-main --ghci-options '-Wall $dev'"

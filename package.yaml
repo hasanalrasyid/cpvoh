@@ -160,15 +160,15 @@ executables:
     - split
     - text
 
-      #  x:
-      #    main        : Main.hs
-      #    source-dirs : app
-      #    ghc-options :
-      #    - -threaded
-      #    - -rtsopts
-      #    - -with-rtsopts=-N
-      #    dependencies:
-      #    - cpvoh
+  x:
+    main        : genSuperCell.hs
+    source-dirs : app
+    ghc-options :
+    - -threaded
+    - -rtsopts
+    - -with-rtsopts=-N
+    dependencies:
+    - cpvoh
 
 tests:
   tf1:
