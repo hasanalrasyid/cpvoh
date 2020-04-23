@@ -27,7 +27,7 @@ import qualified Data.Text as T
 import Numeric.LinearAlgebra hiding ((<>))
 import Numeric.LinearAlgebra.Data
 import Data.Semigroup
-
+import System.IO (hPutStrLn,stderr)
 deg2rad deg = deg * pi / 180
 
 v3fromList :: [Double] -> V3 Double
@@ -68,19 +68,23 @@ genPOSCAR opts = do
   let vNew1 = fromList $ map getReal $ words $ fromMaybe "0.0 0.0 0.0" $ _vectorNew opts
   let forceV = fromList $ map getReal $ words $ fromMaybe "0.0 0.0 0.0" $ _forceVec opts
   let vNew = vNew1 + forceV
-  putStrLn $ show forceV
+  hPutStrLn stderr $ show forceV
   let inCIF = replace "${dynVec}" (dispv vNew) inCIF0
   sPoscar1 <- readProcess "cif2poscar.py" ["c","d"] inCIF
   --                                                    |   +- direct not cartesian
   --                                                    +- full cell not p primitive
   let (Right crystalCell) = A.parseOnly fileParser $ T.pack sPoscar1
+  hPutStrLn stderr $ show opts
   let newBasis =
-        case _newBasis opts of
-          Just s -> (scale cell_a . tr' . fromLists . chunksOf 3 . map getReal . words) s
-          Nothing -> translatVector crystalCell
+        if _fullCell opts then
+                            case _newBasis opts of
+                              Just s -> (scale cell_a . tr' . fromLists . chunksOf 3 . map getReal . words) s
+                              Nothing -> translatVector crystalCell
+                          else translatVector crystalCell
 --  putStrLn $ "newBasis: " ++ show newBasis
 --  putStrLn $ show crystalCell
 --  hLine
+  hPutStrLn stderr $ "newBasis: " ++ show newBasis
   let target = map getReal $ splitOn "x" $ _inSize opts :: [Double]
       doubleSizeInt  = map ceiling $ map (\x -> x*2-1 ) target :: [Integer]
       doubleSize@(d1:d2:d3:_)  = map fromIntegral doubleSizeInt :: [Double]
@@ -92,7 +96,7 @@ genPOSCAR opts = do
 --  let crystal1 = applyNewPos ( + fromList [1,1,1]) crystalCell
   --let css = foldr (<>) crystalCell $ map (\x -> applyNewPos (+ x) crystalCell) expander
   let expandedCrystal = expand crystalCell expander
---  putStrLn $ showCoords $ crystalCell <>  crystal1
+--  putStrLn $ showCoords $ expandedCrystal
 --when we want to generate coordinates from this ...
 --putStrLn $ show $ (<>) (fromRows fracCart) $ translatVector crystalCell
 --steps to generate new cell:
@@ -374,7 +378,8 @@ data Opts = Opts {
     _vectorNew :: Maybe String,
     _forceVec :: Maybe String,
     _atomString :: Maybe String,
-    _newBasis :: Maybe String
+    _newBasis :: Maybe String,
+    _fullCell :: Bool
                  } deriving Show
 
 optsParser :: Parser Opts
@@ -386,7 +391,7 @@ optsParser = Opts
              <*> strOption (long "input-celldm0" <> short 'c' <> metavar "CELLDM0"
                             <> help "file input from celldm0 in CPVO run, usually defined as an input" <> value "celldm0")
              <*> strOption (long "input-size" <> short 's' <> metavar "N1xN2xN3"
-                            <> help "Expansion size of the supercell, based on new basis vectors: 2x2x1" <> value "2x2x1")
+                            <> help "Expansion size of the supercell, based on new basis vectors: 2x2x1" <> value "1x1x1")
              <*> strOption (long "move" <> short 'm' <> metavar "X,Y,Z"
                             <> help "Move all crystal by m:(x y z), following c' = c - m" <> value "0,0,0" )
              <*> (optional $
@@ -413,6 +418,7 @@ optsParser = Opts
                  strOption (long "new-basis-vector" <> short 'b' <> metavar "Va Vb Vc"
                             <> help "new real cart basis vector, read in row based" )
                  )
+             <*> switch (long "full-cell" <> short 'l' <> help "generate Full cell, in case of IBRAV=2, then generate for cubic cell instead of primitive cell" )
 
 withHelp :: ParserInfo Opts
 withHelp = info
