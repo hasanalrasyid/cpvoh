@@ -71,8 +71,8 @@ genPOSCAR opts = do
   hPutStrLn stderr $ show forceV
   let inCIF = replace "${dynVec}" (dispv vNew) inCIF0
   sPoscar1 <- readProcess "cif2poscar.py" ["c","d"] inCIF
-  --                                                    |   +- direct not cartesian
-  --                                                    +- full cell not p primitive
+  --                                        |   +- direct not cartesian
+  --                                        +- full cell not p primitive
   let (Right crystalCell) = A.parseOnly fileParser $ T.pack sPoscar1
   hPutStrLn stderr $ show opts
   let newBasis =
@@ -85,6 +85,7 @@ genPOSCAR opts = do
 --  putStrLn $ show crystalCell
 --  hLine
   hPutStrLn stderr $ "newBasis: " ++ show newBasis
+  hPutStrLn stderr $ "crystalCell:" ++ showCoords crystalCell
   let target = map getReal $ splitOn "x" $ _inSize opts :: [Double]
       doubleSizeInt  = map ceiling $ map (\x -> x*2-1 ) target :: [Integer]
       doubleSize@(d1:d2:d3:_)  = map fromIntegral doubleSizeInt :: [Double]
@@ -115,7 +116,7 @@ genPOSCAR opts = do
       newCrystal = crystalCell { translatVector = newBasis
                                , atomList = map genAtom' $ group newAtoms
                                }
---  putStrLn $ show newCrystal
+  hPutStrLn stderr $ "newCrystal:" ++ showCoords newCrystal
 --  putStrLns (\(a,(b,c)) -> unwords [show a, show b, dispv c])
 --    $ zip [1..] $ atomCoord fractional newCrystal
 --  putStrLn $ dispf 6 $ translatVector newCrystal
@@ -134,8 +135,9 @@ genPOSCAR opts = do
   putStrLns id site
 --  putStrLn "!genPOSCAR"
 
+-- genSITE should only do creating showcase
 genSITE cell_a c ats = do
-  let p = toRows $ (fromRows $ cartesian c) <> (inv $ scale cell_a $ diagl [1,1,1])
+  let p = toRows $ (fromRows $ fractional c) -- <> (inv $ scale cell_a $ diagl [1,1,1])
   let a = case ats of
             Nothing -> map (\(AtomSymbol s) -> s) $ getAtom c
             Just s -> words s
