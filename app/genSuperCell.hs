@@ -65,8 +65,8 @@ genPOSCAR opts = do
 --  putStrLn "genPOSCAR"
   (ibrav:cell_a:_) <- fmap ((map getReal) . words) $ readFile $ _inCellDM0 opts
   inCIF0 <- readFile $ _inCIF opts
-  let vNew1 = fromList $ map getReal $ words $ fromMaybe "0.0 0.0 0.0" $ _vectorNew opts
-  let forceV = fromList $ map getReal $ words $ fromMaybe "0.0 0.0 0.0" $ _forceVec opts
+  let vNew1  = fromList $ map getReal $ splitOn ":" $ fromMaybe "0.0:0.0:0.0" $ _vectorNew opts
+  let forceV = fromList $ map getReal $ splitOn ":" $ fromMaybe "0.0:0.0:0.0" $ _forceVec opts
   let vNew = vNew1 + forceV
   hPutStrLn stderr $ show forceV
   let inCIF = replace "${dynVec}" (dispv vNew) inCIF0
