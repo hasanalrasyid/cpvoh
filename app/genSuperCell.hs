@@ -70,7 +70,7 @@ genPOSCAR opts = do
   let vNew = vNew1 + forceV
   hPutStrLn stderr $ show forceV
   let inCIF = replace "${dynVec}" (dispv vNew) inCIF0
-  sPoscar1 <- readProcess "cif2poscar.py" ["c","d"] inCIF
+  sPoscar1 <- readProcess "cif2poscar.pyx" ["c","d"] inCIF
   --                                        |   +- direct not cartesian
   --                                        +- full cell not p primitive
   let (Right crystalCell) = A.parseOnly fileParser $ T.pack sPoscar1
