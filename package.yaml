@@ -65,24 +65,6 @@ library:
   ghc-options     : -Wall -pgmlg++
 
 executables:
-  test:
-    #c-sources:           app/test.c
-    #cc-options:          -Wall -O2
-    #extra-libraries:     -lm
-    extra-lib-dirs  : foreign/lib
-    extra-libraries : test
-    main            : test.hs
-    source-dirs     : app
-    ghc-options     :
-    - -threaded
-    - -rtsopts
-    - -with-rtsopts=-N
-    dependencies    :
-    - cpvoh
-    - text-format
-    - split
-    - text
-
   reduce :
     main        : reduce.hs
     source-dirs : app
@@ -90,6 +72,7 @@ executables:
     - -threaded
     - -rtsopts
     - -with-rtsopts=-N
+    - -pgmlmpif90
     dependencies:
     - cpvoh
     - bytestring
@@ -101,6 +84,7 @@ executables:
     - -threaded
     - -rtsopts
     - -with-rtsopts=-N
+    - -pgmlmpif90
     dependencies:
     - cpvoh
     #    - text-format
