@@ -19,6 +19,7 @@ config = {
 #           memory = pkgs.haskellPackages.callHackage "memory" "0.15.0" {};
 #           HsYAML = pkgs.haskellPackages.callHackage "HsYAML" "0.2.1.0" {};
 #           pandoc = pkgs.haskellPackages.callHackage "pandoc" "2.9.1.1" {};
+            fortran-src = pkgs.haskell.lib.dontCheck (pkgs.haskellPackages.callHackage "fortran-src" "0.4.0" {});
 #           pandoc = pkgs.haskellPackages.callCabal2nix "pandoc" (
 #             builtins.fetchTarball {
 #               url = "https://github.com/jgm/pandoc/archive/7c6dbd37eb3e785f875e0030d723e422db72d453.zip";
@@ -50,7 +51,7 @@ pkgs.haskell.lib.buildStackProject {
   inherit ghc;
   name = "cpvoh";
   buildInputs = with pkgs; [ git protobuf zlib gcc.cc gfortran gfortran.cc haskellPackages.happy haskellPackages.alex
-#  fftw blas liblapack
+  fftw blas liblapack
 #  pkgs.pandoc
   openmpi_static
   which hwloc openssh
