@@ -36,7 +36,7 @@ config = {
 npkgs = (import ./nixpkgs {inherit config;});
 newestpkgs = (import <nixpkgs> {});
 pkgs = npkgs.pkgs;
-ghc = pkgs.haskellPackages.ghcWithPackages (ps: with ps; [ ] );
+ghc = pkgs.haskellPackages.ghcWithPackages (ps: with ps; [ fortran-src ] );
 
 # this refers to openmpi-4.0.3
 openmpi_static = newestpkgs.openmpi.overrideAttrs (oldAttrs: rec {
@@ -50,7 +50,7 @@ pkgs.haskell.lib.buildStackProject {
   inherit ghc;
   name = "cpvoh";
   buildInputs = with pkgs; [ git protobuf zlib gcc.cc gfortran gfortran.cc haskellPackages.happy haskellPackages.alex
-  fftw blas liblapack
+#  fftw blas liblapack
 #  pkgs.pandoc
   openmpi_static
   which hwloc openssh

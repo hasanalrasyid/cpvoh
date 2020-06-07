@@ -32,14 +32,14 @@ dependencies:
 #- text-format
 #- inline-c
 #- vector
-#- optparse-applicative # ---  needed by zmat2xyz
-#- linear
-#- fortran-src          # --- !needed by zmat2xyz
+- optparse-applicative # ---  needed by zmat2xyz
+- linear
+- fortran-src          # --- !needed by zmat2xyz
 #- shake
 #- template-haskell
 - directory
 #- MissingH
-#- filepath
+- filepath
 #
 #- machines
 - attoparsec
@@ -128,6 +128,7 @@ executables:
     - -threaded
     - -rtsopts
     - -with-rtsopts=-N
+    - -pgmlmpif90
     dependencies:
     - cpvoh
     - text-format
@@ -141,6 +142,7 @@ executables:
     - -threaded
     - -rtsopts
     - -with-rtsopts=-N
+    - -pgmlmpif90
     dependencies:
     - cpvoh
     - text-format
@@ -154,6 +156,7 @@ executables:
     - -threaded
     - -rtsopts
     - -with-rtsopts=-N
+    - -pgmlmpif90
     dependencies:
     - cpvoh
     - text-format
@@ -167,6 +170,7 @@ executables:
     - -threaded
     - -rtsopts
     - -with-rtsopts=-N
+    - -pgmlmpif90
     dependencies:
     - cpvoh
 
