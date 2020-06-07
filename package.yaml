@@ -26,31 +26,31 @@ dependencies:
 - process
 - hmatrix
 - boxes
-- foldl
-- turtle
+#- foldl
+#- turtle
 - split
-- text-format
-- inline-c
-- vector
-- optparse-applicative # ---  needed by zmat2xyz
-- linear
-- fortran-src          # --- !needed by zmat2xyz
-- shake
-- template-haskell
+#- text-format
+#- inline-c
+#- vector
+#- optparse-applicative # ---  needed by zmat2xyz
+#- linear
+#- fortran-src          # --- !needed by zmat2xyz
+#- shake
+#- template-haskell
 - directory
-- MissingH
-- filepath
-
-- machines
+#- MissingH
+#- filepath
+#
+#- machines
 - attoparsec
-
+#
 - string-qq
-
-- parsec
-- lens
-  #- cryptohash           # ---  temporary needed
-  #- base16-bytestring           # --- !temporary needed
-  #- bytestring           # --- !temporary needed
+#
+#- parsec
+#- lens
+#  #- cryptohash           # ---  temporary needed
+#  #- base16-bytestring           # --- !temporary needed
+#  #- bytestring           # --- !temporary needed
 
 library:
   source-dirs     :

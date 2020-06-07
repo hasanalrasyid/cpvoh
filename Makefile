@@ -1,5 +1,5 @@
 shake:
-	stack build cpvoh:lib
+	stack build --verbose cpvoh:lib
 #	./build.hs
 #	stack exec ./build.shake.sh
 
