@@ -407,7 +407,7 @@ susunOrbs job foldernya tailer' invStat ((urutan,((jumlah,nomor,_),_,listOrbital
 susunTot :: String -> String -> Bool -> Int -> String
 susunTot foldernya tailer' flipSpin spin =
   unwords [ Text.Printf.printf
-              "'%s/dos.tot.%s' u ($1*rydberg):($%d *( %d ) *( %d ) / rydberg ) w l lw 2 lc rgb 'black' notitle "
+              "'%s/dos.tot.%s' u ($1*rydberg):($%d *( %d ) *( %d ) / rydberg ) w l lw 1 lc rgb 'black' notitle "
               (T.pack foldernya)
               (T.pack tailer')
               (delta (spin < 2) 2 (3) :: Int)
