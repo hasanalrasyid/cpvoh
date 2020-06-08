@@ -55,10 +55,13 @@ pkgs.haskell.lib.buildStackProject {
 #  pkgs.pandoc
   openmpi_static
   which hwloc openssh
+  gnuplot ghostscript perl
   ];
   doHaddock = false;
   doCheck = false;
   shellHook = ''
+    LD_LIBRARY_PATH=$LD_LIBRARY_PATH:/home/aku/opt/python3-3.8.2/lib
+    PATH=$PATH:/usr/local/bin:/usr/bin:/home/aku/opt/python3-3.8.2/bin
 #   . ./.inline-fortran/env
   echo shellHook out
   '';
