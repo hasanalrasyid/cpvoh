@@ -1,5 +1,10 @@
 #./app/f1PDOS.hs -f -t "QSGW" -a all -y "-20:20" -x "-8:3" -o temp/kadal -b -r "7@p-Ni:Ni label@dx2My2:d1" ext.nico2o4.invB/nico2o4.invB.11G20:1:Majority
 #stack exec f1 -- -t "QSGW" -a all -y "-20:20" -x "-9:3" -o temp/kadal -b -r "Ni:Ni 3d@d-Co:Co 3d@d-CoTd:Co_{Td} 3d@d-O:O 2p@p" nico2o4.invB.0GGA:1:Majority
-stack exec f1 -- -t "QSGW" -a all -y "-20:20" -x "-9:3" -o temp/kadal -b -r "Ni:Ni_{Oct} 3d@d-Co:Co_{Oct} 3d@d-NiTd:Ni_{Td} 3d@d-CoTd:Co_{Td} 3d@d-O:O 2p@p" DONE.nico2o4invA/nico2o4.invA.0GGA:1:Majority
+#stack exec f1 -- -t "QSGW" -a all -y "-20:20" -x "-9:3" -o temp/f01.invA.0GGA -b -r "Ni:Ni_{Oct} 3d@d-Co:Co_{Oct} 3d@d-NiTd:Ni_{Td} 3d@d-CoTd:Co_{Td} 3d@d-O:O 2p@p" DONE.nico2o4invA/nico2o4.invA.0GGA:1:Majority
+#stack exec f1 -- -t "QSGW" -a all -y "-20:20" -x "-9:3" -o temp/f01.invA.1G0 -b -r "Ni:Ni_{Oct} 3d@d-Co:Co_{Oct} 3d@d-NiTd:Ni_{Td} 3d@d-CoTd:Co_{Td} 3d@d-O:O 2p@p" DONE.nico2o4invA/nico2o4.invA.1G0:1:Majority
+#stack exec f1 -- -t "QSGW" -a all -y "-20:20" -x "-9:3" -o temp/f01.invA.QSGW -b -r "Ni:Ni_{Oct} 3d@d-Co:Co_{Oct} 3d@d-NiTd:Ni_{Td} 3d@d-CoTd:Co_{Td} 3d@d-O:O 2p@p" DONE.nico2o4invA/nico2o4.invA.19G20:1:Majority
+stack exec f1 -- -t "QSGW"    -a all -y "-20:20" -x "-9:3" -o temp/f01.normal.0GGA -b -r "Ni:Ni 3d@d-Co:Co 3d@d-O:O 2p@p" DONE.nico2o4.normal/nico2o4.0GGA:1:Majority
+stack exec f1 -- -t "QSGW"    -a all -y "-20:20" -x "-9:3" -o temp/f01.normal.1G0  -b -r "Ni:Ni 3d@d-Co:Co 3d@d-O:O 2p@p" DONE.nico2o4.normal/nico2o4.1G0:1:Majority
+stack exec f1 -- -t "QSGW" -f -a all -y "-20:20" -x "-9:3" -o temp/f01.normal.QSGW -b -r "Ni:Ni 3d@d-Co:Co 3d@d-O:O 2p@p" DONE.nico2o4.normal/e1.n.15G49:1:Majority
 #stack exec f1 -- -t "QSGW" -a all -y "-20:20" -x "-9:3" -o temp/kadal -b -r "Ni:Ni 3d@d-Co:Co 3d@d-O:O 2p@p" DONE.nico2o4.normal/nico2o4.0GGA:1:Majority
 
