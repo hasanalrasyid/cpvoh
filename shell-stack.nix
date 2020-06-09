@@ -63,12 +63,13 @@ pkgs.haskell.lib.buildStackProject {
   openmpi_static
   which hwloc openssh
   gnuplot ghostscript perl
+  poppler_utils
   ];
   doHaddock = false;
   doCheck = false;
   shellHook = ''
     LD_LIBRARY_PATH=$LD_LIBRARY_PATH:/home/aku/opt/python3-3.8.2/lib
-    PATH=$PATH:/usr/local/bin:/usr/bin:/home/aku/opt/python3-3.8.2/bin:/home/aku/opt/texlive/2019/bin/x86_64-linux
+    PATH=$PATH:/usr/local/bin:/usr/bin:/home/aku/opt/python3-3.8.2/bin:/home/aku/opt/texlive/2019/bin/x86_64-linux:/home/aku/.local/bin
 #   . ./.inline-fortran/env
   echo shellHook out
   '';
