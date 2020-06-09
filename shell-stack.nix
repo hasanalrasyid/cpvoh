@@ -28,7 +28,7 @@ config = {
             stack = pkgs.haskellPackages.callCabal2nix "stack" (
               builtins.fetchTarball {
                 url = "https://github.com/commercialhaskell/stack/archive/9dcef52902d01646d63fe76fc8e6b1b3ac6cc9b8.tar.gz";
-                sha256 = "0xyiaj3z0hm4zdkdird5296q5r9lb5dpqlm4352z9kglksq66k63";
+                sha256 = "0xs8zmxvklgqmm44xb76w45cgs5kbx2ab1677gmlclkng105px3h";
             }){};
             });
         };
