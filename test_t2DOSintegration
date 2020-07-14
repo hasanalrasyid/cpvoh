@@ -1,0 +1,4 @@
+mkdir -p temp
+#stack exec t2 -- kadalijo "Atomic magnetic moment using QSGW Method" "{Number}|{Orbital}|{Spin Density}|{PDOS}|{Diff}" "@{}llSSS@{}" -9:6 25 T o flipSpin nico2o4 "DONE.nico2o4.normal/e1.n.15G49" "Ni:Ni#3d:6:7:9:8:10" "Co:Co#3d:6:7:8:9:10" "O:O#2p:3:4:5"
+#stack exec t2 -- kadalijo "Atomic magnetic moment using QSGW Method" "{Number}|{Orbital}|{Spin Density}|{PDOS}|{Diff}" "@{}llSSS@{}" -9:6 25 T o noflipSpin nico2o4ia "DONE.nico2o4invA/nico2o4.invA.19G20" "Ni:Ni#3d:6:7:9:8:10" "Co:Co#3d:6:7:8:9:10"  "NiTd:Ni_{Td}#3d:6:7:9:8:10" "CoTd:Co_{Td}#3d:6:7:8:9:10" "O:O#2p:3:4:5"
+stack exec t2 -- kadalijo "Atomic magnetic moment using QSGW Method" "{Number}|{Orbital}|{Spin Density}|{PDOS}|{Diff}" "@{}llSSS@{}" -9:6 25 T o noflipSpin nico2o4ib "DONE.nico2o4invB/nico2o4.invB.11G20" "Ni:Ni#3d:6:7:9:8:10" "Co:Co#3d:6:7:8:9:10" "CoTd:Co(Td) t_2g#3d:6:7:8:9:10" "O:O#2p:3:4:5"
