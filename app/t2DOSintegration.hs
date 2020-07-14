@@ -125,6 +125,6 @@ showTotPDOS allArgs = do
 
   T.writeFile texFile $ T.pack rIntgAll
   -}
-
+  putStrLn rIntgAll
   putStrLn "====!showTotPDOS===="
 
